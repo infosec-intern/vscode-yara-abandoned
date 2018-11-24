@@ -1,0 +1,126 @@
+{
+	"fileTypes": [
+		"yara",
+		"yar"
+	],
+	"name": "YARA",
+	"scopeName": "source.yara",
+	"patterns": [
+		{
+			"name": "comment.line.double-slash.yara",
+			"match": "//.*\n"
+		},
+		{
+			"name": "comment.block.yara",
+			"begin": "/\\*",
+			"end": "\\*/"
+		},
+		{
+			"name": "comment.language.boolean.yara",
+			"match": "\\b(true|false)\\b"
+		},
+		{
+			"name": "constant.numeric.hex.yara",
+			"match": "\\b0x[a-fA-F0-9]+\\b"
+		},
+		{
+			"name": "constant.numeric.decimal.yara",
+			"match": "\\b[0-9]+(MB|KB)?\\b"
+		},
+		{
+			"name": "keyword.other.misc.yara",
+			"match": "\\b(all|any|at|contains|filesize|for|in|include|matches|none|of|them)\\b"
+		},
+		{
+			"name": "keyword.logical.yara",
+			"match": "\\b(and|not|or)\\b"
+		},
+		{
+			"name": "keyword.operator.bitwise.yara",
+			"match": "(&|\\||>>|<<|~|\\^)"
+		},
+		{
+			"name": "keyword.section.condition.yara",
+			"end": ":",
+			"match": "\\bcondition\\b"
+		},
+		{
+			"name": "keyword.section.import.yara",
+			"end": "\"",
+			"match": "^import "
+		},
+		{
+			"name": "keyword.section.meta.yara",
+			"end": ":",
+			"match": "\\bmeta\\b"
+		},
+		{
+			"name": "keyword.operator.relational.yara",
+			"match": "(<=?|>=?|==|!=)"
+		},
+		{
+			"name": "keyword.other.rule.yara",
+			"match": "\\brule\\b"
+		},
+		{
+			"name": "keyword.section.strings.yara",
+			"end": ":",
+			"match": "\\bstrings\\b"
+		},
+		{
+			"name": "variable.parameter.source.yara",
+			"match": "[$#@][a-zA-Z0-9_]*"
+		},
+		{
+			"name": "string.quoted.double.yara",
+			"match": "\"(\\.|[^\\\"])*?\""
+		},
+		{
+			"name": "string.regexp.yara",
+			"match": "/.*?[^\\\\]/[icxtsmpwnJUdbeqx]*"
+		},
+		{
+			"contentName": "string.hex.yara",
+			"begin": "= {",
+			"end": "}"
+		},
+		{
+			"name": "storage.type.other.yara",
+			"match": "\\b(ascii|entrypoint)\\b"
+		},
+		{
+			"name": "storage.modifier.yara",
+			"match": "\\b(fullword|global|nocase|private|wide|xor)\\b"
+		},
+		{
+			"name": "storage.type.int.yara",
+			"match": "\\bint(8|16|32)\\b"
+		},
+		{
+			"name": "storage.type.intbe.yara",
+			"match": "\\bint(8|16|32)be\\b"
+		},
+		{
+			"name": "storage.type.uint.yara",
+			"match": "\\buint(8|16|32)\\b"
+		},
+		{
+			"name": "storage.type.uintbe.yara",
+			"match": "\\buint(8|16|32)be\\b"
+		}
+	],
+	"smartTypingPairs": [
+		[ "\"", "\"" ],
+		[ "(", ")" ],
+		[ "{", "}" ],
+		[ "[", "]" ],
+		[ "/*", "*/" ]
+	],
+	"highlightPairs": [
+		[ "\"", "\"" ],
+		[ "(", ")" ],
+		[ "{", "}" ],
+		[ "[", "]" ],
+		[ "/*", "*/" ]
+	]
+}
