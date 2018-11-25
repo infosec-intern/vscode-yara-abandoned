@@ -8,6 +8,9 @@ Language support for the YARA pattern matching language
 
 ## Features
 
+### Diagnostics
+The extension will compile workspace rules in the background and return errors and warnings as you type
+
 ### Definition Provider and Peeking
 Allows peeking and Ctrl+clicking to jump to a rule definition. This applies to both rule names and variables
 
@@ -24,11 +27,6 @@ Provides completion suggestions for standard YARA modules, including `pe`, `elf`
 ![Code Completion](./images/module_completion.PNG)
 
 ### Snippets
-Includes:
-* `rule:` skeleton
-* `import` statement completion
-* `strings:` section skeleton
-* `meta:` section skeleton
 
 ## Problems?
 If you encounter an issue with the syntax, feel free to create an issue or pull request!
