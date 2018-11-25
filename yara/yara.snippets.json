@@ -44,9 +44,14 @@
         "body": "import \"${1|pe,elf,cuckoo,magic,hash,math,dotnet,time|}\"",
         "description": "Import a YARA module"
     },
-    "for": {
+    "for..of": {
         "prefix": "for",
-        "body": "for ${1:expression} of ${2:string_set} : ( ${3:boolean_expression} )",
+        "body": "for ${1:expression} of them : ( ${2:boolean_expression} )",
+        "description": "Apply the same condition to many strings"
+    },
+    "for..in": {
+        "prefix": "for",
+        "body": "for ${1:expression} in ( ${2:string_set} ) : ( ${3:boolean_expression} )",
         "description": "Apply the same condition to many strings"
     },
     "any": {
