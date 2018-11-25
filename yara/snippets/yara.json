@@ -2,7 +2,7 @@
     "Rule": {
         "prefix": "rule",
         "body": [
-            "rule ${TM_FILENAME_BASE}",
+            "rule ${TM_FILENAME_BASE/[^0-9^a-z^_]//gi}",
             "{",
             "\tmeta:",
             "\t\tdate = \"${CURRENT_YEAR}-${CURRENT_MONTH}-${CURRENT_DATE}\"",
@@ -12,7 +12,7 @@
             "\t\t${2:condition}",
             "}"
         ],
-        "description": "Generate a rule skeleton"
+        "description": "Generate a rule skeleton. Rule name is generated from current filename including only alphanumeric characters and underscores)"
     },
     "Meta": {
         "prefix": "meta",
