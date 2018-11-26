@@ -13,8 +13,6 @@ try:
 except ModuleNotFoundError:
     HAS_YARA = False
 
-logging.debug("yara-python is installed")
-
 
 def code_completion_provider(request: dict):
     ''' Respond to the completionItem/resolve request '''
@@ -35,6 +33,7 @@ def diagnostic_provider(request: dict):
     '''
     if HAS_YARA:
         logging.warning("diagnostic_provider() is not yet implemented")
+        logging.debug("yara-python is installed")
         response = {
             "jsonrpc": "2.0",
             "id": request["id"],
