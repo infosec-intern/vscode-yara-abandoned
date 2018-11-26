@@ -84,7 +84,6 @@
         "vscode": "^1.1.21"
     },
     "dependencies": {
-        "vscode-languageclient": "^5.1.1",
-        "vscode-languageserver": "^5.1.0"
+        "vscode-languageclient": "^5.1.1"
     }
 }
