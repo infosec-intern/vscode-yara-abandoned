@@ -1,25 +1,48 @@
 "use strict";
 
-import * as vscode from "vscode";
-import {YaraCompletionItemProvider} from "./completionProvider";
-import {YaraDefinitionProvider} from "./definitionProvider";
-import {YaraReferenceProvider} from "./referenceProvider";
+import * as path from "path";
+import { workspace, ExtensionContext } from "vscode";
 
+import * as lcp from "vscode-languageclient";
 
-export function activate(context: vscode.ExtensionContext) {
-    // console.log("Activating Yara extension");
-    let YARA: vscode.DocumentSelector = { language: "yara", scheme: "file" };
-    let definitionDisposable: vscode.Disposable = vscode.languages.registerDefinitionProvider(YARA, new YaraDefinitionProvider());
-    let referenceDisposable: vscode.Disposable = vscode.languages.registerReferenceProvider(YARA, new YaraReferenceProvider());
-    let completionDisposable: vscode.Disposable = vscode.languages.registerCompletionItemProvider(YARA, new YaraCompletionItemProvider(), '.');
-    context.subscriptions.push(definitionDisposable);
-    context.subscriptions.push(referenceDisposable);
-    context.subscriptions.push(completionDisposable);
-};
+let client: lcp.LanguageClient;
 
-export function deactivate(context: vscode.ExtensionContext) {
-    // console.log("Deactivating Yara extension");
-    context.subscriptions.forEach(disposable => {
-        disposable.dispose();
-    });
-};
+export function activate(context: ExtensionContext) {
+    let serverModule: string = context.asAbsolutePath(path.join("yara", "src", "languageServer.py"));
+    let serverOptions: lcp.ServerOptions = {
+        run: {
+            module: serverModule,
+            transport: lcp.TransportKind.ipc
+        },
+        debug: {
+            module: serverModule,
+            transport: lcp.TransportKind.ipc
+        }
+    };
+    let clientOptions: lcp.LanguageClientOptions = {
+        // Register the server for yara documents
+        documentSelector: [{ scheme: "file", language: "yara" }],
+        synchronize: {
+            // Notify the server about file changes to .yara files contained in the workspace
+            fileEvents: workspace.createFileSystemWatcher("**/.yara")
+        }
+    };
+
+    // Create the language client and start the client.
+    client = new lcp.LanguageClient(
+        "yara",
+        "Yara",
+        serverOptions,
+        clientOptions
+    );
+
+    // Start the client. This will also launch the server
+    client.start();
+}
+
+export function deactivate(): Thenable<void> {
+    if (!client) {
+        return undefined;
+    }
+    return client.stop();
+}
