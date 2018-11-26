@@ -20,23 +20,9 @@ export function activate(context: ExtensionContext) {
         }
     };
     let clientOptions: lcp.LanguageClientOptions = {
-        // Register the server for yara documents
-        documentSelector: [{ scheme: "file", language: "yara" }],
-        synchronize: {
-            // Notify the server about file changes to .yara files contained in the workspace
-            fileEvents: workspace.createFileSystemWatcher("**/.yara")
-        }
+        documentSelector: [{ scheme: "file", language: "yara" }]
     };
-
-    // Create the language client and start the client.
-    client = new lcp.LanguageClient(
-        "yara",
-        "Yara",
-        serverOptions,
-        clientOptions
-    );
-
-    // Start the client. This will also launch the server
+    client = new lcp.LanguageClient("yara", "Yara", serverOptions, clientOptions);
     client.start();
 }
 
