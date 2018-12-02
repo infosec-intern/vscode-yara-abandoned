@@ -13,7 +13,7 @@
     },
     "tasks": [
         {
-            "label": "tsc",
+            "label": "compile",
             "command": "${workspaceRoot}/node_modules/.bin/tsc",
             "type": "shell",
             "args": ["-p", "${workspaceRoot}"],
