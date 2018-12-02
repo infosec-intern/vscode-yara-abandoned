@@ -8,7 +8,8 @@ import * as lcp from "vscode-languageclient";
 let client: lcp.LanguageClient;
 
 export function activate(context: vscode.ExtensionContext) {
-    let serverModule: string = context.asAbsolutePath(path.join("yara", "src", "languageServer.py"));
+    // let envPath: string = context.asAbsolutePath(path.join("..", "..", "server", "env"))
+    let serverModule: string = context.asAbsolutePath(path.join("..", "..", "server", "languageServer.py"));
     let serverOptions: lcp.ServerOptions = {
         run: {
             module: serverModule,
@@ -24,7 +25,7 @@ export function activate(context: vscode.ExtensionContext) {
         diagnosticCollectionName: "yara",
         stdioEncoding: "utf8"
     };
-    client = new lcp.LanguageClient("yara", "Yara", serverOptions, clientOptions);
+    client = new lcp.LanguageClient("yara","Yara",serverOptions,clientOptions);
     client.start();
 }
 
