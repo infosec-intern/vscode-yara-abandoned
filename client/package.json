@@ -1,0 +1,118 @@
+{
+    "name": "yara",
+    "displayName": "YARA",
+    "description": "Rich language support for the YARA pattern matching language",
+    "version": "2.0.0",
+    "icon": "images/logo.png",
+    "galleryBanner": {
+        "color": "#A4A4A4",
+        "theme": "dark"
+    },
+    "publisher": "infosec-intern",
+    "license": "MIT License - full document in LICENSE.md",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/infosec-intern/textmate-yara"
+    },
+    "bugs": {
+        "url": "https://github.com/infosec-intern/textmate-yara/issues"
+    },
+    "engines": {
+        "vscode": "^1.22.0"
+    },
+    "categories": [
+        "Programming Languages",
+        "Snippets"
+    ],
+    "contributes": {
+        "languages": [
+            {
+                "id": "yara",
+                "aliases": [
+                    "yara",
+                    "yara-syntax",
+                    "yaralang",
+                    "YARA",
+                    "Yara"
+                ],
+                "extensions": [
+                    ".yara",
+                    ".yar"
+                ],
+                "configuration": "../yara/yara.configuration.json"
+            }
+        ],
+        "grammars": [
+            {
+                "language": "yara",
+                "scopeName": "source.yara",
+                "path": "../yara/yara.tmLanguage.json"
+            }
+        ],
+        "snippets": [
+            {
+                "language": "yara",
+                "path": "../yara/yara.snippets.json"
+            }
+        ],
+        "configuration": {
+            "title": "YARA configuration",
+            "properties": {
+                "yara.require_imports": {
+                    "type": "boolean",
+                    "default": false,
+                    "description": "When providing suggestions for YARA modules, first require an import statement at the top of the rule file. For example, in order to autocomplete the 'time.now()' method, require 'import \"time\"'. Off by default."
+                },
+                "yara.compile_flags": {
+                    "type": [
+                        "string",
+                        "null",
+                        "array"
+                    ],
+                    "default": null,
+                    "scope": "resource",
+                    "description": "Extra flags to pass to the yarac binary when compiling a rule"
+                },
+                "yara.compile_on_save": {
+                    "type": "boolean",
+                    "default": true,
+                    "scope": "resource",
+                    "description": "Compile the active rule on each save and draw diagnostics on-screen"
+                }
+            }
+        },
+        "commands": [
+            {
+                "command": "yara.CompileRule",
+                "title": "Compile rule",
+                "category": "YARA"
+            },
+            {
+                "command": "yara.CompileAllRules",
+                "title": "Compile all rules in the current workspace",
+                "category": "YARA"
+            }
+        ]
+    },
+    "main": "out/extension",
+    "activationEvents": [
+        "onLanguage:yara"
+    ],
+    "scripts": {
+        "vscode:prepublish": "tsc -p ./",
+        "compile": "tsc -watch -p ./",
+        "postinstall": "node ./node_modules/vscode/bin/install",
+        "test": "mocha"
+    },
+    "devDependencies": {
+        "@types/mocha": "^2.2.32",
+        "@types/node": "^6.0.114",
+        "mocha": "^5.2.0",
+        "typescript": "^2.9.2",
+        "vscode": "^1.1.21"
+    },
+    "dependencies": {
+        "path": "^0.12.7",
+        "vscode-languageclient": "^5.1.1"
+    }
+}
