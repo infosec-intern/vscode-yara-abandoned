@@ -11,8 +11,19 @@ try:
     import yara
     HAS_YARA = True
 except ModuleNotFoundError:
+    # set INCLUDE="C:\Program Files (x86)\Windows Kits\10\Include" && python -m pip install yara-python
     HAS_YARA = False
 
+
+async def stream_handler(message, port=8888):
+    reader, writer = await asyncio.open_connection("127.0.0.1", port)
+    print(reader)
+    print(writer)
+    data = await reader.read(100)
+    print("Received: {:r}".format(data.decode()))
+    print("Close the connection")
+    writer.close()
+    await writer.wait_closed()
 
 def code_completion_provider(request: dict):
     ''' Respond to the completionItem/resolve request '''

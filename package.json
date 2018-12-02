@@ -62,9 +62,33 @@
                     "type": "boolean",
                     "default": false,
                     "description": "When providing suggestions for YARA modules, first require an import statement at the top of the rule file. For example, in order to autocomplete the 'time.now()' method, require 'import \"time\"'. Off by default."
+                },
+                "yara.compile_flags": {
+                    "type": ["string", "null", "array"],
+                    "default": null,
+                    "scope": "resource",
+                    "description": "Extra flags to pass to the yarac binary when compiling a rule"
+                },
+                "yara.compile_on_save": {
+                    "type": "boolean",
+                    "default": true,
+                    "scope": "resource",
+                    "description": "Compile the active rule on each save and draw diagnostics on-screen"
                 }
             }
-        }
+        },
+        "commands": [
+            {
+                "command": "yara.CompileRule",
+                "title": "Compile rule",
+                "category": "YARA"
+            },
+            {
+                "command": "yara.CompileAllRules",
+                "title": "Compile all rules in the current workspace",
+                "category": "YARA"
+            }
+        ]
     },
     "main": "out/yara/src/extension",
     "activationEvents": [
