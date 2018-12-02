@@ -15,7 +15,7 @@
             "stopOnEntry": false,
             "sourceMaps": true,
             "outFiles": [
-                "${workspaceRoot}/out/yara/**/*.js"
+                "${workspaceRoot}/out/**/*.js"
             ]
         },
         {
