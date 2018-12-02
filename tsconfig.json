@@ -14,7 +14,7 @@
         ".vscode-test"
     ],
     "include": [
-        "yara/src/**/*",
-        "test/**/*"
+        "client/**/*",
+        "test/*"
     ]
 }

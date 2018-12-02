@@ -64,7 +64,11 @@
                     "description": "When providing suggestions for YARA modules, first require an import statement at the top of the rule file. For example, in order to autocomplete the 'time.now()' method, require 'import \"time\"'. Off by default."
                 },
                 "yara.compile_flags": {
-                    "type": ["string", "null", "array"],
+                    "type": [
+                        "string",
+                        "null",
+                        "array"
+                    ],
                     "default": null,
                     "scope": "resource",
                     "description": "Extra flags to pass to the yarac binary when compiling a rule"
@@ -90,16 +94,20 @@
             }
         ]
     },
-    "main": "client/out/extension",
+    "main": "out/client/extension",
     "activationEvents": [
         "onLanguage:yara"
     ],
-    "scripts": {
-    },
+    "scripts": {},
     "devDependencies": {
         "@types/mocha": "^2.2.32",
         "@types/node": "^6.0.114",
         "mocha": "^5.2.0",
         "typescript": "^2.9.2"
+    },
+    "dependencies": {
+        "tsc": "^1.20150623.0",
+        "vscode": "^1.1.22",
+        "vscode-languageclient": "^5.1.1"
     }
 }
