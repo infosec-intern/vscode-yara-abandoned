@@ -1,32 +1,40 @@
 {
     // See https://go.microsoft.com/fwlink/?LinkId=733558
     // for the documentation about the tasks.json format
-    "version": "0.1.1",
+    "version": "2.0.0",
     "echoCommand": true,
-    "showOutput": "always",
+    "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared",
+        "showReuseMessage": false,
+        "clear": true
+    },
     "tasks": [
         {
-            "taskName": "tsc",
+            "label": "tsc",
             "command": "${workspaceRoot}/node_modules/.bin/tsc",
-            "isShellCommand": true,
+            "type": "shell",
             "args": ["-p", "${workspaceRoot}"],
             "problemMatcher": "$tsc",
-            "isBuildCommand": true
+            "group": "build"
         },
         {
-            "taskName": "install",
+            "label": "install",
             "command": "npm",
-            "args": ["install"]
+            "args": ["install"],
         },
         {
-            "taskName": "update",
+            "label": "update",
             "command": "npm",
             "args": ["update"]
         },
         {
-            "taskName": "test",
+            "label": "test",
             "command": "npm",
-            "args": ["run", "test"]
+            "args": ["run", "test"],
+            "group": "test"
         }
     ]
 }
