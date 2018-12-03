@@ -9,7 +9,7 @@ let client: lcp.LanguageClient;
 
 export function activate(context: vscode.ExtensionContext) {
     // let envPath: string = context.asAbsolutePath(path.join("..", "..", "server", "env"))
-    let serverModule: string = context.asAbsolutePath(path.join("..", "..", "server", "languageServer.py"));
+    let serverModule: string = context.asAbsolutePath(path.join("server", "languageServer.py"));
     let serverOptions: lcp.ServerOptions = {
         run: {
             module: serverModule,
