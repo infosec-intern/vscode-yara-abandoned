@@ -1,0 +1,1 @@
+NAME = "yara-languageserver"

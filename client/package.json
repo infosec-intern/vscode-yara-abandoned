@@ -1,0 +1,28 @@
+{
+    "name": "yara-languageclient",
+    "description": "Language client for the YARA language server",
+    "version": "2.0.0",
+    "author": "infosec-intern",
+    "publisher": "infosec",
+    "license": "MIT",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/infosec-intern/textmate-yara"
+    },
+    "bugs": {
+        "url": "https://github.com/infosec-intern/textmate-yara/issues"
+    },
+    "engines": {
+        "vscode": "^1.22.0"
+    },
+    "scripts": {
+        "update-vscode": "vscode-install",
+        "postinstall": "vscode-install"
+    },
+    "dependencies": {
+        "vscode-languageclient": "^4.1.4"
+    },
+    "devDependencies": {
+        "vscode": "^1.1.21"
+    }
+}
