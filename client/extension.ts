@@ -2,36 +2,30 @@
 
 import * as path from "path";
 import * as vscode from "vscode";
-
 import * as lcp from "vscode-languageclient";
 
-let client: lcp.LanguageClient;
 
-export function activate(context: vscode.ExtensionContext) {
-    // let envPath: string = context.asAbsolutePath(path.join("..", "..", "server", "env"))
-    let serverModule: string = context.asAbsolutePath(path.join("server", "languageServer.py"));
-    let serverOptions: lcp.ServerOptions = {
-        run: {
-            module: serverModule,
-            transport: lcp.TransportKind.socket
-        },
-        debug: {
-            module: serverModule,
-            transport: lcp.TransportKind.socket
-        }
-    };
-    let clientOptions: lcp.LanguageClientOptions = {
+// https://github.com/palantir/python-language-server/blob/develop/vscode-client/src/extension.ts
+function startLanguageServer(command: string, args: Array<string>): vscode.Disposable {
+    const serverOptions: lcp.ServerOptions = { command, args };
+    const clientOptions: lcp.LanguageClientOptions = {
         documentSelector: [{ scheme: "file", language: "yara" }],
         diagnosticCollectionName: "yara",
-        stdioEncoding: "utf8"
+        stdioEncoding: "utf8",
+        synchronize: { configurationSection: "yara" }
     };
-    client = new lcp.LanguageClient("yara","Yara",serverOptions,clientOptions);
-    client.start();
+    return new lcp.LanguageClient(command, serverOptions, clientOptions).start();
 }
 
-export function deactivate(): Thenable<void> {
-    if (!client) {
-        return undefined;
-    }
-    return client.stop();
+export function activate(context: vscode.ExtensionContext) {
+    let serverPath: string = context.asAbsolutePath(path.join("server", "languageServer.py"));
+    let client = startLanguageServer(serverPath, []);
+    context.subscriptions.push(client);
+}
+
+export function deactivate(context: vscode.ExtensionContext) {
+    // console.log("Deactivating Yara extension");
+    context.subscriptions.forEach(disposable => {
+        disposable.dispose();
+    });
 }
