@@ -11,6 +11,7 @@ try:
     HAS_YARA = True
 except ModuleNotFoundError:
     # set INCLUDE="C:\Program Files (x86)\Windows Kits\10\Include" && python -m pip install yara-python
+    logging.warning("yara-python not installed. Diagnostics will not be available")
     HAS_YARA = False
 
 
@@ -23,9 +24,7 @@ def _binary_stdio():
     Thanks Palantir!
     https://github.com/palantir/python-language-server/blob/ab3e5eaef848a0cc752110f85ed95187f5cffcc4/pyls/__main__.py
     '''
-    PY3K = sys.version_info >= (3, 0)
-
-    if PY3K:
+    if sys.version_info >= (3, 0):
         # pylint: disable=no-member
         stdin, stdout = sys.stdin.buffer, sys.stdout.buffer
     else:
@@ -127,8 +126,8 @@ def initialize():
 
 def start_io_lang_server(rfile, wfile):
     logging.info("Starting YARA IO language server")
-    print("rfile: {}", rfile)
-    print("wfile: {}", wfile)
+    logging.debug("rfile: %s", rfile)
+    logging.debug("wfile: %s", wfile)
 
 def main():
     stdin, stdout = _binary_stdio()
