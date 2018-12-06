@@ -121,7 +121,6 @@ def initialize():
             # "workspaceSymbolProvider": False,
         }
     }
-
     return json.dumps(announcement)
 
 def start_io_lang_server(rfile, wfile):
