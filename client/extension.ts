@@ -32,11 +32,6 @@ export function activate(context: vscode.ExtensionContext) {
     client.info("test info log");
     client.error("test error log");
     client.warn("test warn log");
-    client.onReady().then(function () {
-        console.log("client is ready");
-    })
-    console.log(client.initializeResult);
-    console.log(client.trace);
     context.subscriptions.push(client.start());
 }
 
