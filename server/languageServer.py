@@ -123,14 +123,11 @@ def initialize():
     }
     return json.dumps(announcement)
 
-def start_io_lang_server(rfile, wfile):
-    logging.info("Starting YARA IO language server")
-    logging.debug("rfile: %s", rfile)
-    logging.debug("wfile: %s", wfile)
-
 def main():
+    logging.info("Starting YARA IO language server")
     stdin, stdout = _binary_stdio()
-    start_io_lang_server(stdin, stdout)
+    logging.debug("rfile: %s", stdin)
+    logging.debug("wfile: %s", stdout)
 
 
 if __name__ == "__main__":
