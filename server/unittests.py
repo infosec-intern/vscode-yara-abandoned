@@ -2,6 +2,12 @@ import unittest
 
 
 class TestLanguageServer(unittest.TestCase):
+    def setUpClass(self):
+        ''' Initialize tests '''
+        pass
+    def tearDownClass(self):
+        ''' Clean things up '''
+        pass
     def test_code_completion_provider(self):
         ''' Test code completion provider '''
         pass
