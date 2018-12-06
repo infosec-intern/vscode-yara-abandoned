@@ -3,9 +3,8 @@ import asyncio
 import http
 import json
 import logging
+import sys
 
-
-logging.basicConfig(level=logging.INFO, format="%(levelname)s [%(module)s:$(lineno)d] %(message)s")
 
 try:
     import yara
@@ -15,15 +14,32 @@ except ModuleNotFoundError:
     HAS_YARA = False
 
 
-async def stream_handler(message, port=8888):
-    reader, writer = await asyncio.open_connection("127.0.0.1", port)
-    print(reader)
-    print(writer)
-    data = await reader.read(100)
-    print("Received: {:r}".format(data.decode()))
-    print("Close the connection")
-    writer.close()
-    await writer.wait_closed()
+def _binary_stdio():
+    '''
+    Construct binary stdio streams (not text mode).
+    This seems to be different for Window/Unix Python2/3, so going by:
+        https://stackoverflow.com/questions/2850893/reading-binary-data-from-stdin
+
+    Thanks Palantir!
+    https://github.com/palantir/python-language-server/blob/ab3e5eaef848a0cc752110f85ed95187f5cffcc4/pyls/__main__.py
+    '''
+    PY3K = sys.version_info >= (3, 0)
+
+    if PY3K:
+        # pylint: disable=no-member
+        stdin, stdout = sys.stdin.buffer, sys.stdout.buffer
+    else:
+        # Python 2 on Windows opens sys.stdin in text mode, and
+        # binary data that read from it becomes corrupted on \r\n
+        if sys.platform == "win32":
+            # set sys.stdin to binary mode
+            # pylint: disable=no-member,import-error
+            import os
+            import msvcrt
+            msvcrt.setmode(sys.stdin.fileno(), os.O_BINARY)
+            msvcrt.setmode(sys.stdout.fileno(), os.O_BINARY)
+        stdin, stdout = sys.stdin, sys.stdout
+    return stdin, stdout
 
 def code_completion_provider(request: dict):
     ''' Respond to the completionItem/resolve request '''
@@ -108,3 +124,17 @@ def initialize():
     }
 
     return json.dumps(announcement)
+
+def start_io_lang_server(rfile, wfile):
+    logging.info("Starting YARA IO language server")
+    print("rfile: {}", rfile)
+    print("wfile: {}", wfile)
+
+def main():
+    stdin, stdout = _binary_stdio()
+    start_io_lang_server(stdin, stdout)
+
+
+if __name__ == "__main__":
+    logging.basicConfig(level=logging.INFO, format="%(levelname)s [%(module)s:%(lineno)d] %(message)s")
+    main()
