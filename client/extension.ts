@@ -1,21 +1,17 @@
 "use strict";
 
 import * as path from "path";
-import * as vscode from "vscode";
+import {ExtensionContext} from "vscode";
 import * as lcp from "vscode-languageclient";
 
 
-export function activate(context: vscode.ExtensionContext) {
+export function activate(context: ExtensionContext) {
     let serverPath: string = context.asAbsolutePath(path.join("server", "languageServer.py"));
+    let pythonPath: string = context.asAbsolutePath(path.join("server", "env", "Scripts", "python"));
     const serverOptions: lcp.ServerOptions = {
-        run: {
-            module: serverPath,
-            transport: lcp.TransportKind.stdio
-        },
-        debug: {
-            module: serverPath,
-            transport: lcp.TransportKind.stdio
-        }
+        command: pythonPath,
+        args: [serverPath],
+        transport: lcp.TransportKind.stdio
     };
     const clientOptions: lcp.LanguageClientOptions = {
         documentSelector: [{ scheme: "file", language: "yara" }],
@@ -35,7 +31,7 @@ export function activate(context: vscode.ExtensionContext) {
     context.subscriptions.push(client.start());
 }
 
-export function deactivate(context: vscode.ExtensionContext) {
+export function deactivate(context: ExtensionContext) {
     // console.log("Deactivating Yara extension");
     context.subscriptions.forEach(disposable => {
         disposable.dispose();
