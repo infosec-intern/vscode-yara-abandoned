@@ -90,7 +90,6 @@ async def rename_provider(request: dict) -> str:
 async def initialize() -> str:
     ''' Announce language support methods '''
     # document_selector = { "language": "yara", "scheme": "file" }
-    LOGGER.debug("inside initialize()")
     return json.dumps({
         "capabilities": {
             # "codeActionProvider": False,
@@ -118,13 +117,19 @@ async def protocol_handler(reader:asyncio.StreamReader, writer: asyncio.StreamWr
     announcement = await initialize()
     writer.write(announcement)
     await writer.drain()
-    data = await reader.readline()
-    key, value = tuple(data.decode().strip().split(" "))
-    header = {key: value}
-    LOGGER.debug("%s: %s", key, header[key])
-    data = await reader.read()
-    LOGGER.info(data.decode())
-    LOGGER.info("Closing connection")
+    i = 0
+    while i < 10:
+        data = await reader.readuntil(separator=b"\r\n\r\n")
+        key, value = tuple(data.decode().strip().split(" "))
+        header = {key: value}
+        LOGGER.debug("%s %s", key, header[key])
+        if key == "Content-Length:":
+            data = await reader.readexactly(int(value))
+        else:
+            data = await reader.readline()
+        body = json.loads(data.decode())#.replace("\r\n", ""))
+        LOGGER.info(body)
+        i += 1
     writer.close()
 
 async def exception_handler(eventloop: asyncio.BaseEventLoop, context: dict):
@@ -156,7 +161,6 @@ async def main():
         await server.serve_forever()
         LOGGER.info(server.is_serving())
         server.close()
-
     await server.wait_closed()
     LOGGER.info("server is closed")
 
