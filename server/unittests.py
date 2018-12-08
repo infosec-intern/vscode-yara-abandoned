@@ -22,6 +22,10 @@ class TestLanguageServer(unittest.TestCase):
         ''' Test code completion provider '''
         pass
 
+    def test_connection_closed(self):
+        ''' Ensure the server properly handles closed client connections '''
+        pass
+
     def test_definition_provider(self):
         ''' Test defintion provider '''
         pass
