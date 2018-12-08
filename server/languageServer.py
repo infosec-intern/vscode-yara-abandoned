@@ -114,6 +114,13 @@ async def initialize(reader:asyncio.StreamReader, writer: asyncio.StreamWriter) 
     }).encode()
     writer.write(announcement)
     await writer.drain()
+    data = await reader.read(10000)
+    contentlength = data.decode().split(" ")[1].strip()
+    LOGGER.debug("Content-Length: %s", contentlength)
+    data = await reader.read(int(contentlength)+1)
+    print(data.decode())
+    LOGGER.info("Closing connection")
+    writer.close()
 
 async def main():
     ''' Program entrypoint '''
