@@ -17,6 +17,9 @@ class TestLanguageServer(unittest.TestCase):
     def test_diagnostic_provider(self):
         ''' Test diganostic provider '''
         pass
+    def test_exceptions_handled(self):
+        ''' Test the server handles exceptions properly '''
+        pass
     def test_highlight_provider(self):
         ''' Test highlight provider '''
         pass
