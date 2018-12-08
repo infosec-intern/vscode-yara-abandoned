@@ -28,6 +28,17 @@ Provides completion suggestions for standard YARA modules, including `pe`, `elf`
 
 ### Snippets
 
+## Requirements
+With the new language server protocol, Python 3.4 or higher is required, due to the heavy use of the `asyncio` library.
+
+In addition, `yara-python` must be installed. If it is not installed, this extension will try to build a virtual environment in `$EXTENSIONROOT/server/env` with the latest Python version and install dependencies there.
+
+**Note:** If you are on Windows, you might have to set the `$INCLUDE` environment variable before buidling this environment, so that when `yara-python` is compiled for your local system, Python knows where to find the appropriate DLLs.
+On Windows 10, this would probably look like:
+```sh
+set INCLUDE="C:\Program Files (x86)\Windows Kits\10\Include" && python -m pip install yara-python
+```
+
 ## Problems?
 If you encounter an issue with the syntax, feel free to create an issue or pull request!
 Alternatively, check out some of the YARA syntaxes for Sublime and Atom, or the one bundled with YARA itself.

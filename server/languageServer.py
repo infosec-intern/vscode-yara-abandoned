@@ -8,7 +8,6 @@ try:
     import yara
     HAS_YARA = True
 except ModuleNotFoundError:
-    # set INCLUDE="C:\Program Files (x86)\Windows Kits\10\Include" && python -m pip install yara-python
     logging.warning("yara-python not installed. Diagnostics will not be available")
     HAS_YARA = False
 
@@ -31,12 +30,10 @@ def _build_logger() -> logging.Logger:
     LOGGER.addHandler(file_hdlr)
     LOGGER.setLevel(logging.DEBUG)
 
-@asyncio.coroutine
 async def code_completion_provider(request: dict) -> str:
     ''' Respond to the completionItem/resolve request '''
     LOGGER.warning("code_completion_provider() is not yet implemented")
 
-@asyncio.coroutine
 async def definition_provider(request: dict) -> str:
     ''' Respond to the textDocument/definition request '''
     LOGGER.warning("definition_provider() is not yet implemented")
@@ -46,7 +43,6 @@ async def definition_provider(request: dict) -> str:
         "result": {}
     }
 
-@asyncio.coroutine
 async def diagnostic_provider(request: dict) -> str:
     ''' Respond to the textDocument/publishDiagnostics request
     The message carries an array of diagnostic items for a resource URI.
@@ -64,7 +60,6 @@ async def diagnostic_provider(request: dict) -> str:
         response = {}
     return response
 
-@asyncio.coroutine
 async def highlight_provider(request: dict) -> str:
     ''' Respond to the textDocument/documentHighlight request '''
     LOGGER.warning("highlight_provider() is not implemented")
@@ -74,7 +69,6 @@ async def highlight_provider(request: dict) -> str:
         "result": {}
     }
 
-@asyncio.coroutine
 async def reference_provider(request: dict) -> str:
     ''' Respond to the textDocument/references request '''
     LOGGER.warning("reference_provider() is not yet implemented")
@@ -84,7 +78,6 @@ async def reference_provider(request: dict) -> str:
         "result": {}
     }
 
-@asyncio.coroutine
 async def rename_provider(request: dict) -> str:
     ''' Respond to the textDocument/rename request '''
     LOGGER.warning("rename_provider() is not yet implemented")
@@ -94,7 +87,6 @@ async def rename_provider(request: dict) -> str:
         "result": {}
     }
 
-@asyncio.coroutine
 async def initialize() -> str:
     ''' Announce language support methods '''
     # document_selector = { "language": "yara", "scheme": "file" }
@@ -122,7 +114,7 @@ async def initialize() -> str:
     }).encode()
 
 async def protocol_handler(reader:asyncio.StreamReader, writer: asyncio.StreamWriter) -> str:
-    ''' Set up the server '''
+    ''' Handle the language server protocol '''
     announcement = await initialize()
     writer.write(announcement)
     await writer.drain()
@@ -135,7 +127,6 @@ async def protocol_handler(reader:asyncio.StreamReader, writer: asyncio.StreamWr
     LOGGER.info("Closing connection")
     writer.close()
 
-@asyncio.coroutine
 async def exception_handler(eventloop: asyncio.BaseEventLoop, context: dict):
     ''' Handle asynchronous exceptions '''
     LOGGER.info("eventloop: %s", eventloop)
