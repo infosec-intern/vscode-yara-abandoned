@@ -1,14 +1,8 @@
 ''' Implements a VSCode language server for YARA '''
 import asyncio
-import http
-from io import BufferedReader, TextIOWrapper
 import json
 import logging
 import logging.handlers
-import signal
-import sys
-from typing import Tuple
-
 
 try:
     import yara
@@ -128,6 +122,7 @@ async def main():
     LOGGER.info("Serving on {}".format(server.sockets[0].getsockname()))
     async with server:
         await server.serve_forever()
+        server.close()
 
 
 if __name__ == "__main__":
