@@ -154,6 +154,7 @@ async def exception_handler(eventloop: asyncio.BaseEventLoop, context: dict):
 
 async def main():
     ''' Program entrypoint '''
+    _build_logger()
     LOGGER.info("Starting YARA IO language server")
     server = await asyncio.start_server(
         client_connected_cb=protocol_handler,
@@ -171,7 +172,6 @@ async def main():
 
 if __name__ == "__main__":
     try:
-        _build_logger()
         asyncio.run(main(),debug=True)
     except KeyboardInterrupt:
         LOGGER.critical("Stopping at user's request")
