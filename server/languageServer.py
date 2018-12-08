@@ -12,7 +12,9 @@ except ModuleNotFoundError:
     logging.warning("yara-python not installed. Diagnostics will not be available")
     HAS_YARA = False
 
+HOST = "127.0.0.1"
 LOGGER = logging.getLogger(__name__).addHandler(logging.NullHandler())
+PORT = 8471
 
 
 def _build_logger() -> logging.Logger:
@@ -119,7 +121,6 @@ async def initialize() -> str:
         }
     }).encode()
 
-@asyncio.coroutine
 async def protocol_handler(reader:asyncio.StreamReader, writer: asyncio.StreamWriter) -> str:
     ''' Set up the server '''
     announcement = await initialize()
@@ -129,27 +130,47 @@ async def protocol_handler(reader:asyncio.StreamReader, writer: asyncio.StreamWr
     key, value = tuple(data.decode().strip().split(" "))
     header = {key: value}
     LOGGER.debug("%s: %s", key, header[key])
-    data = await reader.read(int(value)+1)
-    body = data.decode()
-    print(body)
+    data = await reader.read()
+    LOGGER.info(data.decode())
     LOGGER.info("Closing connection")
     writer.close()
 
+@asyncio.coroutine
+async def exception_handler(eventloop: asyncio.BaseEventLoop, context: dict):
+    ''' Handle asynchronous exceptions '''
+    LOGGER.info("eventloop: %s", eventloop)
+    LOGGER.info(type(eventloop))
+    LOGGER.info(dir(eventloop))
+    LOGGER.info("context: %s", context)
+    LOGGER.info(type(context))
+    LOGGER.info("message: %s", context["message"])
+    LOGGER.info("exception: %s", context["exception"])
+    LOGGER.info("future: %s", context["future"])
+    LOGGER.info("handle: %s", context["handle"])
+    LOGGER.info("protocol: %s", context["protocol"])
+    LOGGER.info("transport: %s", context["transport"])
+    LOGGER.info("socket: %s", context["socket"])
+    eventloop.default_exception_handler(context)
 
 async def main():
     ''' Program entrypoint '''
     LOGGER.info("Starting YARA IO language server")
-    eventloop = asyncio.get_event_loop()
+    # eventloop = asyncio.get_event_loop()
+    eventloop = asyncio.get_running_loop()
     eventloop.set_debug(enabled=True)
+    eventloop.set_exception_handler(exception_handler)
     server = await asyncio.start_server(
         client_connected_cb=protocol_handler,
-        host="127.0.0.1",
-        port=8471,
+        host=HOST,
+        port=PORT,
         loop=eventloop)
+    LOGGER.info(server)
+    LOGGER.info(type(server))
+    LOGGER.info(dir(server))
     LOGGER.info("Serving on {}".format(server.sockets[0].getsockname()))
     async with server:
         task = await server.serve_forever()
-        print(task)
+        LOGGER.info(task)
         server.close()
 
 
