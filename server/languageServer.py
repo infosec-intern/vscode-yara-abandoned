@@ -155,30 +155,26 @@ async def exception_handler(eventloop: asyncio.BaseEventLoop, context: dict):
 async def main():
     ''' Program entrypoint '''
     LOGGER.info("Starting YARA IO language server")
-    # eventloop = asyncio.get_event_loop()
-    eventloop = asyncio.get_running_loop()
-    eventloop.set_debug(enabled=True)
-    eventloop.set_exception_handler(exception_handler)
     server = await asyncio.start_server(
         client_connected_cb=protocol_handler,
         host=HOST,
-        port=PORT,
-        loop=eventloop)
-    LOGGER.info(server)
-    LOGGER.info(type(server))
-    LOGGER.info(dir(server))
-    LOGGER.info("Serving on {}".format(server.sockets[0].getsockname()))
+        port=PORT)
+    LOGGER.info("Serving on %s", server.sockets[0].getsockname())
     async with server:
-        task = await server.serve_forever()
-        LOGGER.info(task)
+        await server.serve_forever()
+        LOGGER.info(server.is_serving())
         server.close()
+
+    await server.wait_closed()
+    LOGGER.info("server is closed")
 
 
 if __name__ == "__main__":
     try:
         _build_logger()
-        asyncio.run(main())
+        asyncio.run(main(),debug=True)
     except KeyboardInterrupt:
         LOGGER.critical("Stopping at user's request")
     except Exception as err:
+        LOGGER.error("exception thrown")
         LOGGER.exception(err)
