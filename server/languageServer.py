@@ -23,17 +23,19 @@ def _build_logger() -> logging.Logger:
     screen_hdlr.setFormatter(logging.Formatter("%(message)s"))
     screen_hdlr.setLevel(logging.INFO)
     file_hdlr = logging.handlers.RotatingFileHandler(filename=".yara.log", backupCount=1, maxBytes=100000)
-    file_hdlr.setFormatter(logging.Formatter("%(levelname)s [%(module)s:%(lineno)d] %(message)s"))
+    file_hdlr.setFormatter(logging.Formatter("%(asctime)s | [%(levelname)s:%(module)s:%(lineno)d] %(message)s"))
     file_hdlr.setLevel(logging.DEBUG)
     LOGGER.addHandler(screen_hdlr)
     LOGGER.addHandler(file_hdlr)
     LOGGER.setLevel(logging.DEBUG)
 
-def code_completion_provider(request: dict) -> str:
+@asyncio.coroutine
+async def code_completion_provider(request: dict) -> str:
     ''' Respond to the completionItem/resolve request '''
     LOGGER.warning("code_completion_provider() is not yet implemented")
 
-def definition_provider(request: dict) -> str:
+@asyncio.coroutine
+async def definition_provider(request: dict) -> str:
     ''' Respond to the textDocument/definition request '''
     LOGGER.warning("definition_provider() is not yet implemented")
     return {
@@ -42,7 +44,8 @@ def definition_provider(request: dict) -> str:
         "result": {}
     }
 
-def diagnostic_provider(request: dict) -> str:
+@asyncio.coroutine
+async def diagnostic_provider(request: dict) -> str:
     ''' Respond to the textDocument/publishDiagnostics request
     The message carries an array of diagnostic items for a resource URI.
     '''
@@ -59,7 +62,8 @@ def diagnostic_provider(request: dict) -> str:
         response = {}
     return response
 
-def highlight_provider(request: dict) -> str:
+@asyncio.coroutine
+async def highlight_provider(request: dict) -> str:
     ''' Respond to the textDocument/documentHighlight request '''
     LOGGER.warning("highlight_provider() is not implemented")
     return {
@@ -68,7 +72,8 @@ def highlight_provider(request: dict) -> str:
         "result": {}
     }
 
-def reference_provider(request: dict) -> str:
+@asyncio.coroutine
+async def reference_provider(request: dict) -> str:
     ''' Respond to the textDocument/references request '''
     LOGGER.warning("reference_provider() is not yet implemented")
     return {
@@ -77,7 +82,8 @@ def reference_provider(request: dict) -> str:
         "result": {}
     }
 
-def rename_provider(request: dict) -> str:
+@asyncio.coroutine
+async def rename_provider(request: dict) -> str:
     ''' Respond to the textDocument/rename request '''
     LOGGER.warning("rename_provider() is not yet implemented")
     return {
@@ -87,11 +93,11 @@ def rename_provider(request: dict) -> str:
     }
 
 @asyncio.coroutine
-async def initialize(reader:asyncio.StreamReader, writer: asyncio.StreamWriter) -> str:
+async def initialize() -> str:
     ''' Announce language support methods '''
     # document_selector = { "language": "yara", "scheme": "file" }
     LOGGER.debug("inside initialize()")
-    announcement = json.dumps({
+    return json.dumps({
         "capabilities": {
             # "codeActionProvider": False,
             # "codeLensProvider": False,
@@ -112,23 +118,38 @@ async def initialize(reader:asyncio.StreamReader, writer: asyncio.StreamWriter) 
             # "workspaceSymbolProvider": False,
         }
     }).encode()
+
+@asyncio.coroutine
+async def protocol_handler(reader:asyncio.StreamReader, writer: asyncio.StreamWriter) -> str:
+    ''' Set up the server '''
+    announcement = await initialize()
     writer.write(announcement)
     await writer.drain()
-    data = await reader.read(10000)
-    contentlength = data.decode().split(" ")[1].strip()
-    LOGGER.debug("Content-Length: %s", contentlength)
-    data = await reader.read(int(contentlength)+1)
-    print(data.decode())
+    data = await reader.readline()
+    key, value = tuple(data.decode().strip().split(" "))
+    header = {key: value}
+    LOGGER.debug("%s: %s", key, header[key])
+    data = await reader.read(int(value)+1)
+    body = data.decode()
+    print(body)
     LOGGER.info("Closing connection")
     writer.close()
+
 
 async def main():
     ''' Program entrypoint '''
     LOGGER.info("Starting YARA IO language server")
-    server = await asyncio.start_server(initialize, "127.0.0.1", 8471)
+    eventloop = asyncio.get_event_loop()
+    eventloop.set_debug(enabled=True)
+    server = await asyncio.start_server(
+        client_connected_cb=protocol_handler,
+        host="127.0.0.1",
+        port=8471,
+        loop=eventloop)
     LOGGER.info("Serving on {}".format(server.sockets[0].getsockname()))
     async with server:
-        await server.serve_forever()
+        task = await server.serve_forever()
+        print(task)
         server.close()
 
 
