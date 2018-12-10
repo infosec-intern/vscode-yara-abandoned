@@ -105,4 +105,5 @@ class YaraLanguageServer(object):
 
     def __del__(self):
         ''' Clean up the server '''
-        self.output.close()
+        if isinstance(self.output, asyncio.StreamWriter):
+            self.output.close()
