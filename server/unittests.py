@@ -3,14 +3,13 @@ import logging
 import socket
 import unittest
 
-import languageServer as server
+from . import languageServer as server
 
 
 class TestLanguageServer(unittest.TestCase):
     @classmethod
     def setUpClass(self):
         ''' Initialize tests '''
-        server._build_logger()
         # asyncio.run(server.main())
 
     @classmethod
@@ -50,14 +49,23 @@ class TestLanguageServer(unittest.TestCase):
         ''' Test rename provider '''
         pass
 
-    def transport_kind_opened(self):
+    def test_single_instance(self):
+        ''' Test to make sure there is only a single
+        instance of the server when multiple clients connect
+        '''
+        pass
+
+    def test_transport_kind_opened(self):
         ''' Ensure the transport mechanism is properly opened '''
-        conn = socket.create_connection((server.HOST, server.PORT))
+        HOST = "127.0.0.1"
+        PORT = 8471
+        conn = socket.create_connection((HOST, PORT))
         print(conn)
 
-    def transport_kind_closed(self):
+    def test_transport_kind_closed(self):
         ''' Ensure the transport mechanism is properly closed '''
         pass
+
 
 if __name__ == "__main__":
     unittest.main()
