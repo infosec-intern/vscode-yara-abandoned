@@ -3,14 +3,14 @@ import logging
 import socket
 import unittest
 
-from . import languageServer as server
+import languageServer as server
 
 
-class TestLanguageServer(unittest.TestCase):
+class YaraLanguageServerTests(unittest.TestCase):
     @classmethod
     def setUpClass(self):
         ''' Initialize tests '''
-        # asyncio.run(server.main())
+        self.yaralangserver = server.YaraLanguageServer()
 
     @classmethod
     def tearDownClass(self):
@@ -19,53 +19,84 @@ class TestLanguageServer(unittest.TestCase):
 
     def test_code_completion_provider(self):
         ''' Test code completion provider '''
-        pass
+        self.assertTrue(False)
 
     def test_connection_closed(self):
         ''' Ensure the server properly handles closed client connections '''
-        pass
+        self.assertTrue(False)
 
     def test_definition_provider(self):
         ''' Test defintion provider '''
-        pass
+        self.assertTrue(False)
 
     def test_diagnostic_provider(self):
         ''' Test diganostic provider '''
-        pass
+        self.assertTrue(False)
 
     def test_exceptions_handled(self):
         ''' Test the server handles exceptions properly '''
-        pass
+        self.assertTrue(False)
 
     def test_highlight_provider(self):
         ''' Test highlight provider '''
-        pass
+        self.assertTrue(False)
 
     def test_reference_provider(self):
         ''' Test reference provider '''
-        pass
+        self.assertTrue(False)
 
     def test_rename_provider(self):
         ''' Test rename provider '''
-        pass
+        self.assertTrue(False)
 
     def test_single_instance(self):
         ''' Test to make sure there is only a single
         instance of the server when multiple clients connect
         '''
-        pass
+        self.assertTrue(False)
 
     def test_transport_kind_opened(self):
         ''' Ensure the transport mechanism is properly opened '''
-        HOST = "127.0.0.1"
-        PORT = 8471
-        conn = socket.create_connection((HOST, PORT))
-        print(conn)
+        try:
+            HOST = "127.0.0.1"
+            PORT = 8471
+            socket.create_connection((HOST, PORT))
+            connected = True
+        except ConnectionRefusedError:
+            connected = False
+        finally:
+            self.assertTrue(connected)
 
     def test_transport_kind_closed(self):
         ''' Ensure the transport mechanism is properly closed '''
-        pass
+        try:
+            HOST = "127.0.0.1"
+            PORT = 8471
+            socket.create_connection((HOST, PORT))
+            not_connected = False
+        except ConnectionRefusedError:
+            not_connected = True
+        finally:
+            self.assertTrue(not_connected)
 
 
 if __name__ == "__main__":
-    unittest.main()
+    # add all the tet cases to be run
+    suite = unittest.TestSuite()
+    suite.addTest(YaraLanguageServerTests("test_code_completion_provider"))
+    suite.addTest(YaraLanguageServerTests("test_connection_closed"))
+    suite.addTest(YaraLanguageServerTests("test_definition_provider"))
+    suite.addTest(YaraLanguageServerTests("test_diagnostic_provider"))
+    suite.addTest(YaraLanguageServerTests("test_exceptions_handled"))
+    suite.addTest(YaraLanguageServerTests("test_highlight_provider"))
+    suite.addTest(YaraLanguageServerTests("test_reference_provider"))
+    suite.addTest(YaraLanguageServerTests("test_rename_provider"))
+    suite.addTest(YaraLanguageServerTests("test_single_instance"))
+    suite.addTest(YaraLanguageServerTests("test_transport_kind_opened"))
+    suite.addTest(YaraLanguageServerTests("test_transport_kind_closed"))
+    # set up a runner and run
+    runner = unittest.TextTestRunner(verbosity=2)
+    results = runner.run(suite)
+    # print results
+    pct_coverage = ((results.testsRun - len(results.failures)) / results.testsRun) * 100
+    print("{:.1f}% test coverage".format(pct_coverage))
