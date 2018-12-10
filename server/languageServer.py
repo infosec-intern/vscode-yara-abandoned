@@ -2,7 +2,6 @@
 import asyncio
 import json
 import logging
-import logging.handlers
 
 try:
     import yara
@@ -11,165 +10,99 @@ except ModuleNotFoundError:
     logging.warning("yara-python not installed. Diagnostics will not be available")
     HAS_YARA = False
 
-HOST = "127.0.0.1"
-LOGGER = logging.getLogger(__name__).addHandler(logging.NullHandler())
-PORT = 8471
 
+class YaraLanguageServer(object):
+    def __init__(self):
+        '''
+        Handle the details of the VSCode language server protocol
 
-def _build_logger() -> logging.Logger:
-    ''' Build the loggers '''
-    global LOGGER
-    LOGGER = logging.getLogger(__name__)
-    screen_hdlr = logging.StreamHandler()
-    screen_hdlr.setFormatter(logging.Formatter("%(message)s"))
-    screen_hdlr.setLevel(logging.INFO)
-    file_hdlr = logging.handlers.RotatingFileHandler(filename=".yara.log", backupCount=1, maxBytes=100000)
-    file_hdlr.setFormatter(logging.Formatter("%(asctime)s | [%(levelname)s:%(module)s:%(lineno)d] %(message)s"))
-    file_hdlr.setLevel(logging.DEBUG)
-    LOGGER.addHandler(screen_hdlr)
-    LOGGER.addHandler(file_hdlr)
-    LOGGER.setLevel(logging.DEBUG)
+        :reader: asyncio StreamReader. The connected client will write to this stream
+        :writer: asyncio.StreamWriter. The connected client will read from this stream
+        '''
+        self._logger = logging.getLogger("yara.{}".format(__name__))
+        self._logger.addHandler(logging.StreamHandler())
+        self._logger.setLevel(logging.DEBUG)
+        self._separator=b"\r\n\r\n"
+        self.input = None
+        self.output = None
 
-async def code_completion_provider(request: dict) -> str:
-    ''' Respond to the completionItem/resolve request '''
-    LOGGER.warning("code_completion_provider() is not yet implemented")
+    async def handler(self):
+        ''' React and respond to client messages '''
+        self._logger.debug("inside handler()")
+        message = await self.read_request()
+        if message["method"] == "initialize":
+            announcement = await self.initialize()
+            self.send_response(announcement)
 
-async def definition_provider(request: dict) -> str:
-    ''' Respond to the textDocument/definition request '''
-    LOGGER.warning("definition_provider() is not yet implemented")
-    return {
-        "jsonrpc": "2.0",
-        "id": request["id"],
-        "result": {}
-    }
-
-async def diagnostic_provider(request: dict) -> str:
-    ''' Respond to the textDocument/publishDiagnostics request
-    The message carries an array of diagnostic items for a resource URI.
-    '''
-    if HAS_YARA:
-        LOGGER.warning("diagnostic_provider() is not yet implemented")
-        logging.debug("yara-python is installed")
-        response = {
-            "jsonrpc": "2.0",
-            "id": request["id"],
-            "result": {}
+    async def initialize(self) -> dict:
+        ''' Announce language support methods '''
+        self._logger.debug("inside initialize()")
+        return {
+            "capabilities": {
+                "completionProvider" : {
+                    "triggerCharacters": [ "." ]
+                },
+                "definitionProvider": True,
+                "documentHighlightProvider": True,
+                "referencesProvider": True,
+                "renameProvider": True
+            }
         }
-    elif not HAS_YARA:
-        LOGGER.error("yara-python is not installed. Diagnostics are disabled")
-        response = {}
-    return response
 
-async def highlight_provider(request: dict) -> str:
-    ''' Respond to the textDocument/documentHighlight request '''
-    LOGGER.warning("highlight_provider() is not implemented")
-    return {
-        "jsonrpc": "2.0",
-        "id": request["id"],
-        "result": {}
-    }
+    async def provide_code_completion(self) -> dict:
+        ''' Respond to the completionItem/resolve request '''
+        self._logger.warning("provide_code_completion() is not yet implemented")
 
-async def reference_provider(request: dict) -> str:
-    ''' Respond to the textDocument/references request '''
-    LOGGER.warning("reference_provider() is not yet implemented")
-    return {
-        "jsonrpc": "2.0",
-        "id": request["id"],
-        "result": {}
-    }
+    async def provide_definition(self) -> dict:
+        ''' Respond to the textDocument/definition request '''
+        self._logger.warning("provide_definition() is not yet implemented")
 
-async def rename_provider(request: dict) -> str:
-    ''' Respond to the textDocument/rename request '''
-    LOGGER.warning("rename_provider() is not yet implemented")
-    return {
-        "jsonrpc": "2.0",
-        "id": request["id"],
-        "result": {}
-    }
+    async def provide_diagnostic(self) -> dict:
+        ''' Respond to the textDocument/publishDiagnostics request
+        The message carries an array of diagnostic items for a resource URI.
+        '''
+        self._logger.warning("provide_diagnostic() is not yet implemented")
+        if HAS_YARA:
+            logging.debug("yara-python is installed")
+        elif not HAS_YARA:
+            self._logger.error("yara-python is not installed. Diagnostics are disabled")
 
-async def initialize() -> str:
-    ''' Announce language support methods '''
-    # document_selector = { "language": "yara", "scheme": "file" }
-    return json.dumps({
-        "capabilities": {
-            # "codeActionProvider": False,
-            # "codeLensProvider": False,
-            # "colorProvider": False,
-            "completionProvider" : {
-                "triggerCharacters": [ "." ]
-            },
-            "definitionProvider": True,
-            # "documentFormattingProvider": False,
-            "documentHighlightProvider": True,
-            # "documentOnTypeFormattingProvider": False,
-            # "documentRangeFormattingProvider": False,
-            # "documentSymbolProvider": False,
-            # "hoverProvider": False,
-            "referencesProvider": True,
-            "renameProvider": True,
-            # "signatureHelpProvider": False,
-            # "workspaceSymbolProvider": False,
-        }
-    }).encode()
+    async def provide_highlight(self) -> dict:
+        ''' Respond to the textDocument/documentHighlight request '''
+        self._logger.warning("provide_highlight() is not implemented")
 
-async def protocol_handler(reader:asyncio.StreamReader, writer: asyncio.StreamWriter) -> str:
-    ''' Handle the language server protocol '''
-    announcement = await initialize()
-    writer.write(announcement)
-    await writer.drain()
-    i = 0
-    while i < 10:
-        data = await reader.readuntil(separator=b"\r\n\r\n")
+    async def provide_reference(self) -> dict:
+        ''' Respond to the textDocument/references request '''
+        self._logger.warning("provide_reference() is not yet implemented")
+
+    async def provide_rename(self) -> dict:
+        ''' Respond to the textDocument/rename request '''
+        self._logger.warning("provide_rename() is not yet implemented")
+
+    async def read_request(self) -> dict:
+        ''' Read data from the client '''
+        data = await self.input.readuntil(separator=self._separator)
         key, value = tuple(data.decode().strip().split(" "))
         header = {key: value}
-        LOGGER.debug("%s %s", key, header[key])
+        self._logger.debug("%s %s", key, header[key])
         if key == "Content-Length:":
-            data = await reader.readexactly(int(value))
+            data = await self.input.readexactly(int(value))
         else:
-            data = await reader.readline()
-        body = json.loads(data.decode())#.replace("\r\n", ""))
-        LOGGER.info(body)
-        i += 1
-    writer.close()
+            data = await self.input.readline()
+        self._logger.info("in <= %r", data)
+        message = json.loads(data.decode())
+        return message
 
-async def exception_handler(eventloop: asyncio.BaseEventLoop, context: dict):
-    ''' Handle asynchronous exceptions '''
-    LOGGER.info("eventloop: %s", eventloop)
-    LOGGER.info(type(eventloop))
-    LOGGER.info(dir(eventloop))
-    LOGGER.info("context: %s", context)
-    LOGGER.info(type(context))
-    LOGGER.info("message: %s", context["message"])
-    LOGGER.info("exception: %s", context["exception"])
-    LOGGER.info("future: %s", context["future"])
-    LOGGER.info("handle: %s", context["handle"])
-    LOGGER.info("protocol: %s", context["protocol"])
-    LOGGER.info("transport: %s", context["transport"])
-    LOGGER.info("socket: %s", context["socket"])
-    eventloop.default_exception_handler(context)
+    async def send_response(self, message: dict):
+        ''' Write back to the client '''
+        self._logger.info("out => %s", message)
+        self.output.write(json.dumps(message).encode("utf-8"))
+        await self.output.drain()
 
-async def main():
-    ''' Program entrypoint '''
-    _build_logger()
-    LOGGER.info("Starting YARA IO language server")
-    server = await asyncio.start_server(
-        client_connected_cb=protocol_handler,
-        host=HOST,
-        port=PORT)
-    LOGGER.info("Serving on %s", server.sockets[0].getsockname())
-    async with server:
-        await server.serve_forever()
-        LOGGER.info(server.is_serving())
-        server.close()
-    await server.wait_closed()
-    LOGGER.info("server is closed")
+    async def start(self, reader: asyncio.StreamReader, writer: asyncio.StreamWriter):
+        self.input = reader
+        self.output = writer
 
-
-if __name__ == "__main__":
-    try:
-        asyncio.run(main(),debug=True)
-    except KeyboardInterrupt:
-        LOGGER.critical("Stopping at user's request")
-    except Exception as err:
-        LOGGER.error("exception thrown")
-        LOGGER.exception(err)
+    def __del__(self):
+        ''' Clean up the server '''
+        self.output.close()
