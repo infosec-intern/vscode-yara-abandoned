@@ -5,10 +5,8 @@ import logging.handlers
 
 from languageServer import YaraLanguageServer
 
-HOST = "127.0.0.1"
 logging.getLogger("yara").addHandler(logging.NullHandler())
 LOGGER = logging.getLogger("yara.{}".format(__name__))
-PORT = 8471
 
 
 def _build_logger() -> logging.Logger:
@@ -32,8 +30,8 @@ async def main():
     LOGGER.info("Starting YARA IO language server")
     socket_server = await asyncio.start_server(
         client_connected_cb=yaralangserver.start,
-        host=HOST,
-        port=PORT)
+        host="127.0.0.1",
+        port=8471)
     LOGGER.info("Serving on %s", socket_server.sockets[0].getsockname())
     async with socket_server:
         await socket_server.serve_forever()
