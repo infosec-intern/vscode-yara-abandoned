@@ -15,6 +15,7 @@ class YaraLanguageServer(object):
     def __init__(self):
         ''' Handle the details of the VSCode language server protocol '''
         self._logger = logging.getLogger("yara.server")
+        self._encoding = "ascii"
         self._separator=b"\r\n"
 
     async def handle_client(self, reader: asyncio.StreamReader, writer: asyncio.StreamWriter):
@@ -81,7 +82,7 @@ class YaraLanguageServer(object):
     async def read_request(self, reader: asyncio.StreamReader) -> dict:
         ''' Read data from the client '''
         data = await reader.readline()
-        key, value = tuple(data.decode().strip().split(" "))
+        key, value = tuple(data.decode(self._encoding).strip().split(" "))
         header = {key: value}
         self._logger.debug("%s %s", key, header[key])
         # read the extra separator after the initial header
@@ -91,7 +92,7 @@ class YaraLanguageServer(object):
         else:
             data = await reader.readline()
         self._logger.debug("in <= %r", data)
-        return json.loads(data.decode())
+        return json.loads(data.decode(self._encoding))
 
     async def remove_client(self, writer: asyncio.StreamWriter):
         ''' Close the cient input & output streams '''
@@ -100,7 +101,7 @@ class YaraLanguageServer(object):
 
     async def send_response(self, response: dict, writer: asyncio.StreamWriter):
         ''' Write back to the client '''
-        message = json.dumps(response).encode("utf-8")
+        message = json.dumps(response).encode(self._encoding)
         self._logger.debug("out => %s", message)
         writer.write(message)
         await writer.drain()
