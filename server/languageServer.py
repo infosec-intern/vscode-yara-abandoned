@@ -80,16 +80,16 @@ class YaraLanguageServer(object):
 
     async def read_request(self, reader: asyncio.StreamReader) -> dict:
         ''' Read data from the client '''
-        data = await reader.readuntil(separator=self._separator)
+        data = await reader.readline()
         key, value = tuple(data.decode().strip().split(" "))
         header = {key: value}
         self._logger.debug("%s %s", key, header[key])
-        # read the extra line after the initial header
+        # read the extra separator after the initial header
         await reader.readuntil(separator=self._separator)
         if key == "Content-Length:":
             data = await reader.readexactly(int(value))
         else:
-            data = await reader.readuntil(separator=self._separator)
+            data = await reader.readline()
         self._logger.debug("in <= %r", data)
         return json.loads(data.decode())
 
