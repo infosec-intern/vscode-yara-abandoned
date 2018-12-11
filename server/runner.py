@@ -27,7 +27,7 @@ async def main():
     yaralangserver = YaraLanguageServer()
     LOGGER.info("Starting YARA IO language server")
     socket_server = await asyncio.start_server(
-        client_connected_cb=yaralangserver.handler,
+        client_connected_cb=yaralangserver.handle_client,
         host="127.0.0.1",
         port=8471)
     LOGGER.info("Serving on %s", socket_server.sockets[0].getsockname())

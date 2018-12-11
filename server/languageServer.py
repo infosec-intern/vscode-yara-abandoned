@@ -19,7 +19,7 @@ class YaraLanguageServer(object):
         self.input = None
         self.output = None
 
-    async def handler(self, reader: asyncio.StreamReader, writer: asyncio.StreamWriter):
+    async def handle_client(self, reader: asyncio.StreamReader, writer: asyncio.StreamWriter):
         '''React and respond to client messages
 
         :reader: asyncio StreamReader. The connected client will write to this stream
@@ -34,9 +34,11 @@ class YaraLanguageServer(object):
                 if message["method"] == "initialize":
                     announcement = await self.initialize()
                     await self.send_response(announcement)
-                    self._logger.debug("response sent")
+                elif message["method"] == "shutdown":
+                    self.remove_client()
+                    break
         except KeyboardInterrupt:
-            self._logger.error("Closing handler()")
+            self._logger.error("Closing handle_client() at user's request")
 
     async def initialize(self) -> dict:
         ''' Announce language support methods '''
@@ -97,8 +99,14 @@ class YaraLanguageServer(object):
         self._logger.debug("in <= %r", data)
         return json.loads(data.decode())
 
-    async def send_response(self, message: dict):
+    async def send_response(self, response: dict):
         ''' Write back to the client '''
+        message = json.dumps(response).encode("utf-8")
         self._logger.debug("out => %s", message)
-        self.output.write(json.dumps(message).encode("utf-8"))
+        self.output.write(message)
         await self.output.drain()
+
+    def remove_client(self):
+        ''' Close the output stream and remove the client connection '''
+        self._logger.info("Shutting down server")
+        self.output.close()
