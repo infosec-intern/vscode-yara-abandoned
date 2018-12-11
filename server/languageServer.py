@@ -15,7 +15,7 @@ class YaraLanguageServer(object):
     def __init__(self):
         ''' Handle the details of the VSCode language server protocol '''
         self._logger = logging.getLogger("yara.server")
-        self._encoding = "ascii"
+        self._encoding = "utf-8"
         self._separator=b"\r\n"
 
     async def handle_client(self, reader: asyncio.StreamReader, writer: asyncio.StreamWriter):
