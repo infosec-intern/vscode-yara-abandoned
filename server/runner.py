@@ -5,23 +5,21 @@ import logging.handlers
 
 from languageServer import YaraLanguageServer
 
-logging.getLogger("yara").addHandler(logging.NullHandler())
-LOGGER = logging.getLogger("yara.{}".format(__name__))
+LOGGER = logging.getLogger("yara.runner")
 
 
 def _build_logger() -> logging.Logger:
-    ''' Build the loggers '''
-    global LOGGER
-    LOGGER = logging.getLogger("yara")
+    ''' Build the module's parent logger '''
+    logger = logging.getLogger("yara")
     screen_hdlr = logging.StreamHandler()
-    screen_hdlr.setFormatter(logging.Formatter("%(message)s"))
+    screen_hdlr.setFormatter(logging.Formatter("%(name)s | %(message)s"))
     screen_hdlr.setLevel(logging.INFO)
     file_hdlr = logging.handlers.RotatingFileHandler(filename=".yara.log", backupCount=1, maxBytes=100000)
-    file_hdlr.setFormatter(logging.Formatter("%(asctime)s | [%(levelname)s:%(module)s:%(lineno)d] %(message)s"))
+    file_hdlr.setFormatter(logging.Formatter("%(asctime)s [%(levelname)s] %(name)s | %(message)s"))
     file_hdlr.setLevel(logging.DEBUG)
-    LOGGER.addHandler(screen_hdlr)
-    LOGGER.addHandler(file_hdlr)
-    LOGGER.setLevel(logging.DEBUG)
+    logger.addHandler(screen_hdlr)
+    logger.addHandler(file_hdlr)
+    logger.setLevel(logging.DEBUG)
 
 async def main():
     ''' Program entrypoint '''
@@ -43,7 +41,7 @@ async def main():
 
 if __name__ == "__main__":
     try:
-        asyncio.run(main(),debug=True)
+        asyncio.run(main(), debug=True)
     except KeyboardInterrupt:
         LOGGER.critical("Stopping at user's request")
     except Exception as err:

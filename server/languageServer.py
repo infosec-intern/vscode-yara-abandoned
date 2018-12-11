@@ -19,9 +19,7 @@ class YaraLanguageServer(object):
         :reader: asyncio StreamReader. The connected client will write to this stream
         :writer: asyncio.StreamWriter. The connected client will read from this stream
         '''
-        self._logger = logging.getLogger("yara.{}".format(__name__))
-        self._logger.addHandler(logging.StreamHandler())
-        self._logger.setLevel(logging.DEBUG)
+        self._logger = logging.getLogger("yara.server")
         self._separator=b"\r\n\r\n"
         self.input = None
         self.output = None
@@ -99,7 +97,8 @@ class YaraLanguageServer(object):
         self.output.write(json.dumps(message).encode("utf-8"))
         await self.output.drain()
 
-    async def start(self, reader: asyncio.StreamReader, writer: asyncio.StreamWriter):
+    def start(self, reader: asyncio.StreamReader, writer: asyncio.StreamWriter):
+        self._logger.info("Client connected")
         self.input = reader
         self.output = writer
 
