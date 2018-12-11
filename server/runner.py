@@ -26,19 +26,18 @@ async def main():
         client_connected_cb=yaralangserver.handle_client,
         host="127.0.0.1",
         port=8471)
-    logger.info("Serving on %s", socket_server.sockets[0].getsockname())
+    servhost, servport = socket_server.sockets[0].getsockname()
+    logger.info("Serving on tcp://%s:%d", servhost, servport)
     async with socket_server:
         await socket_server.serve_forever()
-        socket_server.close()
     await socket_server.wait_closed()
-    LOGGER.info("server is closed")
+    logger.info("server is closed")
 
 
 if __name__ == "__main__":
     try:
         asyncio.run(main(), debug=True)
     except KeyboardInterrupt:
-        LOGGER.critical("Stopping at user's request")
+        logging.critical("Stopping at user's request")
     except Exception as err:
-        LOGGER.error("exception thrown")
-        LOGGER.exception(err)
+        logging.exception(err)

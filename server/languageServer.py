@@ -28,17 +28,15 @@ class YaraLanguageServer(object):
         self._logger.info("Client connected")
         self.input = reader
         self.output = writer
-        try:
-            while True:
-                message = await self.read_request()
-                if message["method"] == "initialize":
-                    announcement = await self.initialize()
-                    await self.send_response(announcement)
-                elif message["method"] == "shutdown":
-                    self.remove_client()
-                    break
-        except KeyboardInterrupt:
-            self._logger.error("Closing handle_client() at user's request")
+        while True:
+            message = await self.read_request()
+            if message["method"] == "initialize":
+                announcement = await self.initialize()
+                await self.send_response(announcement)
+            elif message["method"] == "shutdown":
+                await self.remove_client()
+                self._logger.info("Disconnected client")
+                break
 
     async def initialize(self) -> dict:
         ''' Announce language support methods '''
@@ -99,14 +97,14 @@ class YaraLanguageServer(object):
         self._logger.debug("in <= %r", data)
         return json.loads(data.decode())
 
+    async def remove_client(self):
+        ''' Close the output stream and remove the client connection '''
+        self.output.close()
+        await self.output.wait_closed()
+
     async def send_response(self, response: dict):
         ''' Write back to the client '''
         message = json.dumps(response).encode("utf-8")
         self._logger.debug("out => %s", message)
         self.output.write(message)
         await self.output.drain()
-
-    def remove_client(self):
-        ''' Close the output stream and remove the client connection '''
-        self.output.close()
-        self._logger.info("Disconnected client")
