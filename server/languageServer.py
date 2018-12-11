@@ -13,31 +13,33 @@ except ModuleNotFoundError:
 
 class YaraLanguageServer(object):
     def __init__(self):
-        '''
-        Handle the details of the VSCode language server protocol
-
-        :reader: asyncio StreamReader. The connected client will write to this stream
-        :writer: asyncio.StreamWriter. The connected client will read from this stream
-        '''
+        ''' Handle the details of the VSCode language server protocol '''
         self._logger = logging.getLogger("yara.server")
         self._separator=b"\r\n"
         self.input = None
         self.output = None
 
     async def handler(self, reader: asyncio.StreamReader, writer: asyncio.StreamWriter):
-        ''' React and respond to client messages '''
+        '''React and respond to client messages
+
+        :reader: asyncio StreamReader. The connected client will write to this stream
+        :writer: asyncio.StreamWriter. The connected client will read from this stream
+        '''
         self._logger.info("Client connected")
         self.input = reader
         self.output = writer
-        message = await self.read_request()
-        if message["method"] == "initialize":
-            announcement = await self.initialize()
-            response = await self.send_response(announcement)
-            self._logger.info("response: %s", response)
+        try:
+            while True:
+                message = await self.read_request()
+                if message["method"] == "initialize":
+                    announcement = await self.initialize()
+                    await self.send_response(announcement)
+                    self._logger.debug("response sent")
+        except KeyboardInterrupt:
+            self._logger.error("Closing handler()")
 
     async def initialize(self) -> dict:
         ''' Announce language support methods '''
-        self._logger.debug("inside initialize()")
         return {
             "capabilities": {
                 "completionProvider" : {
