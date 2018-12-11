@@ -27,13 +27,12 @@ async def main():
     yaralangserver = YaraLanguageServer()
     LOGGER.info("Starting YARA IO language server")
     socket_server = await asyncio.start_server(
-        client_connected_cb=yaralangserver.start,
+        client_connected_cb=yaralangserver.handler,
         host="127.0.0.1",
         port=8471)
     LOGGER.info("Serving on %s", socket_server.sockets[0].getsockname())
     async with socket_server:
         await socket_server.serve_forever()
-        LOGGER.info(socket_server.is_serving())
         socket_server.close()
     await socket_server.wait_closed()
     LOGGER.info("server is closed")

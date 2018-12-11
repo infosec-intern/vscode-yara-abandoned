@@ -20,17 +20,20 @@ class YaraLanguageServer(object):
         :writer: asyncio.StreamWriter. The connected client will read from this stream
         '''
         self._logger = logging.getLogger("yara.server")
-        self._separator=b"\r\n\r\n"
+        self._separator=b"\r\n"
         self.input = None
         self.output = None
 
-    async def handler(self):
+    async def handler(self, reader: asyncio.StreamReader, writer: asyncio.StreamWriter):
         ''' React and respond to client messages '''
-        self._logger.debug("inside handler()")
+        self._logger.info("Client connected")
+        self.input = reader
+        self.output = writer
         message = await self.read_request()
         if message["method"] == "initialize":
             announcement = await self.initialize()
-            self.send_response(announcement)
+            response = await self.send_response(announcement)
+            self._logger.info("response: %s", response)
 
     async def initialize(self) -> dict:
         ''' Announce language support methods '''
@@ -83,26 +86,17 @@ class YaraLanguageServer(object):
         key, value = tuple(data.decode().strip().split(" "))
         header = {key: value}
         self._logger.debug("%s %s", key, header[key])
+        # read the extra line after the initial header
+        await self.input.readuntil(separator=self._separator)
         if key == "Content-Length:":
             data = await self.input.readexactly(int(value))
         else:
-            data = await self.input.readline()
-        self._logger.info("in <= %r", data)
-        message = json.loads(data.decode())
-        return message
+            data = await self.input.readuntil(separator=self._separator)
+        self._logger.debug("in <= %r", data)
+        return json.loads(data.decode())
 
     async def send_response(self, message: dict):
         ''' Write back to the client '''
-        self._logger.info("out => %s", message)
+        self._logger.debug("out => %s", message)
         self.output.write(json.dumps(message).encode("utf-8"))
         await self.output.drain()
-
-    def start(self, reader: asyncio.StreamReader, writer: asyncio.StreamWriter):
-        self._logger.info("Client connected")
-        self.input = reader
-        self.output = writer
-
-    def __del__(self):
-        ''' Clean up the server '''
-        if isinstance(self.output, asyncio.StreamWriter):
-            self.output.close()
