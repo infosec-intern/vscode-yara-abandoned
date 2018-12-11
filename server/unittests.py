@@ -58,9 +58,7 @@ class YaraLanguageServerTests(unittest.TestCase):
     def test_transport_kind_opened(self):
         ''' Ensure the transport mechanism is properly opened '''
         try:
-            HOST = "127.0.0.1"
-            PORT = 8471
-            socket.create_connection((HOST, PORT))
+            socket.create_connection(("127.0.0.1", 8471))
             connected = True
         except ConnectionRefusedError:
             connected = False
@@ -70,9 +68,7 @@ class YaraLanguageServerTests(unittest.TestCase):
     def test_transport_kind_closed(self):
         ''' Ensure the transport mechanism is properly closed '''
         try:
-            HOST = "127.0.0.1"
-            PORT = 8471
-            socket.create_connection((HOST, PORT))
+            socket.create_connection(("127.0.0.1", 8471))
             not_connected = False
         except ConnectionRefusedError:
             not_connected = True
