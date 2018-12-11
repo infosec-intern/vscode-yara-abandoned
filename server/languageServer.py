@@ -11,6 +11,21 @@ except ModuleNotFoundError:
     HAS_YARA = False
 
 
+class ErrorCodes(object):
+    def __init__(self):
+        ''' Error codes defined by JSON RPC '''
+        self.parse_error = -32700
+        self.invalid_request = -32600
+        self.method_not_found = -32601
+        self.invalid_params = -32602
+        self.internal_error = -32603
+        self.server_error_start = -32099
+        self.server_error_end = -32000
+        self.server_not_Initialized = -32002
+        self.unknown_error_code = -32001
+        # Defined by the protocol.
+        self.request_cancelled = -32800
+
 class YaraLanguageServer(object):
     def __init__(self):
         ''' Handle the details of the VSCode language server protocol '''
@@ -29,7 +44,8 @@ class YaraLanguageServer(object):
             message = await self.read_request(reader)
             if message["method"] == "initialize":
                 announcement = await self.initialize()
-                await self.send_response(message["id"], message["method"], announcement, writer)
+                # await self.send_response(message["id"], message["method"], announcement, writer)
+                await self.send_response(announcement, writer)
             elif message["method"] == "shutdown":
                 await self.remove_client(writer)
                 break
@@ -99,13 +115,15 @@ class YaraLanguageServer(object):
         await writer.wait_closed()
         self._logger.info("Disconnected client")
 
-    async def send_response(self, message_id: int, method: str, response: dict, writer: asyncio.StreamWriter):
+    async def send_response(self, response: dict, writer: asyncio.StreamWriter):
         ''' Write back to the client '''
+        # response_error = {
+        #     "code": None,
+        #     "message": "test error"
+        # }
         message = json.dumps({
             "jsonrpc": "2.0",
-            "id": message_id,
-            "method": method,
-            "params": response
+            "result": response
         }).encode(self._encoding)
         self._logger.debug("out => %s", message)
         writer.write(message)
