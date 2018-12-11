@@ -16,7 +16,7 @@
 			"end": "\\*/"
 		},
 		{
-			"name": "comment.language.boolean.yara",
+			"name": "constant.language.boolean.yara",
 			"match": "\\b(true|false)\\b"
 		},
 		{
