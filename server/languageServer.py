@@ -108,5 +108,5 @@ class YaraLanguageServer(object):
 
     def remove_client(self):
         ''' Close the output stream and remove the client connection '''
-        self._logger.info("Shutting down server")
         self.output.close()
+        self._logger.info("Disconnected client")

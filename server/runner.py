@@ -5,32 +5,28 @@ import logging.handlers
 
 from languageServer import YaraLanguageServer
 
-LOGGER = logging.getLogger("yara.runner")
+parent_logger = logging.getLogger("yara")
+screen_hdlr = logging.StreamHandler()
+screen_hdlr.setFormatter(logging.Formatter("%(name)s | %(message)s"))
+screen_hdlr.setLevel(logging.INFO)
+file_hdlr = logging.handlers.RotatingFileHandler(filename=".yara.log", backupCount=1, maxBytes=100000)
+file_hdlr.setFormatter(logging.Formatter("%(asctime)s [%(levelname)s] %(name)s | %(message)s"))
+file_hdlr.setLevel(logging.DEBUG)
+parent_logger.addHandler(screen_hdlr)
+parent_logger.addHandler(file_hdlr)
+parent_logger.setLevel(logging.DEBUG)
 
-
-def _build_logger() -> logging.Logger:
-    ''' Build the module's parent logger '''
-    logger = logging.getLogger("yara")
-    screen_hdlr = logging.StreamHandler()
-    screen_hdlr.setFormatter(logging.Formatter("%(name)s | %(message)s"))
-    screen_hdlr.setLevel(logging.INFO)
-    file_hdlr = logging.handlers.RotatingFileHandler(filename=".yara.log", backupCount=1, maxBytes=100000)
-    file_hdlr.setFormatter(logging.Formatter("%(asctime)s [%(levelname)s] %(name)s | %(message)s"))
-    file_hdlr.setLevel(logging.DEBUG)
-    logger.addHandler(screen_hdlr)
-    logger.addHandler(file_hdlr)
-    logger.setLevel(logging.DEBUG)
 
 async def main():
     ''' Program entrypoint '''
-    _build_logger()
+    logger = logging.getLogger("yara.runner")
     yaralangserver = YaraLanguageServer()
-    LOGGER.info("Starting YARA IO language server")
+    logger.info("Starting YARA IO language server")
     socket_server = await asyncio.start_server(
         client_connected_cb=yaralangserver.handle_client,
         host="127.0.0.1",
         port=8471)
-    LOGGER.info("Serving on %s", socket_server.sockets[0].getsockname())
+    logger.info("Serving on %s", socket_server.sockets[0].getsockname())
     async with socket_server:
         await socket_server.serve_forever()
         socket_server.close()
