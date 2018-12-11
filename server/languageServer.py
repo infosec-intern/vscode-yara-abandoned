@@ -29,10 +29,9 @@ class YaraLanguageServer(object):
             message = await self.read_request(reader)
             if message["method"] == "initialize":
                 announcement = await self.initialize()
-                await self.send_response(announcement, writer)
+                await self.send_response(message["id"], message["method"], announcement, writer)
             elif message["method"] == "shutdown":
                 await self.remove_client(writer)
-                self._logger.info("Disconnected client")
                 break
 
     async def initialize(self) -> dict:
@@ -98,10 +97,16 @@ class YaraLanguageServer(object):
         ''' Close the cient input & output streams '''
         writer.close()
         await writer.wait_closed()
+        self._logger.info("Disconnected client")
 
-    async def send_response(self, response: dict, writer: asyncio.StreamWriter):
+    async def send_response(self, message_id: int, method: str, response: dict, writer: asyncio.StreamWriter):
         ''' Write back to the client '''
-        message = json.dumps(response).encode(self._encoding)
+        message = json.dumps({
+            "jsonrpc": "2.0",
+            "id": message_id,
+            "method": method,
+            "params": response
+        }).encode(self._encoding)
         self._logger.debug("out => %s", message)
         writer.write(message)
         await writer.drain()
