@@ -11,7 +11,7 @@ except ModuleNotFoundError:
     HAS_YARA = False
 
 
-class ErrorCodes(object):
+class LSPError(object):
     def __init__(self):
         ''' Error codes defined by JSON RPC '''
         self.parse_error = -32700
