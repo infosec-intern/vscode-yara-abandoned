@@ -18,7 +18,15 @@ SERVER_NOT_INITIALIZED = -32002
 UNKNOWN_ERROR_CODE = -32001
 # Defined by the protocol.
 REQUEST_CANCELLED = -32800
-
+# MessageType
+MESSAGETYPE_ERROR = 1
+MESSAGETYPE_WARNING = 2
+MESSAGETYPE_INFO = 3
+MESSAGETYPE_LOG = 4
+# TransportKind
+TRANSPORTKIND_NONE = 0
+TRANSPORTKIND_FULL = 1
+TRANSPORTKIND_INC = 2
 
 class Position(object):
     def __init__(self, line: int, number: int):
