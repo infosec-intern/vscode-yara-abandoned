@@ -1,4 +1,7 @@
-''' VSCode Language Server Protocol Definitions '''
+''' VSCode Language Server Protocol Definitions
+
+For more info: https://microsoft.github.io/language-server-protocol/specification
+'''
 import json
 from typing import List, Union
 
