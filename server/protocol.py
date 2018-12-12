@@ -2,23 +2,20 @@
 import json
 from typing import List, Union
 
-
 EOL: List = ["\n", "\r\n", "\r"]
+# Error codes defined by JSON RPC
+METHOD_NOT_FOUND = -32601
+INTERNAL_ERROR = -32603
+INVALID_PARAMS = -32602
+INVALID_REQUEST = -32600
+PARSE_ERROR = -32700
+SERVER_ERROR_START = -32099
+SERVER_ERROR_END = -32000
+SERVER_NOT_INITIALIZED = -32002
+UNKNOWN_ERROR_CODE = -32001
+# Defined by the protocol.
+REQUEST_CANCELLED = -32800
 
-class LSPError(object):
-    def __init__(self):
-        ''' Error codes defined by JSON RPC '''
-        self.parse_error = -32700
-        self.invalid_request = -32600
-        self.method_not_found = -32601
-        self.invalid_params = -32602
-        self.internal_error = -32603
-        self.server_error_start = -32099
-        self.server_error_end = -32000
-        self.server_not_Initialized = -32002
-        self.unknown_error_code = -32001
-        # Defined by the protocol.
-        self.request_cancelled = -32800
 
 class Position(object):
     def __init__(self, line: int, number: int):
