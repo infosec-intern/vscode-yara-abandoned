@@ -27,7 +27,6 @@ export function activate(context: ExtensionContext) {
     const clientOptions: lcp.LanguageClientOptions = {
         documentSelector: [{ scheme: "file", language: "yara" }],
         diagnosticCollectionName: "yara",
-        stdioEncoding: "utf8",
         synchronize: { configurationSection: "yara" }
     };
     let client = new lcp.LanguageClient(
