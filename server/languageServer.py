@@ -2,6 +2,9 @@
 import asyncio
 import json
 import logging
+from urllib.parse import unquote, urlsplit
+
+import protocol as lsp
 
 try:
     import yara
@@ -24,13 +27,23 @@ class YaraLanguageServer(object):
         :reader: asyncio StreamReader. The connected client will write to this stream
         :writer: asyncio.StreamWriter. The connected client will read from this stream
         '''
+        current_id = 0
+        workspace = []
         self._logger.info("Client connected")
         while True:
             message = await self.read_request(reader)
-            if message["method"] == "initialize":
-                announcement = await self.initialize()
-                # await self.send_response(message["id"], message["method"], announcement, writer)
-                await self.send_response(announcement, writer)
+            current_id = message["id"]
+            self._logger.debug("Message Id: %d", current_id)
+            if current_id == 0:
+                if message["method"] == "initialize":
+                    for folder in message["params"]["workspaceFolders"]:
+                        workspace.append(urlsplit(unquote(folder["uri"], encoding=self._encoding)).path)
+                    self._logger.debug("Set workspace: %s", workspace)
+                    announcement = await self.initialize()
+                    await self.send_response(announcement, writer)
+                else: # client is trying to send data before server is initialized
+                    not_initialized = {}
+                    await self.send_response(not_initialized, writer)
             elif message["method"] == "shutdown":
                 await self.remove_client(writer)
                 break
