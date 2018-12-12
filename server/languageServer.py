@@ -11,27 +11,12 @@ except ModuleNotFoundError:
     HAS_YARA = False
 
 
-class LSPError(object):
-    def __init__(self):
-        ''' Error codes defined by JSON RPC '''
-        self.parse_error = -32700
-        self.invalid_request = -32600
-        self.method_not_found = -32601
-        self.invalid_params = -32602
-        self.internal_error = -32603
-        self.server_error_start = -32099
-        self.server_error_end = -32000
-        self.server_not_Initialized = -32002
-        self.unknown_error_code = -32001
-        # Defined by the protocol.
-        self.request_cancelled = -32800
-
 class YaraLanguageServer(object):
     def __init__(self):
         ''' Handle the details of the VSCode language server protocol '''
         self._logger = logging.getLogger("yara.server")
         self._encoding = "utf-8"
-        self._separator=b"\r\n"
+        self._eol=b"\r\n"
 
     async def handle_client(self, reader: asyncio.StreamReader, writer: asyncio.StreamWriter):
         '''React and respond to client messages
@@ -101,7 +86,7 @@ class YaraLanguageServer(object):
         header = {key: value}
         self._logger.debug("%s %s", key, header[key])
         # read the extra separator after the initial header
-        await reader.readuntil(separator=self._separator)
+        await reader.readuntil(separator=self._eol)
         if key == "Content-Length:":
             data = await reader.readexactly(int(value))
         else:
