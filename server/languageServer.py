@@ -33,12 +33,10 @@ class YaraLanguageServer(object):
         while True:
             message = await self.read_request(reader)
             current_id = message["id"]
-            self._logger.debug("Message Id: %d", current_id)
             if current_id == 0:
                 if message["method"] == "initialize":
                     for folder in message["params"]["workspaceFolders"]:
                         workspace.append(urlsplit(unquote(folder["uri"], encoding=self._encoding)).path)
-                    self._logger.debug("Set workspace: %s", workspace)
                     announcement = await self.initialize()
                     await self.send_response(announcement, writer)
                 else: # client is trying to send data before server is initialized
@@ -51,14 +49,30 @@ class YaraLanguageServer(object):
     async def initialize(self) -> dict:
         ''' Announce language support methods '''
         return {
-            "capabilities": {
-                "completionProvider" : {
-                    "triggerCharacters": [ "." ]
-                },
-                "definitionProvider": True,
-                "documentHighlightProvider": True,
-                "referencesProvider": True,
-                "renameProvider": True
+            "completionProvider" : {
+                # The server does not provide support to resolve additional information for a completion item
+                "resolveProvider": False,
+                "triggerCharacters": ["."]
+            },
+            "definitionProvider": True,
+            "documentFormattingProvider": True,
+            "documentHighlightProvider": True,
+            "referencesProvider": True,
+            "renameProvider": True,
+            "textDocumentSync": {
+                # Documents are synced by always sending the full content of the document
+                "change": 1,
+                "openClose": False,
+                # Save notifications are sent to the server
+                "save": True,
+                "willSave": False,
+                "willSaveWaitUntil": False
+            },
+            "workspace": {
+                "workspaceFolders": {
+                    "changeNotifications": False,
+                    "supported": False
+                }
             }
         }
 
