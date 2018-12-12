@@ -28,6 +28,8 @@ class YaraLanguageServer(object):
         :writer: asyncio.StreamWriter. The connected client will read from this stream
         '''
         current_id = 0
+        has_shutdown = False
+        has_started = False
         workspace = []
         self._logger.info("Client connected")
         while True:
@@ -39,41 +41,57 @@ class YaraLanguageServer(object):
                         workspace.append(urlsplit(unquote(folder["uri"], encoding=self._encoding)).path)
                     announcement = await self.initialize()
                     await self.send_response(announcement, writer)
+                    has_started = True
                 else: # client is trying to send data before server is initialized
-                    not_initialized = {}
-                    await self.send_response(not_initialized, writer)
-            elif message["method"] == "shutdown":
+                    error = {
+                        "code": lsp.SERVER_NOT_INITIALIZED,
+                        "message": "Server has not initialized"
+                    }
+                    await self.send_response(error, writer)
+            elif has_started and message["method"] == "shutdown":
+                has_shutdown = True
+                await self.send_response({}, writer)
+            elif has_started and message["method"] == "exit":
+                proper_shutdown = 0 if has_shutdown else 1
+                proper_exit = {
+                    "success": proper_shutdown
+                }
+                await self.send_response(proper_exit, writer)
                 await self.remove_client(writer)
-                break
 
     async def initialize(self) -> dict:
         ''' Announce language support methods '''
         return {
-            "completionProvider" : {
-                # The server does not provide support to resolve additional information for a completion item
-                "resolveProvider": False,
-                "triggerCharacters": ["."]
-            },
-            "definitionProvider": True,
-            "documentFormattingProvider": True,
-            "documentHighlightProvider": True,
-            "referencesProvider": True,
-            "renameProvider": True,
-            "textDocumentSync": {
-                # Documents are synced by always sending the full content of the document
-                "change": 1,
-                "openClose": False,
-                # Save notifications are sent to the server
-                "save": True,
-                "willSave": False,
-                "willSaveWaitUntil": False
-            },
-            "workspace": {
-                "workspaceFolders": {
-                    "changeNotifications": False,
-                    "supported": False
-                }
+            "capabilities": {
+                "textDocumentSync": lsp.TRANSPORTKIND_FULL
             }
+        #     "capabilities": {
+        #         "completionProvider" : {
+        #             # The server does not provide support to resolve additional information for a completion item
+        #             "resolveProvider": False,
+        #             "triggerCharacters": ["."]
+        #         },
+        #         "definitionProvider": True,
+        #         "documentFormattingProvider": True,
+        #         "documentHighlightProvider": True,
+        #         "referencesProvider": True,
+        #         "renameProvider": True,
+        #         "textDocumentSync": {
+        #             # Documents are synced by always sending the full content of the document
+        #             "change": 1,
+        #             "openClose": False,
+        #             # Save notifications are sent to the server
+        #             "save": True,
+        #             "willSave": False,
+        #             "willSaveWaitUntil": False
+        #         },
+        #         "workspace": {
+        #             "workspaceFolders": {
+        #                 "changeNotifications": False,
+        #                 "supported": False
+        #             }
+        #         }
+        #     }
         }
 
     async def provide_code_completion(self) -> dict:
@@ -129,12 +147,7 @@ class YaraLanguageServer(object):
 
     async def send_response(self, response: dict, writer: asyncio.StreamWriter):
         ''' Write back to the client '''
-        # response_error = {
-        #     "code": None,
-        #     "message": "test error"
-        # }
         message = json.dumps({
-            "jsonrpc": "2.0",
             "result": response
         }).encode(self._encoding)
         self._logger.debug("out => %s", message)
