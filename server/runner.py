@@ -3,7 +3,7 @@ import json
 import logging
 import logging.handlers
 
-from languageServer import YaraLanguageServer
+from server import YaraLanguageServer
 
 logger = logging.getLogger("yara")
 screen_hdlr = logging.StreamHandler()
