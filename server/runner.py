@@ -51,6 +51,7 @@ async def main():
 if __name__ == "__main__":
     try:
         asyncio.run(main(), debug=True)
+    except KeyboardInterrupt:
+        logger.error("Stopping at user's request")
     except Exception as err:
         logging.exception(err)
-
