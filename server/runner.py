@@ -17,6 +17,17 @@ parent_logger.addHandler(file_hdlr)
 parent_logger.setLevel(logging.DEBUG)
 
 
+def exc_handler(loop, context: dict):
+    ''' Appropriately handle exceptions '''
+    try:
+        result = context["future"].result()
+        print("future result: %s" % result)
+    except ConnectionResetError:
+        logging.error("Client disconnected unexpectedly")
+    finally:
+        loop.stop()
+        loop.close()
+
 async def main():
     ''' Program entrypoint '''
     logger = logging.getLogger("yara.runner")
@@ -26,12 +37,13 @@ async def main():
         client_connected_cb=yaralangserver.handle_client,
         host="127.0.0.1",
         port=8471)
+    socket_server.get_loop().set_exception_handler(exc_handler)
     servhost, servport = socket_server.sockets[0].getsockname()
     logger.info("Serving on tcp://%s:%d", servhost, servport)
     async with socket_server:
         await socket_server.serve_forever()
     await socket_server.wait_closed()
-    logger.info("server is closed")
+    logger.info("Server is closed")
 
 
 if __name__ == "__main__":
