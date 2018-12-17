@@ -29,7 +29,7 @@ def exc_handler(loop, context: dict):
         logger.info("Server is closed")
     except Exception as err:
         logger.critical("Unknown exception encountered")
-        logger.critical(err)
+        logger.exception(err)
         loop.stop()
         logger.info("Server is closed")
 
