@@ -45,4 +45,9 @@ Alternatively, check out some of the YARA syntaxes for Sublime and Atom, or the 
 They use the same syntax engine as VSCode and should work the same way.
 
 ## YARA Documentation
-https://yara.readthedocs.io/
+* [YARA Documentation](https://yara.readthedocs.io/)
+
+## Language Server Protocol
+* [JSON RPC Specification](https://www.jsonrpc.org/specification)
+* [Language Server Protocol Specification](https://microsoft.github.io/language-server-protocol/specification)
+* [VSCode Example Language Server](https://code.visualstudio.com/docs/extensions/example-language-server)
