@@ -20,7 +20,6 @@ class YaraLanguageServer(object):
         self._encoding = "utf-8"
         self._eol=b"\r\n"
         self._logger = logging.getLogger("yara")
-        self.current_id = 0
         self.reader = None
         self.workspace = None
         self.writer = None
@@ -31,6 +30,7 @@ class YaraLanguageServer(object):
         :reader: asyncio StreamReader. The connected client will write to this stream
         :writer: asyncio.StreamWriter. The connected client will read from this stream
         '''
+        current_id = 0
         has_shutdown = False
         has_started = False
         self.reader = reader
@@ -38,29 +38,32 @@ class YaraLanguageServer(object):
         self._logger.info("Client connected")
         while True:
             message = await self.read_request()
-            self.current_id = message["id"]
-            if self.current_id == 0:
-                if message["method"] == "initialize":
+            current_id = message.get("id", None)
+            if "id" in message:
+                # if an id is present, this is a JSON-RPC request
+                current_id = message["id"]
+                if message.get("method", "") == "initialize":
                     self.workspace = urlsplit(unquote(message["params"]["rootUri"], encoding=self._encoding)).path
-                    self._logger.debug("Client workspace folder: %s", self.workspace)
+                    self._logger.info("Client workspace folder: %s", self.workspace)
                     client_options = message.get("params", {}).get("capabilities", {}).get("textDocument", {})
                     announcement = self.initialize(client_options)
-                    await self.send_response(announcement)
+                    await self.send_response(curr_id=current_id, response=announcement)
+                elif has_started and message.get("method", "") == "initialized":
+                    self._logger.info("Client has been successfully initialized")
                     has_started = True
-                else:
-                    # client is trying to send data before server is initialized
-                    await self.send_error(code=lsp.SERVER_NOT_INITIALIZED, msg="Server has not initialized")
-            elif has_started and message["method"] == "initialized":
-                self._logger.debug("Client has been successfully initialized")
-            elif has_started and message["method"] == "shutdown":
-                self._logger.debug("Client requested shutdown")
-                has_shutdown = True
-                await self.send_response({})
-            elif has_started and message["method"] == "exit":
-                self._logger.debug("Client requested exit")
-                proper_shutdown = 0 if has_shutdown else 1
-                await self.send_response({"success": proper_shutdown})
-                await self.remove_client()
+                elif has_started and message.get("method", "") == "shutdown":
+                    self._logger.info("Client requested shutdown")
+                    has_shutdown = True
+                    await self.send_response(curr_id=current_id, response={})
+                elif has_started and message.get("method", "") == "exit":
+                    self._logger.info("Client requested exit")
+                    proper_shutdown = 0 if has_shutdown else 1
+                    await self.send_response(curr_id=current_id, response={"success": proper_shutdown})
+                    await self.remove_client()
+            else:
+                # if no id is present, this is a JSON-RPC notification
+                self._logger.debug("Client sent a notification")
+                self._logger.info(message)
 
     def initialize(self, client_options: dict) -> dict:
         ''' Announce language support methods '''
@@ -119,7 +122,7 @@ class YaraLanguageServer(object):
     async def read_request(self) -> dict:
         ''' Read data from the client '''
         data = await self.reader.readline()
-        self._logger.debug("in <= %r", data)
+        self._logger.debug("header <= %r", data)
         key, value = tuple(data.decode(self._encoding).strip().split(" "))
         header = {key: value}
         self._logger.debug("%s %s", key, header[key])
@@ -129,7 +132,7 @@ class YaraLanguageServer(object):
             data = await self.reader.readexactly(int(value))
         else:
             data = await self.reader.readline()
-        self._logger.debug("in <= %r", data)
+        self._logger.debug("request <= %r", data)
         return json.loads(data.decode(self._encoding))
 
     async def remove_client(self):
@@ -138,11 +141,11 @@ class YaraLanguageServer(object):
         await self.writer.wait_closed()
         self._logger.info("Disconnected client")
 
-    async def send_error(self, code: int, msg: str):
+    async def send_error(self, code: int, curr_id: int, msg: str):
         ''' Write back a JSON-RPC error message to the client '''
         message = json.dumps({
             "jsonrpc": "2.0",
-            "id": self.current_id,
+            "id": curr_id,
             "error": {
                 "code": code,
                 "message": msg
@@ -152,14 +155,25 @@ class YaraLanguageServer(object):
         self.writer.write(message)
         await self.writer.drain()
 
-    async def send_response(self, response: dict):
+    async def send_notification(self, method: str, params: dict):
+        ''' Write back a JSON-RPC notification to the client '''
+        message = json.dumps({
+            "jsonrpc": "2.0",
+            "method": method,
+            "params": params
+        }).encode(self._encoding)
+        self._logger.debug("notify => %s", message)
+        self.writer.write(message)
+        await self.writer.drain()
+
+    async def send_response(self, curr_id: int, response: dict):
         ''' Write back a JSON-RPC response to the client '''
         message = json.dumps({
             "jsonrpc": "2.0",
-            "id": self.current_id,
+            "id": curr_id,
             "result": response,
-        }).encode(self._encoding)
-        self._logger.debug("out => %s", message)
+        }).replace(" ", "").encode(self._encoding)
+        self._logger.debug("response => %r", message)
         self.writer.write(message)
         await self.writer.drain()
 
