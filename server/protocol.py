@@ -18,6 +18,11 @@ SERVER_NOT_INITIALIZED = -32002
 UNKNOWN_ERROR_CODE = -32001
 # Defined by the protocol.
 REQUEST_CANCELLED = -32800
+# DiagnosticSeveriy
+DIAGNOSTIC_ERROR = 1
+DIAGNOSTIC_WARNING = 2
+DIAGNOSTIC_INFO = 3
+DIAGNOSTIC_HINT = 4
 # MessageType
 MESSAGETYPE_ERROR = 1
 MESSAGETYPE_WARNING = 2
@@ -29,7 +34,7 @@ TRANSPORTKIND_FULL = 1
 TRANSPORTKIND_INC = 2
 
 class Position(object):
-    def __init__(self, line: int, number: int):
+    def __init__(self, line: int, char: int):
         ''' Line position in a document (zero-based)
 
         Character offset on a line in a document (zero-based). Assuming that the line is
@@ -40,7 +45,7 @@ class Position(object):
         line length.
         '''
         self.line = line
-        self.number = number
+        self.char = char
 
 class Range(object):
     def __init__(self, start: Position, end: Position):
@@ -58,14 +63,6 @@ class Location(object):
         '''
         self.range = locrange
         self.uri = uri
-
-class DiagnosticSeverity(object):
-    def __init__(self):
-        ''' Type of diagnostic '''
-        self.error = 1
-        self.warning = 2
-        self.information = 3
-        self.hint = 4
 
 class Diagnostic(object):
     def __init__(self, locrange: Range, severity: DiagnosticSeverity, code: Union[int,str], message: str, source: str="yara", relatedInformation: List=[]):
