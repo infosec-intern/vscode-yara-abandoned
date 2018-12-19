@@ -177,6 +177,8 @@ class YaraLanguageServer(object):
             "params": params
         }).replace(" ", "").encode(self._encoding)
         self._logger.debug("notify => %s", message)
+        writer.write("Content-Length: {:d}\r\n\r\n".format(len(message)).encode(self._encoding))
+        await writer.drain()
         writer.write(message)
         await writer.drain()
 
@@ -188,5 +190,7 @@ class YaraLanguageServer(object):
             "result": response,
         }).replace(" ", "").encode(self._encoding)
         self._logger.debug("response => %r", message)
+        writer.write("Content-Length: {:d}\r\n\r\n".format(len(message)).encode(self._encoding))
+        await writer.drain()
         writer.write(message)
         await writer.drain()
