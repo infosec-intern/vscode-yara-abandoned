@@ -37,33 +37,41 @@ class YaraLanguageServer(object):
         self.writer = writer
         self._logger.info("Client connected")
         while True:
+            if self.reader.at_eof():
+                self._logger.warning("Client has closed")
+                break
             message = await self.read_request()
-            current_id = message.get("id", None)
-            if "id" in message:
-                # if an id is present, this is a JSON-RPC request
-                current_id = message["id"]
-                if message.get("method", "") == "initialize":
-                    self.workspace = urlsplit(unquote(message["params"]["rootUri"], encoding=self._encoding)).path
-                    self._logger.info("Client workspace folder: %s", self.workspace)
-                    client_options = message.get("params", {}).get("capabilities", {}).get("textDocument", {})
-                    announcement = self.initialize(client_options)
-                    await self.send_response(curr_id=current_id, response=announcement)
-                elif has_started and message.get("method", "") == "initialized":
-                    self._logger.info("Client has been successfully initialized")
-                    has_started = True
-                elif has_started and message.get("method", "") == "shutdown":
-                    self._logger.info("Client requested shutdown")
-                    has_shutdown = True
-                    await self.send_response(curr_id=current_id, response={})
-                elif has_started and message.get("method", "") == "exit":
-                    self._logger.info("Client requested exit")
-                    proper_shutdown = 0 if has_shutdown else 1
-                    await self.send_response(curr_id=current_id, response={"success": proper_shutdown})
-                    await self.remove_client()
+            if "jsonrpc" in message:
+                # this matches some kind of JSON-RPC message
+                if "id" in message:
+                    # if an id is present, this is a JSON-RPC request
+                    current_id = message["id"]
+                    if message.get("method", "") == "initialize":
+                        self.workspace = urlsplit(unquote(message["params"]["rootUri"], encoding=self._encoding)).path
+                        self._logger.info("Client workspace folder: %s", self.workspace)
+                        client_options = message.get("params", {}).get("capabilities", {}).get("textDocument", {})
+                        announcement = self.initialize(client_options)
+                        await self.send_response(curr_id=current_id, response=announcement)
+                    elif has_started and message.get("method", "") == "initialized":
+                        self._logger.info("Client has been successfully initialized")
+                        has_started = True
+                    elif has_started and message.get("method", "") == "shutdown":
+                        self._logger.info("Client requested shutdown")
+                        has_shutdown = True
+                        await self.send_response(curr_id=current_id, response={})
+                    elif has_started and message.get("method", "") == "exit":
+                        self._logger.info("Client requested exit")
+                        proper_shutdown = 0 if has_shutdown else 1
+                        await self.send_response(curr_id=current_id, response={"success": proper_shutdown})
+                        await self.remove_client()
+                else:
+                    # if no id is present, this is a JSON-RPC notification
+                    self._logger.debug("Client sent a notification")
+                    self._logger.info(message)
             else:
-                # if no id is present, this is a JSON-RPC notification
-                self._logger.debug("Client sent a notification")
-                self._logger.info(message)
+                # no idea what this message is, let the client know the server is shutting down improperly
+                await self.send_error(code=lsp.PARSE_ERROR, curr_id=current_id, msg="Could not parse message")
+                await self.remove_client()
 
     def initialize(self, client_options: dict) -> dict:
         ''' Announce language support methods '''
@@ -121,19 +129,23 @@ class YaraLanguageServer(object):
 
     async def read_request(self) -> dict:
         ''' Read data from the client '''
+        # we don't want handle_client() to deal with anything other than dicts
+        request = {}
         data = await self.reader.readline()
-        self._logger.debug("header <= %r", data)
-        key, value = tuple(data.decode(self._encoding).strip().split(" "))
-        header = {key: value}
-        self._logger.debug("%s %s", key, header[key])
-        # read the extra separator after the initial header
-        await self.reader.readuntil(separator=self._eol)
-        if key == "Content-Length:":
-            data = await self.reader.readexactly(int(value))
-        else:
-            data = await self.reader.readline()
-        self._logger.debug("request <= %r", data)
-        return json.loads(data.decode(self._encoding))
+        if data:
+            self._logger.debug("header <= %r", data)
+            key, value = tuple(data.decode(self._encoding).strip().split(" "))
+            header = {key: value}
+            self._logger.debug("%s %s", key, header[key])
+            # read the extra separator after the initial header
+            await self.reader.readuntil(separator=self._eol)
+            if key == "Content-Length:":
+                data = await self.reader.readexactly(int(value))
+            else:
+                data = await self.reader.readline()
+            self._logger.debug("request <= %r", data)
+            request = json.loads(data.decode(self._encoding))
+        return request
 
     async def remove_client(self):
         ''' Close the cient input & output streams '''
