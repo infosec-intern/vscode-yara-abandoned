@@ -136,14 +136,13 @@ class YaraLanguageServer(object):
             self._logger.debug("header <= %r", data)
             key, value = tuple(data.decode(self._encoding).strip().split(" "))
             header = {key: value}
-            self._logger.debug("%s %s", key, header[key])
             # read the extra separator after the initial header
             await reader.readuntil(separator=self._eol)
             if key == "Content-Length:":
                 data = await reader.readexactly(int(value))
             else:
                 data = await reader.readline()
-            self._logger.debug("request <= %r", data)
+            self._logger.debug("input <= %r", data)
             request = json.loads(data.decode(self._encoding))
         return request
 
@@ -164,10 +163,8 @@ class YaraLanguageServer(object):
                 "code": code,
                 "message": msg
             }
-        }).replace(" ", "").encode(self._encoding)
-        self._logger.debug("error => %s", message)
-        writer.write(message)
-        await writer.drain()
+        }).replace(" ", "")
+        await self.write_data(message, writer)
 
     async def send_notification(self, method: str, params: dict, writer: asyncio.StreamWriter):
         ''' Write back a JSON-RPC notification to the client '''
@@ -175,12 +172,8 @@ class YaraLanguageServer(object):
             "jsonrpc": "2.0",
             "method": method,
             "params": params
-        }).replace(" ", "").encode(self._encoding)
-        self._logger.debug("notify => %s", message)
-        writer.write("Content-Length: {:d}\r\n\r\n".format(len(message)).encode(self._encoding))
-        await writer.drain()
-        writer.write(message)
-        await writer.drain()
+        }).replace(" ", "")
+        await self.write_data(message, writer)
 
     async def send_response(self, curr_id: int, response: dict, writer: asyncio.StreamWriter):
         ''' Write back a JSON-RPC response to the client '''
@@ -188,8 +181,13 @@ class YaraLanguageServer(object):
             "jsonrpc": "2.0",
             "id": curr_id,
             "result": response,
-        }).replace(" ", "").encode(self._encoding)
-        self._logger.debug("response => %r", message)
+        }).replace(" ", "")
+        await self.write_data(message, writer)
+
+    async def write_data(self, message: str, writer: asyncio.StreamWriter):
+        ''' Write a JSON-RPC message to the given stream with the proper encoding and formatting '''
+        message = message.encode(self._encoding)
+        self._logger.debug("output => %r", message)
         writer.write("Content-Length: {:d}\r\n\r\n".format(len(message)).encode(self._encoding))
         await writer.drain()
         writer.write(message)
