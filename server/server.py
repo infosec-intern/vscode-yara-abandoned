@@ -20,9 +20,7 @@ class YaraLanguageServer(object):
         self._encoding = "utf-8"
         self._eol=b"\r\n"
         self._logger = logging.getLogger("yara")
-        self.reader = None
-        self.workspace = None
-        self.writer = None
+        self.num_clients = 0
 
     async def handle_client(self, reader: asyncio.StreamReader, writer: asyncio.StreamWriter):
         '''React and respond to client messages
@@ -33,14 +31,15 @@ class YaraLanguageServer(object):
         current_id = 0
         has_shutdown = False
         has_started = False
-        self.reader = reader
-        self.writer = writer
         self._logger.info("Client connected")
+        self.num_clients += 1
+        await self.send_notification("window/showMessageRequest", {"type": lsp.MESSAGETYPE_INFO, "message": "I see you!"}, writer)
         while True:
-            if self.reader.at_eof():
+            if reader.at_eof():
                 self._logger.warning("Client has closed")
+                self.num_clients -= 1
                 break
-            message = await self.read_request()
+            message = await self.read_request(reader)
             if "jsonrpc" in message:
                 # this matches some kind of JSON-RPC message
                 if "id" in message:
@@ -51,27 +50,26 @@ class YaraLanguageServer(object):
                         self._logger.info("Client workspace folder: %s", self.workspace)
                         client_options = message.get("params", {}).get("capabilities", {}).get("textDocument", {})
                         announcement = self.initialize(client_options)
-                        await self.send_response(curr_id=current_id, response=announcement)
+                        await self.send_response(current_id, announcement, writer)
                     elif has_started and message.get("method", "") == "initialized":
                         self._logger.info("Client has been successfully initialized")
                         has_started = True
                     elif has_started and message.get("method", "") == "shutdown":
                         self._logger.info("Client requested shutdown")
                         has_shutdown = True
-                        await self.send_response(curr_id=current_id, response={})
+                        await self.send_response(current_id, {}, writer)
                     elif has_started and message.get("method", "") == "exit":
                         self._logger.info("Client requested exit")
                         proper_shutdown = 0 if has_shutdown else 1
-                        await self.send_response(curr_id=current_id, response={"success": proper_shutdown})
-                        await self.remove_client()
+                        await self.send_response(current_id, {"success": proper_shutdown}, writer)
+                        await self.remove_client(writer)
                 else:
                     # if no id is present, this is a JSON-RPC notification
                     self._logger.debug("Client sent a notification")
                     self._logger.info(message)
             else:
                 # no idea what this message is, let the client know the server is shutting down improperly
-                await self.send_error(code=lsp.PARSE_ERROR, curr_id=current_id, msg="Could not parse message")
-                await self.remove_client()
+                await self.send_error(lsp.PARSE_ERROR, current_id, "Could not parse message", writer)
 
     def initialize(self, client_options: dict) -> dict:
         ''' Announce language support methods '''
@@ -79,6 +77,7 @@ class YaraLanguageServer(object):
         if client_options.get("synchronization", {}).get("dynamicRegistration", False):
             # Documents are synced by always sending the full content of the document
             server_options["textDocumentSync"] = lsp.TRANSPORTKIND_FULL
+        '''
         if client_options.get("completion", {}).get("dynamicRegistration", False):
             server_options["completionProvider"] = {
                 # The server does not provide support to resolve additional information for a completion item
@@ -95,6 +94,7 @@ class YaraLanguageServer(object):
             server_options["documentFormattingProvider"] = True
         if client_options.get("rename", {}).get("dynamicRegistration", False):
             server_options["renameProvider"] = True
+        '''
         return {"capabilities": server_options}
 
     async def provide_code_completion(self) -> dict:
@@ -127,33 +127,35 @@ class YaraLanguageServer(object):
         ''' Respond to the textDocument/rename request '''
         self._logger.warning("provide_rename() is not yet implemented")
 
-    async def read_request(self) -> dict:
+    async def read_request(self, reader: asyncio.StreamReader) -> dict:
         ''' Read data from the client '''
         # we don't want handle_client() to deal with anything other than dicts
         request = {}
-        data = await self.reader.readline()
+        data = await reader.readline()
         if data:
             self._logger.debug("header <= %r", data)
             key, value = tuple(data.decode(self._encoding).strip().split(" "))
             header = {key: value}
             self._logger.debug("%s %s", key, header[key])
             # read the extra separator after the initial header
-            await self.reader.readuntil(separator=self._eol)
+            await reader.readuntil(separator=self._eol)
             if key == "Content-Length:":
-                data = await self.reader.readexactly(int(value))
+                data = await reader.readexactly(int(value))
             else:
-                data = await self.reader.readline()
+                data = await reader.readline()
             self._logger.debug("request <= %r", data)
             request = json.loads(data.decode(self._encoding))
         return request
 
-    async def remove_client(self):
+    async def remove_client(self, writer: asyncio.StreamWriter):
         ''' Close the cient input & output streams '''
-        self.writer.close()
-        await self.writer.wait_closed()
+        if writer.can_write_eof():
+            await writer.write_eof()
+        writer.close()
+        await writer.wait_closed()
         self._logger.info("Disconnected client")
 
-    async def send_error(self, code: int, curr_id: int, msg: str):
+    async def send_error(self, code: int, curr_id: int, msg: str, writer: asyncio.StreamWriter):
         ''' Write back a JSON-RPC error message to the client '''
         message = json.dumps({
             "jsonrpc": "2.0",
@@ -162,23 +164,23 @@ class YaraLanguageServer(object):
                 "code": code,
                 "message": msg
             }
-        }).encode(self._encoding)
+        }).replace(" ", "").encode(self._encoding)
         self._logger.debug("error => %s", message)
-        self.writer.write(message)
-        await self.writer.drain()
+        writer.write(message)
+        await writer.drain()
 
-    async def send_notification(self, method: str, params: dict):
+    async def send_notification(self, method: str, params: dict, writer: asyncio.StreamWriter):
         ''' Write back a JSON-RPC notification to the client '''
         message = json.dumps({
             "jsonrpc": "2.0",
             "method": method,
             "params": params
-        }).encode(self._encoding)
+        }).replace(" ", "").encode(self._encoding)
         self._logger.debug("notify => %s", message)
-        self.writer.write(message)
-        await self.writer.drain()
+        writer.write(message)
+        await writer.drain()
 
-    async def send_response(self, curr_id: int, response: dict):
+    async def send_response(self, curr_id: int, response: dict, writer: asyncio.StreamWriter):
         ''' Write back a JSON-RPC response to the client '''
         message = json.dumps({
             "jsonrpc": "2.0",
@@ -186,15 +188,5 @@ class YaraLanguageServer(object):
             "result": response,
         }).replace(" ", "").encode(self._encoding)
         self._logger.debug("response => %r", message)
-        self.writer.write(message)
-        await self.writer.drain()
-
-    def show_message(self, msg_type: int, msg_text: str) -> dict:
-        ''' Ask the client to display a particular message in the user interface '''
-        return {
-            "method": "window/showMessageRequest",
-            "params": {
-                "type": msg_type,
-                "message": msg_text
-            }
-        }
+        writer.write(message)
+        await writer.drain()
