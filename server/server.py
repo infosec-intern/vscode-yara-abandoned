@@ -29,11 +29,11 @@ class YaraLanguageServer(object):
         :writer: asyncio.StreamWriter. The connected client will read from this stream
         '''
         current_id = 0
+        current_workspace = {"config": None}
         has_shutdown = False
         has_started = False
         self._logger.info("Client connected")
         self.num_clients += 1
-        await self.send_notification("window/showMessageRequest", {"type": lsp.MESSAGETYPE_INFO, "message": "I see you!"}, writer)
         while True:
             if reader.at_eof():
                 self._logger.warning("Client has closed")
@@ -41,32 +41,41 @@ class YaraLanguageServer(object):
                 break
             message = await self.read_request(reader)
             if "jsonrpc" in message:
+                method = message.get("method", "")
                 # this matches some kind of JSON-RPC message
                 if "id" in message:
                     # if an id is present, this is a JSON-RPC request
                     current_id = message["id"]
-                    if message.get("method", "") == "initialize":
+                    if not has_started and method == "initialize":
                         self.workspace = urlsplit(unquote(message["params"]["rootUri"], encoding=self._encoding)).path
                         self._logger.info("Client workspace folder: %s", self.workspace)
                         client_options = message.get("params", {}).get("capabilities", {}).get("textDocument", {})
                         announcement = self.initialize(client_options)
                         await self.send_response(current_id, announcement, writer)
-                    elif has_started and message.get("method", "") == "initialized":
-                        self._logger.info("Client has been successfully initialized")
-                        has_started = True
-                    elif has_started and message.get("method", "") == "shutdown":
+                    elif has_started and method == "shutdown":
                         self._logger.info("Client requested shutdown")
                         has_shutdown = True
                         await self.send_response(current_id, {}, writer)
-                    elif has_started and message.get("method", "") == "exit":
+                else:
+                    # if no id is present, this is a JSON-RPC notification
+                    self._logger.debug("Client sent a '%s' notification", method)
+                    if method == "initialized":
+                        self._logger.info("Client has been successfully initialized")
+                        has_started = True
+                        await self.send_notification("window/showMessageRequest", {"type": lsp.MESSAGETYPE_INFO, "message": "Successfully connected"}, writer)
+                    elif has_started and method == "exit":
                         self._logger.info("Client requested exit")
                         proper_shutdown = 0 if has_shutdown else 1
                         await self.send_response(current_id, {"success": proper_shutdown}, writer)
                         await self.remove_client(writer)
-                else:
-                    # if no id is present, this is a JSON-RPC notification
-                    self._logger.debug("Client sent a notification")
-                    self._logger.info(message)
+                    elif has_started and method == "workspace/didChangeConfiguration":
+                        current_workspace["config"] = message.get("params", {}).get("settings", {}).get("yara", {})
+                        self._logger.debug("Changed workspace config to %s", json.dumps(current_workspace["config"]))
+                        if current_workspace["config"].get("trace", {}).get("server", "off") == "on":
+                            # add another logging handler to output DEBUG logs to VSCode's channel
+                            self._logger.info("Ignoring trace request for now")
+                    elif has_started and method == "textDocument/didOpen":
+                        self._logger.debug("Ignoring textDocument/didOpen notification")
             else:
                 # no idea what this message is, let the client know the server is shutting down improperly
                 await self.send_error(lsp.PARSE_ERROR, current_id, "Could not parse message", writer)
@@ -77,7 +86,6 @@ class YaraLanguageServer(object):
         if client_options.get("synchronization", {}).get("dynamicRegistration", False):
             # Documents are synced by always sending the full content of the document
             server_options["textDocumentSync"] = lsp.TRANSPORTKIND_FULL
-        '''
         if client_options.get("completion", {}).get("dynamicRegistration", False):
             server_options["completionProvider"] = {
                 # The server does not provide support to resolve additional information for a completion item
@@ -94,7 +102,6 @@ class YaraLanguageServer(object):
             server_options["documentFormattingProvider"] = True
         if client_options.get("rename", {}).get("dynamicRegistration", False):
             server_options["renameProvider"] = True
-        '''
         return {"capabilities": server_options}
 
     async def provide_code_completion(self) -> dict:
