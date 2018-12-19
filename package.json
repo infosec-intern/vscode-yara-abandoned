@@ -119,10 +119,10 @@
         "@types/mocha": "^2.2.32",
         "@types/node": "^6.14.2",
         "mocha": "^5.2.0",
-        "typescript": "^3.2.1"
+        "typescript": "^3.2.2"
     },
     "dependencies": {
-        "vscode": "^1.1.25",
-        "vscode-languageclient": "^5.1.1"
+        "vscode": "^1.1.26",
+        "vscode-languageclient": "^5.2.1"
     }
 }
