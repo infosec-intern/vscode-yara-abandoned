@@ -2,9 +2,9 @@
 import asyncio
 import json
 import logging
-from urllib.parse import unquote, urlsplit
 
 import protocol as lsp
+import utils
 
 try:
     import yara
@@ -28,7 +28,6 @@ class YaraLanguageServer(object):
         :reader: asyncio StreamReader. The connected client will write to this stream
         :writer: asyncio.StreamWriter. The connected client will read from this stream
         '''
-        current_id = 0
         current_workspace = {"config": None}
         has_shutdown = False
         has_started = False
@@ -42,31 +41,44 @@ class YaraLanguageServer(object):
             message = await self.read_request(reader)
             if "jsonrpc" in message:
                 method = message.get("method", "")
+                self._logger.info("Client sent a '%s' message", method)
                 # this matches some kind of JSON-RPC message
                 if "id" in message:
                     # if an id is present, this is a JSON-RPC request
-                    current_id = message["id"]
                     if not has_started and method == "initialize":
-                        self.workspace = urlsplit(unquote(message["params"]["rootUri"], encoding=self._encoding)).path
+                        self.workspace = utils.parse_uri(message["params"]["rootUri"])
                         self._logger.info("Client workspace folder: %s", self.workspace)
                         client_options = message.get("params", {}).get("capabilities", {}).get("textDocument", {})
                         announcement = self.initialize(client_options)
-                        await self.send_response(current_id, announcement, writer)
+                        await self.send_response(message["id"], announcement, writer)
                     elif has_started and method == "shutdown":
                         self._logger.info("Client requested shutdown")
                         has_shutdown = True
-                        await self.send_response(current_id, {}, writer)
+                        await self.send_response(message["id"], {}, writer)
+                    elif has_started and method == "textDocument/definition":
+                        definition = await self.provide_definition(message["params"])
+                        await self.send_response(message["id"], definition, writer)
+                    elif has_started and method == "textDocument/documentHighlight":
+                        highlights = await self.provide_highlight(message["params"])
+                        await self.send_response(message["id"], highlights, writer)
+                    elif has_started and method == "textDocument/references":
+                        references = await self.provide_reference(message["params"])
+                        await self.send_response(message["id"], references, writer)
+                    elif has_started and method == "textDocument/rename":
+                        renames = await self.provide_rename(message["params"])
+                        await self.send_response(message["id"], renames, writer)
                 else:
                     # if no id is present, this is a JSON-RPC notification
                     self._logger.debug("Client sent a '%s' notification", method)
                     if method == "initialized":
                         self._logger.info("Client has been successfully initialized")
                         has_started = True
-                        await self.send_notification("window/showMessageRequest", {"type": lsp.MESSAGETYPE_INFO, "message": "Successfully connected"}, writer)
+                        params = {"type": lsp.MESSAGETYPE_INFO, "message": "Successfully connected"}
+                        await self.send_notification("window/showMessageRequest", params, writer)
                     elif has_started and method == "exit":
                         self._logger.info("Client requested exit")
                         proper_shutdown = 0 if has_shutdown else 1
-                        await self.send_response(current_id, {"success": proper_shutdown}, writer)
+                        await self.send_response(None, {"success": proper_shutdown}, writer)
                         await self.remove_client(writer)
                     elif has_started and method == "workspace/didChangeConfiguration":
                         current_workspace["config"] = message.get("params", {}).get("settings", {}).get("yara", {})
@@ -76,9 +88,6 @@ class YaraLanguageServer(object):
                             self._logger.info("Ignoring trace request for now")
                     elif has_started and method == "textDocument/didOpen":
                         self._logger.debug("Ignoring textDocument/didOpen notification")
-            else:
-                # no idea what this message is, let the client know the server is shutting down improperly
-                await self.send_error(lsp.PARSE_ERROR, current_id, "Could not parse message", writer)
 
     def initialize(self, client_options: dict) -> dict:
         ''' Announce language support methods '''
@@ -104,35 +113,47 @@ class YaraLanguageServer(object):
             server_options["renameProvider"] = True
         return {"capabilities": server_options}
 
-    async def provide_code_completion(self) -> dict:
+    async def provide_code_completion(self, params: dict) -> dict:
         ''' Respond to the completionItem/resolve request '''
         self._logger.warning("provide_code_completion() is not yet implemented")
+        return {}
 
-    async def provide_definition(self) -> dict:
+    async def provide_definition(self, params: dict) -> dict:
         ''' Respond to the textDocument/definition request '''
         self._logger.warning("provide_definition() is not yet implemented")
+        return {}
 
-    async def provide_diagnostic(self) -> dict:
+    async def provide_diagnostic(self, params: dict) -> dict:
         ''' Respond to the textDocument/publishDiagnostics request
         The message carries an array of diagnostic items for a resource URI.
         '''
-        self._logger.warning("provide_diagnostic() is not et implemented")
         if HAS_YARA:
-            logging.debug("yara-python is installed")
-        elif not HAS_YARA:
+            self._logger.warning("provide_diagnostic() is not yet implemented")
+        else:
             self._logger.error("yara-python is not installed. Diagnostics are disabled")
 
-    async def provide_highlight(self) -> dict:
+    async def provide_highlight(self, params: dict) -> dict:
         ''' Respond to the textDocument/documentHighlight request '''
         self._logger.warning("provide_highlight() is not implemented")
+        return {}
 
-    async def provide_reference(self) -> dict:
+    async def provide_reference(self, params: dict) -> dict:
         ''' Respond to the textDocument/references request '''
         self._logger.warning("provide_reference() is not yet implemented")
+        return {}
 
-    async def provide_rename(self) -> dict:
+    async def provide_rename(self, params: dict) -> dict:
         ''' Respond to the textDocument/rename request '''
         self._logger.warning("provide_rename() is not yet implemented")
+        new_symbol_name = params["newName"]
+        symbol_pos = lsp.Position(line=params["position"]["line"], char=params["position"]["character"])
+        curr_symbol_name = utils.resolve_symbol(params["textDocument"], symbol_pos)
+        # it's possible the user tries to rename a non-symbol
+        if curr_symbol_name is None:
+            return {}
+        else:
+            rule_range = utils.get_rule_range(params["textDocument"], symbol_pos)
+            return {}
 
     async def read_request(self, reader: asyncio.StreamReader) -> dict:
         ''' Read data from the client '''
