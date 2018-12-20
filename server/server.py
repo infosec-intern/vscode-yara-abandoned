@@ -21,15 +21,20 @@ def parse_uri(file_uri: str, encoding="utf-8"):
 
 def resolve_symbol(file_path: str, pos: lsp.Position, encoding="utf-8") -> str:
     ''' Resolve a symbol located at the given position '''
-    pass
+    symbol = ""
+    return symbol
 
 def get_rule_range(file_path: str, pos: lsp.Position, encoding="utf-8") -> lsp.Range:
     ''' Get the start and end boundaries for the current YARA rule based on a symbol's position '''
-    START = re.compile(r"^rule ")
-    END = re.compile(r"^}")
+    # START = re.compile(r"^((private|global) )?rule ")
+    # END = re.compile(r"^}")
     with open(file_path, "rb", encoding=encoding) as document:
         for line in document.readlines():
             print(line)
+    return lsp.Range(
+        start=lsp.Position(0, 0),
+        end=lsp.Position(0, 0)
+    )
 
 ### lANGUAGE SERVER IMPLEMENTATION ###
 class YaraLanguageServer(object):
@@ -66,7 +71,7 @@ class YaraLanguageServer(object):
                 # if an id is present, this is a JSON-RPC request
                 if "id" in message:
                     if not has_started and method == "initialize":
-                        self.workspace = parse_uri(message["params"]["rootUri"])
+                        self.workspace = parse_uri(message["params"]["rootUri"], encoding=self._encoding)
                         self._logger.info("Client workspace folder: %s", self.workspace)
                         client_options = message.get("params", {}).get("capabilities", {}).get("textDocument", {})
                         announcement = self.initialize(client_options)
@@ -207,7 +212,6 @@ class YaraLanguageServer(object):
         if data:
             # self._logger.debug("header <= %r", data)
             key, value = tuple(data.decode(self._encoding).strip().split(" "))
-            header = {key: value}
             # read the extra separator after the initial header
             await reader.readuntil(separator=self._eol)
             if key == "Content-Length:":
