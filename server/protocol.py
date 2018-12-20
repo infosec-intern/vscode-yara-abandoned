@@ -65,7 +65,7 @@ class Location(object):
         self.uri = uri
 
 class Diagnostic(object):
-    def __init__(self, locrange: Range, severity: DiagnosticSeverity, code: Union[int,str], message: str, source: str="yara", relatedInformation: List=[]):
+    def __init__(self, locrange: Range, severity: int, code: Union[int,str], message: str, source: str="yara", relatedInformation: List=[]):
         ''' Represents a diagnostic, such as a compiler error or warning
 
         Diagnostic objects are only valid in the scope of a resource.
