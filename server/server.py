@@ -108,15 +108,19 @@ class YaraLanguageServer(object):
                         if current_workspace["config"].get("trace", {}).get("server", "off") == "on":
                             # TODO: add another logging handler to output DEBUG logs to VSCode's channel
                             self._logger.info("Ignoring trace request for now")
-                    elif has_started and method == "textDocument/didOpen":
-                        self._logger.debug("Ignoring textDocument/didOpen notification")
+                    elif has_started and method in ("textDocument/didOpen", "textDocument/didSave"):
                         # ensure we only try to compile YARA files
                         if message.get("params", {}).get("textDocument", {}).get("languageId", "") == "yara":
-                            diagnostics = await self.provide_diagnostic(message["params"])
-                            await self.send_response(None, diagnostics, writer)
-                    elif has_started and method == "textDocument/didSave":
-                        # TODO: compile the rule and return diagnostics
-                        self._logger.debug("Ignoring textDocument/didSave notification")
+                            await self.send_notification(
+                                method="window/showMessage",
+                                params={
+                                    "type": lsp.MessageType.WARNING,
+                                    "message": "provide_diagnostic() is not yet implemented"
+                                },
+                                writer=writer
+                            )
+                            # diagnostics = await self.provide_diagnostic(message["params"])
+                            # await self.send_response(None, diagnostics, writer)
 
     def initialize(self, client_options: dict) -> dict:
         '''Announce language support methods
@@ -231,7 +235,7 @@ class YaraLanguageServer(object):
                 "code": code,
                 "message": msg
             }
-        }).replace(" ", "")
+        })
         await self.write_data(message, writer)
 
     async def send_notification(self, method: str, params: dict, writer: asyncio.StreamWriter):
@@ -240,7 +244,7 @@ class YaraLanguageServer(object):
             "jsonrpc": "2.0",
             "method": method,
             "params": params
-        }).replace(" ", "")
+        })
         await self.write_data(message, writer)
 
     async def send_response(self, curr_id: int, response: dict, writer: asyncio.StreamWriter):
@@ -249,7 +253,7 @@ class YaraLanguageServer(object):
             "jsonrpc": "2.0",
             "id": curr_id,
             "result": response,
-        }).replace(" ", "")
+        })
         await self.write_data(message, writer)
 
     async def write_data(self, message: str, writer: asyncio.StreamWriter):
