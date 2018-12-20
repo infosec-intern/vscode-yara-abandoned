@@ -110,6 +110,10 @@ class YaraLanguageServer(object):
                     elif has_started and method == "textDocument/didOpen":
                         # TODO: compile the rule and return diagnostics
                         self._logger.debug("Ignoring textDocument/didOpen notification")
+                        # ensure we only try to compile YARA files
+                        if message.get("params", {}).get("textDocument", {}).get("languageId", "") == "yara":
+                            diagnostics = await self.provide_diagnostic(message["params"])
+                            await self.send_response(message["id"], diagnostics, writer)
                     elif has_started and method == "textDocument/didSave":
                         # TODO: compile the rule and return diagnostics
                         self._logger.debug("Ignoring textDocument/didSave notification")
@@ -162,6 +166,7 @@ class YaraLanguageServer(object):
         '''
         if HAS_YARA:
             self._logger.warning("provide_diagnostic() is not yet implemented")
+            # text_document = params.get("textDocument", {}).get("text", "")
         else:
             self._logger.error("yara-python is not installed. Diagnostics are disabled")
 
@@ -247,6 +252,6 @@ class YaraLanguageServer(object):
 
     async def write_data(self, message: str, writer: asyncio.StreamWriter):
         ''' Write a JSON-RPC message to the given stream with the proper encoding and formatting '''
-        self._logger.debug("output => %r", message)
-        writer.write("Content-Length: {:d}\r\n\r\n{}".format(len(message), message).encode(self._encoding))
+        self._logger.debug("output => %r", message.encode(self._encoding))
+        writer.write("Content-Length: {:d}\r\n\r\n{:s}".format(len(message), message).encode(self._encoding))
         await writer.drain()
