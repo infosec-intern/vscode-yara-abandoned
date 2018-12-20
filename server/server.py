@@ -39,12 +39,12 @@ class YaraLanguageServer(object):
                 self.num_clients -= 1
                 break
             message = await self.read_request(reader)
+            # this matches some kind of JSON-RPC message
             if "jsonrpc" in message:
                 method = message.get("method", "")
                 self._logger.info("Client sent a '%s' message", method)
-                # this matches some kind of JSON-RPC message
+                # if an id is present, this is a JSON-RPC request
                 if "id" in message:
-                    # if an id is present, this is a JSON-RPC request
                     if not has_started and method == "initialize":
                         self.workspace = utils.parse_uri(message["params"]["rootUri"])
                         self._logger.info("Client workspace folder: %s", self.workspace)
@@ -55,6 +55,8 @@ class YaraLanguageServer(object):
                         self._logger.info("Client requested shutdown")
                         has_shutdown = True
                         await self.send_response(message["id"], {}, writer)
+                    elif has_started and method == "textDocument/completion":
+                        completions = await self.provide_code_completion(message["params"])
                     elif has_started and method == "textDocument/definition":
                         definition = await self.provide_definition(message["params"])
                         await self.send_response(message["id"], definition, writer)
@@ -67,8 +69,8 @@ class YaraLanguageServer(object):
                     elif has_started and method == "textDocument/rename":
                         renames = await self.provide_rename(message["params"])
                         await self.send_response(message["id"], renames, writer)
+                # if no id is present, this is a JSON-RPC notification
                 else:
-                    # if no id is present, this is a JSON-RPC notification
                     self._logger.debug("Client sent a '%s' notification", method)
                     if method == "initialized":
                         self._logger.info("Client has been successfully initialized")
@@ -88,9 +90,14 @@ class YaraLanguageServer(object):
                             self._logger.info("Ignoring trace request for now")
                     elif has_started and method == "textDocument/didOpen":
                         self._logger.debug("Ignoring textDocument/didOpen notification")
+                    elif has_started and method == "textDocument/didSave":
+                        self._logger.debug("Ignoring textDocument/didSave notification")
 
     def initialize(self, client_options: dict) -> dict:
-        ''' Announce language support methods '''
+        '''Announce language support methods
+
+        :client_options: Dictionary of registration options that the client supports
+        '''
         server_options = {}
         if client_options.get("synchronization", {}).get("dynamicRegistration", False):
             # Documents are synced by always sending the full content of the document
@@ -114,7 +121,10 @@ class YaraLanguageServer(object):
         return {"capabilities": server_options}
 
     async def provide_code_completion(self, params: dict) -> dict:
-        ''' Respond to the completionItem/resolve request '''
+        '''Respond to the completionItem/resolve request
+
+        :params:
+        '''
         self._logger.warning("provide_code_completion() is not yet implemented")
         return {}
 
