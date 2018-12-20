@@ -108,7 +108,6 @@ class YaraLanguageServer(object):
                             # TODO: add another logging handler to output DEBUG logs to VSCode's channel
                             self._logger.info("Ignoring trace request for now")
                     elif has_started and method == "textDocument/didOpen":
-                        # TODO: compile the rule and return diagnostics
                         self._logger.debug("Ignoring textDocument/didOpen notification")
                         # ensure we only try to compile YARA files
                         if message.get("params", {}).get("textDocument", {}).get("languageId", "") == "yara":
@@ -199,7 +198,7 @@ class YaraLanguageServer(object):
         request = {}
         data = await reader.readline()
         if data:
-            self._logger.debug("header <= %r", data)
+            # self._logger.debug("header <= %r", data)
             key, value = tuple(data.decode(self._encoding).strip().split(" "))
             header = {key: value}
             # read the extra separator after the initial header
@@ -208,7 +207,7 @@ class YaraLanguageServer(object):
                 data = await reader.readexactly(int(value))
             else:
                 data = await reader.readline()
-            self._logger.debug("input <= %r", data)
+            # self._logger.debug("input <= %r", data)
             request = json.loads(data.decode(self._encoding))
         return request
 
@@ -252,6 +251,6 @@ class YaraLanguageServer(object):
 
     async def write_data(self, message: str, writer: asyncio.StreamWriter):
         ''' Write a JSON-RPC message to the given stream with the proper encoding and formatting '''
-        self._logger.debug("output => %r", message.encode(self._encoding))
+        # self._logger.debug("output => %r", message.encode(self._encoding))
         writer.write("Content-Length: {:d}\r\n\r\n{:s}".format(len(message), message).encode(self._encoding))
         await writer.drain()
