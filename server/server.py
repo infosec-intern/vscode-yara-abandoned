@@ -19,22 +19,33 @@ except ModuleNotFoundError:
 def parse_uri(file_uri: str, encoding="utf-8"):
     return urlsplit(unquote(file_uri, encoding=encoding)).path
 
-def resolve_symbol(file_path: str, pos: lsp.Position, encoding="utf-8") -> str:
+def resolve_symbol(document: str, pos: lsp.Position, encoding="utf-8") -> str:
     ''' Resolve a symbol located at the given position '''
     symbol = ""
     return symbol
 
-def get_rule_range(file_path: str, pos: lsp.Position, encoding="utf-8") -> lsp.Range:
+def get_rule_range(document: str, pos: lsp.Position, encoding="utf-8") -> lsp.Range:
     ''' Get the start and end boundaries for the current YARA rule based on a symbol's position '''
-    # START = re.compile(r"^((private|global) )?rule ")
-    # END = re.compile(r"^}")
-    with open(file_path, "rb", encoding=encoding) as document:
-        for line in document.readlines():
-            print(line)
-    return lsp.Range(
-        start=lsp.Position(0, 0),
-        end=lsp.Position(0, 0)
-    )
+    start_pattern = re.compile(r"^((private|global) )?rule ")
+    start_pos = None
+    end_pattern = re.compile(r"^}")
+    end_pos = None
+    lines = document.replace("\r", "").split("\n")
+    # work backwards from the given position and find the start of rule
+    for index in range(pos.line, 0, -1):
+        line = lines[index]
+        match = start_pattern.match(line)
+        if match:
+            start_pos = lsp.Position(line=index+1, char=0)
+            break
+    # start from the given position and find the first end of rule
+    for index in range(pos.line, len(lines)):
+        line = lines[index]
+        match = end_pattern.match(line)
+        if match:
+            end_pos = lsp.Position(line=index+1, char=len(line)-1)
+            break
+    return lsp.Range(start=start_pos, end=end_pos)
 
 ### lANGUAGE SERVER IMPLEMENTATION ###
 class YaraLanguageServer(object):
@@ -124,8 +135,8 @@ class YaraLanguageServer(object):
                                 },
                                 writer=writer
                             )
-                            # diagnostics = await self.provide_diagnostic(message["params"])
-                            # await self.send_response(None, diagnostics, writer)
+                            diagnostics = await self.provide_diagnostic(message["params"])
+                            await self.send_response(None, diagnostics, writer)
 
     def initialize(self, client_options: dict) -> dict:
         '''Announce language support methods
@@ -175,8 +186,14 @@ class YaraLanguageServer(object):
         '''
         if HAS_YARA:
             self._logger.warning("provide_diagnostic() is not yet implemented")
-            # text_document = params.get("textDocument", {}).get("text", "")
-            return {}
+            diagnostics = {}
+            text_document = params.get("textDocument", {}).get("text", "")
+            # 1. identify where each rule starts and ends
+            rules = get_rule_range(text_document, lsp.Position(15, 12))
+            print(rules)
+            # 2. compile each rule individually using the yara.compile method
+            # 3. parse results
+            return diagnostics
         else:
             self._logger.error("yara-python is not installed. Diagnostics are disabled")
             return {}
