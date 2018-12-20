@@ -126,6 +126,8 @@ class YaraLanguageServer(object):
         :params:
         '''
         self._logger.warning("provide_code_completion() is not yet implemented")
+        symbol_pos = lsp.Position(line=params["position"]["line"], char=params["position"]["character"])
+        completion_context = lsp.CompletionTriggerKind(params["context"]["triggerKind"])
         return {}
 
     async def provide_definition(self, params: dict) -> dict:

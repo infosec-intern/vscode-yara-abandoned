@@ -2,36 +2,52 @@
 
 For more info: https://microsoft.github.io/language-server-protocol/specification
 '''
+from enum import Enum
 import json
 from typing import List, Union
 
 EOL: List = ["\n", "\r\n", "\r"]
-# Error codes defined by JSON RPC
-METHOD_NOT_FOUND = -32601
-INTERNAL_ERROR = -32603
-INVALID_PARAMS = -32602
-INVALID_REQUEST = -32600
-PARSE_ERROR = -32700
-SERVER_ERROR_START = -32099
-SERVER_ERROR_END = -32000
-SERVER_NOT_INITIALIZED = -32002
-UNKNOWN_ERROR_CODE = -32001
-# Defined by the protocol.
-REQUEST_CANCELLED = -32800
-# DiagnosticSeveriy
-DIAGNOSTIC_ERROR = 1
-DIAGNOSTIC_WARNING = 2
-DIAGNOSTIC_INFO = 3
-DIAGNOSTIC_HINT = 4
-# MessageType
-MESSAGETYPE_ERROR = 1
-MESSAGETYPE_WARNING = 2
-MESSAGETYPE_INFO = 3
-MESSAGETYPE_LOG = 4
-# TransportKind
-TRANSPORTKIND_NONE = 0
-TRANSPORTKIND_FULL = 1
-TRANSPORTKIND_INC = 2
+
+# Protocol Constants
+class CompletionTriggerKind(Enum):
+    # Completion was triggered by typing an identifier (24x7 code
+	# complete), manual invocation (e.g Ctrl+Space) or via API.
+    INVOKED = 1
+    # Completion was triggered by a trigger character specified by
+	# the `triggerCharacters` properties of the `CompletionRegistrationOptions`
+    CHARACTER = 2
+    # Completion was re-triggered as the current completion list is incomplete.
+    INCOMPLETE = 3
+
+class JsonRPCError(Enum):
+    METHOD_NOT_FOUND = -32601
+    INTERNAL_ERROR = -32603
+    INVALID_PARAMS = -32602
+    INVALID_REQUEST = -32600
+    PARSE_ERROR = -32700
+    SERVER_ERROR_START = -32099
+    SERVER_ERROR_END = -32000
+    SERVER_NOT_INITIALIZED = -32002
+    UNKNOWN_ERROR_CODE = -32001
+    # Defined by the protocol
+    REQUEST_CANCELLED = -32800
+
+class DiagnosticSeverity(Enum):
+    ERROR = 1
+    WARNING = 2
+    INFO = 3
+    HINT = 4
+
+class MessageType(Enum):
+    ERROR = 1
+    WARNING = 2
+    INFO = 3
+    LOG = 4
+
+class TextSyncKind(Enum):
+    NONE = 0
+    FULL = 1
+    INCREMENTAL = 2
 
 class Position(object):
     def __init__(self, line: int, char: int):
