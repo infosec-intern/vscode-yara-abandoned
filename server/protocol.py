@@ -2,14 +2,14 @@
 
 For more info: https://microsoft.github.io/language-server-protocol/specification
 '''
-from enum import Enum
+from enum import IntEnum
 import json
 from typing import List, Union
 
 EOL: List = ["\n", "\r\n", "\r"]
 
 # Protocol Constants
-class CompletionTriggerKind(Enum):
+class CompletionTriggerKind(IntEnum):
     # Completion was triggered by typing an identifier (24x7 code
 	# complete), manual invocation (e.g Ctrl+Space) or via API.
     INVOKED = 1
@@ -19,7 +19,7 @@ class CompletionTriggerKind(Enum):
     # Completion was re-triggered as the current completion list is incomplete.
     INCOMPLETE = 3
 
-class JsonRPCError(Enum):
+class JsonRPCError(IntEnum):
     METHOD_NOT_FOUND = -32601
     INTERNAL_ERROR = -32603
     INVALID_PARAMS = -32602
@@ -32,19 +32,19 @@ class JsonRPCError(Enum):
     # Defined by the protocol
     REQUEST_CANCELLED = -32800
 
-class DiagnosticSeverity(Enum):
+class DiagnosticSeverity(IntEnum):
     ERROR = 1
     WARNING = 2
     INFO = 3
     HINT = 4
 
-class MessageType(Enum):
+class MessageType(IntEnum):
     ERROR = 1
     WARNING = 2
     INFO = 3
     LOG = 4
 
-class TextSyncKind(Enum):
+class TextSyncKind(IntEnum):
     NONE = 0
     FULL = 1
     INCREMENTAL = 2
