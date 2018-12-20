@@ -63,6 +63,9 @@ class Position(object):
         self.line = line
         self.char = char
 
+    def __repr__(self):
+        return "<Position(line={:d}, char={:d})>".format(self.line, self.char)
+
 class Range(object):
     def __init__(self, start: Position, end: Position):
         ''' A range in a text document expressed as (zero-based) start and end positions
@@ -72,6 +75,9 @@ class Range(object):
         self.start = start
         self.end = end
 
+    def __repr__(self):
+        return "<Range(start={}, end={})>".format(self.start, self.end)
+
 class Location(object):
     def __init__(self, locrange: Range, uri: str):
         ''' Represents a location inside a resource
@@ -79,6 +85,9 @@ class Location(object):
         '''
         self.range = locrange
         self.uri = uri
+
+    def __repr__(self):
+        return "<Location(range={}, uri={})>".format(self.range, self.uri)
 
 class Diagnostic(object):
     def __init__(self, locrange: Range, severity: int, code: Union[int,str], message: str, source: str="yara", relatedInformation: List=[]):
@@ -92,3 +101,6 @@ class Diagnostic(object):
         self.relatedInformation = relatedInformation
         self.severity = severity
         self.source = source
+
+    def __repr__(self):
+        return "<Diagnostic(sev={:d}, code={}, msg={})>".format(self.severity, self.code, self.message)
