@@ -254,7 +254,7 @@ class YaraLanguageServer(object):
                 "code": code,
                 "message": msg
             }
-        }, cls=lsp.LSPEncoder)
+        }, cls=lsp.JSONEncoder)
         await self.write_data(message, writer)
 
     async def send_notification(self, method: str, params: dict, writer: asyncio.StreamWriter):
@@ -263,7 +263,7 @@ class YaraLanguageServer(object):
             "jsonrpc": "2.0",
             "method": method,
             "params": params
-        }, cls=lsp.LSPEncoder)
+        }, cls=lsp.JSONEncoder)
         await self.write_data(message, writer)
 
     async def send_response(self, curr_id: int, response: dict, writer: asyncio.StreamWriter):
@@ -272,7 +272,7 @@ class YaraLanguageServer(object):
             "jsonrpc": "2.0",
             "id": curr_id,
             "result": response,
-        }, cls=lsp.LSPEncoder)
+        }, cls=lsp.JSONEncoder)
         await self.write_data(message, writer)
 
     async def write_data(self, message: str, writer: asyncio.StreamWriter):

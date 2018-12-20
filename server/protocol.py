@@ -116,7 +116,7 @@ class Location(object):
     def __repr__(self):
         return "<Location(range={}, uri={})>".format(self.range, self.uri)
 
-class LSPEncoder(json.JSONEncoder):
+class JSONEncoder(json.JSONEncoder):
     def default(self, obj):
         ''' Custom JSON encoder '''
         if isinstance(obj, Diagnostic):
