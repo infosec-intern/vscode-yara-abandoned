@@ -40,10 +40,10 @@ With the new language server protocol, Python 3.5 or higher is required, due to 
 
 In addition, `yara-python` must be installed. If it is not installed, this extension will try to build a virtual environment in `$EXTENSIONROOT/server/env` with the latest Python version and install dependencies there.
 
-**Note:** If you are on Windows, you might have to set the `$INCLUDE` environment variable before buidling this environment, so that when `yara-python` is compiled for your local system, Python knows where to find the appropriate DLLs.
+**Note:** If you are on Windows, you might have to set the `$INCLUDE` environment variable before building this environment, so that when `yara-python` is compiled for your local system, Python knows where to find the appropriate DLLs.
 On Windows 10, this would probably look like:
 ```sh
-set INCLUDE="C:\Program Files (x86)\Windows Kits\10\Include" && python -m pip install yara-python
+set INCLUDE="C:\Program Files (x86)\Windows Kits\10\Include" && python3 -m pip install yara-python
 ```
 
 ## Problems?
