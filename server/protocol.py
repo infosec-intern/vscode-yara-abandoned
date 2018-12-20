@@ -120,12 +120,28 @@ class LSPEncoder(json.JSONEncoder):
     def default(self, obj):
         ''' Custom JSON encoder '''
         if isinstance(obj, Diagnostic):
-            pass
+            return {
+                "code": obj.code,
+                "message": obj.message,
+                "range": obj.range,
+                "relatedInformation": obj.relatedInformation,
+                "severity": obj.severity,
+                "source": obj.source
+            }
         elif isinstance(obj, Location):
-            pass
+            return {
+                "range": obj.range,
+                "uri": obj.uri
+            }
         elif isinstance(obj, Position):
-            pass
+            return {
+                "line": obj.line,
+                "character": obj.char
+            }
         elif isinstance(obj, Range):
-            pass
+            return {
+                "start": obj.start,
+                "end": obj.end
+            }
         else:
             super().default(obj)

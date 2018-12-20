@@ -122,8 +122,8 @@ class YaraLanguageServer(object):
             server_options["definitionProvider"] = True
         if client_options.get("references", {}).get("dynamicRegistration", False):
             server_options["referencesProvider"] = True
-        if client_options.get("documentHighlight", {}).get("dynamicRegistration", False):
-            server_options["documentHighlightProvider"] = True
+        # if client_options.get("documentHighlight", {}).get("dynamicRegistration", False):
+        #     server_options["documentHighlightProvider"] = True
         if client_options.get("formatting", {}).get("dynamicRegistration", False):
             server_options["documentFormattingProvider"] = True
         if client_options.get("rename", {}).get("dynamicRegistration", False):
@@ -194,7 +194,7 @@ class YaraLanguageServer(object):
             return diagnostics
         else:
             self._logger.error("yara-python is not installed. Diagnostics are disabled")
-            return {}
+            return []
 
     async def provide_highlight(self, params: dict) -> dict:
         ''' Respond to the textDocument/documentHighlight request '''
