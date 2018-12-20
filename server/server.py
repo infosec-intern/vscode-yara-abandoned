@@ -25,8 +25,8 @@ def resolve_symbol(file_path: str, pos: lsp.Position, encoding="utf-8") -> str:
 
 def get_rule_range(file_path: str, pos: lsp.Position, encoding="utf-8") -> lsp.Range:
     ''' Get the start and end boundaries for the current YARA rule based on a symbol's position '''
-    rule_start = re.compile(r"^rule ")
-    rule_end = re.compile(r"^}")
+    START = re.compile(r"^rule ")
+    END = re.compile(r"^}")
     with open(file_path, "rb", encoding=encoding) as document:
         for line in document.readlines():
             print(line)
@@ -77,6 +77,7 @@ class YaraLanguageServer(object):
                         await self.send_response(message["id"], {}, writer)
                     elif has_started and method == "textDocument/completion":
                         completions = await self.provide_code_completion(message["params"])
+                        await self.send_response(message["id"], completions, writer)
                     elif has_started and method == "textDocument/definition":
                         definition = await self.provide_definition(message["params"])
                         await self.send_response(message["id"], definition, writer)
@@ -112,7 +113,7 @@ class YaraLanguageServer(object):
                         # ensure we only try to compile YARA files
                         if message.get("params", {}).get("textDocument", {}).get("languageId", "") == "yara":
                             diagnostics = await self.provide_diagnostic(message["params"])
-                            await self.send_response(message["id"], diagnostics, writer)
+                            await self.send_response(None, diagnostics, writer)
                     elif has_started and method == "textDocument/didSave":
                         # TODO: compile the rule and return diagnostics
                         self._logger.debug("Ignoring textDocument/didSave notification")
@@ -166,8 +167,10 @@ class YaraLanguageServer(object):
         if HAS_YARA:
             self._logger.warning("provide_diagnostic() is not yet implemented")
             # text_document = params.get("textDocument", {}).get("text", "")
+            return {}
         else:
             self._logger.error("yara-python is not installed. Diagnostics are disabled")
+            return {}
 
     async def provide_highlight(self, params: dict) -> dict:
         ''' Respond to the textDocument/documentHighlight request '''
