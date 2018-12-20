@@ -90,18 +90,17 @@ class YaraLanguageServer(object):
                         if current_workspace["config"].get("trace", {}).get("server", "off") == "on":
                             # TODO: add another logging handler to output DEBUG logs to VSCode's channel
                             self._logger.info("Ignoring trace request for now")
-                    elif has_started and method in ("textDocument/didOpen", "textDocument/didSave"):
+                    elif has_started and method == "textDocument/didOpen":
                         # ensure we only try to compile YARA files
                         if message.get("params", {}).get("textDocument", {}).get("languageId", "") == "yara":
-                            await self.send_notification(
-                                method="window/showMessage",
-                                params={
-                                    "type": lsp.MessageType.WARNING,
-                                    "message": "provide_diagnostic() is not yet implemented"
-                                },
-                                writer=writer
-                            )
-                            diagnostics = await self.provide_diagnostic(message["params"])
+                            document = message.get("params", {}).get("textDocument", {}).get("text", "")
+                            diagnostics = await self.provide_diagnostic(document)
+                            await self.send_response(None, diagnostics, writer)
+                    elif has_started and method == "textDocument/didSave":
+                        file_path = helpers.parse_uri(message.get("params", {}).get("textDocument", {}).get("uri", ""))
+                        with open(file_path, "rb") as ifile:
+                            document = ifile.read().decode(self._encoding)
+                            diagnostics = await self.provide_diagnostic(document)
                             await self.send_response(None, diagnostics, writer)
 
     def initialize(self, client_options: dict) -> dict:
@@ -146,19 +145,52 @@ class YaraLanguageServer(object):
         self._logger.warning("provide_definition() is not yet implemented")
         return {}
 
-    async def provide_diagnostic(self, params: dict) -> dict:
+    async def provide_diagnostic(self, text_document: str) -> dict:
         ''' Respond to the textDocument/publishDiagnostics request
-        The message carries an array of diagnostic items for a resource URI.
+
+        :text_document: Contents of YARA rule file
         '''
         if HAS_YARA:
             self._logger.warning("provide_diagnostic() is not yet implemented")
-            diagnostics = {}
-            text_document = params.get("textDocument", {}).get("text", "")
+            diagnostics = []
+            rules = []
             # 1. identify where each rule starts and ends
-            rules = helpers.get_rule_range(text_document, lsp.Position(15, 12))
-            print(rules)
-            # 2. compile each rule individually using the yara.compile method
-            # 3. parse results
+            lines = text_document.split("\n")
+            for index in range(0, len(lines)):
+                if "condition:" in lines[index]:
+                    # exact character doesn't actually matter here, just the line number
+                    rule_range = helpers.get_rule_range(text_document, lsp.Position(index, 0))
+                    rule_text = "\n".join(lines[rule_range.start.line:rule_range.end.line])
+                    symbol_range = lsp.Range(
+                        start=lsp.Position(index, 0),
+                        end=lsp.Position(index, 0)
+                    )
+                    rules.append((rule_text, rule_range))
+            # 2. compile each rule individually
+            for rule_text, symbol_range in rules:
+                try:
+                    yara.compile(source=rule_text)
+                # 3. parse results
+                except yara.SyntaxError as err:
+                    line_no, msg = helpers.parse_result(str(err))
+                    diagnostics.append(
+                        lsp.Diagnostic(
+                            locrange=symbol_range,
+                            severity=lsp.DiagnosticSeverity.ERROR,
+                            code=0,
+                            message=msg
+                        )
+                    )
+                except yara.WarningError as warn:
+                    line_no, msg = helpers.parse_result(str(err))
+                    diagnostics.append(
+                        lsp.Diagnostic(
+                            locrange=symbol_range,
+                            severity=lsp.DiagnosticSeverity.WARNING,
+                            code=1,
+                            message=msg
+                        )
+                    )
             return diagnostics
         else:
             self._logger.error("yara-python is not installed. Diagnostics are disabled")
@@ -184,7 +216,7 @@ class YaraLanguageServer(object):
         if curr_symbol_name is None:
             return {}
         else:
-            rule_range = helpers.get_rule_range(params["textDocument"], symbol_pos)
+            rule_range = helpers.get_rule(params["textDocument"], symbol_pos)
             return {}
 
     async def read_request(self, reader: asyncio.StreamReader) -> dict:
@@ -222,7 +254,7 @@ class YaraLanguageServer(object):
                 "code": code,
                 "message": msg
             }
-        })
+        }, cls=lsp.LSPEncoder)
         await self.write_data(message, writer)
 
     async def send_notification(self, method: str, params: dict, writer: asyncio.StreamWriter):
@@ -231,7 +263,7 @@ class YaraLanguageServer(object):
             "jsonrpc": "2.0",
             "method": method,
             "params": params
-        })
+        }, cls=lsp.LSPEncoder)
         await self.write_data(message, writer)
 
     async def send_response(self, curr_id: int, response: dict, writer: asyncio.StreamWriter):
@@ -240,11 +272,11 @@ class YaraLanguageServer(object):
             "jsonrpc": "2.0",
             "id": curr_id,
             "result": response,
-        })
+        }, cls=lsp.LSPEncoder)
         await self.write_data(message, writer)
 
     async def write_data(self, message: str, writer: asyncio.StreamWriter):
         ''' Write a JSON-RPC message to the given stream with the proper encoding and formatting '''
-        # self._logger.debug("output => %r", message.encode(self._encoding))
+        self._logger.debug("output => %r", message.encode(self._encoding))
         writer.write("Content-Length: {:d}\r\n\r\n{:s}".format(len(message), message).encode(self._encoding))
         await writer.drain()
