@@ -91,7 +91,6 @@ class YaraLanguageServer(object):
                         await self.send_response(message["id"], renames, writer)
                 # if no id is present, this is a JSON-RPC notification
                 else:
-                    self._logger.debug("Client sent a '%s' notification", method)
                     if method == "initialized":
                         self._logger.info("Client has been successfully initialized")
                         has_started = True
@@ -248,9 +247,6 @@ class YaraLanguageServer(object):
 
     async def write_data(self, message: str, writer: asyncio.StreamWriter):
         ''' Write a JSON-RPC message to the given stream with the proper encoding and formatting '''
-        message = message.encode(self._encoding)
         self._logger.debug("output => %r", message)
-        writer.write("Content-Length: {:d}\r\n\r\n".format(len(message)).encode(self._encoding))
-        await writer.drain()
-        writer.write(message)
+        writer.write("Content-Length: {:d}\r\n\r\n{}".format(len(message), message).encode(self._encoding))
         await writer.drain()
