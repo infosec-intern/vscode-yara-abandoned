@@ -2,9 +2,8 @@
 import asyncio
 import json
 import logging
-import re
-from urllib.parse import unquote, urlsplit
 
+import helpers
 import protocol as lsp
 
 try:
@@ -15,39 +14,6 @@ except ModuleNotFoundError:
     HAS_YARA = False
 
 
-### UTILITY FUNCTIONS ###
-def parse_uri(file_uri: str, encoding="utf-8"):
-    return urlsplit(unquote(file_uri, encoding=encoding)).path
-
-def resolve_symbol(document: str, pos: lsp.Position, encoding="utf-8") -> str:
-    ''' Resolve a symbol located at the given position '''
-    symbol = ""
-    return symbol
-
-def get_rule_range(document: str, pos: lsp.Position, encoding="utf-8") -> lsp.Range:
-    ''' Get the start and end boundaries for the current YARA rule based on a symbol's position '''
-    start_pattern = re.compile(r"^((private|global) )?rule ")
-    start_pos = None
-    end_pattern = re.compile(r"^}")
-    end_pos = None
-    lines = document.replace("\r", "").split("\n")
-    # work backwards from the given position and find the start of rule
-    for index in range(pos.line, 0, -1):
-        line = lines[index]
-        match = start_pattern.match(line)
-        if match:
-            start_pos = lsp.Position(line=index+1, char=0)
-            break
-    # start from the given position and find the first end of rule
-    for index in range(pos.line, len(lines)):
-        line = lines[index]
-        match = end_pattern.match(line)
-        if match:
-            end_pos = lsp.Position(line=index+1, char=len(line)-1)
-            break
-    return lsp.Range(start=start_pos, end=end_pos)
-
-### lANGUAGE SERVER IMPLEMENTATION ###
 class YaraLanguageServer(object):
     def __init__(self):
         ''' Handle the details of the VSCode language server protocol '''
@@ -82,7 +48,7 @@ class YaraLanguageServer(object):
                 # if an id is present, this is a JSON-RPC request
                 if "id" in message:
                     if not has_started and method == "initialize":
-                        self.workspace = parse_uri(message["params"]["rootUri"], encoding=self._encoding)
+                        self.workspace = helpers.parse_uri(message["params"]["rootUri"], encoding=self._encoding)
                         self._logger.info("Client workspace folder: %s", self.workspace)
                         client_options = message.get("params", {}).get("capabilities", {}).get("textDocument", {})
                         announcement = self.initialize(client_options)
@@ -189,7 +155,7 @@ class YaraLanguageServer(object):
             diagnostics = {}
             text_document = params.get("textDocument", {}).get("text", "")
             # 1. identify where each rule starts and ends
-            rules = get_rule_range(text_document, lsp.Position(15, 12))
+            rules = helpers.get_rule_range(text_document, lsp.Position(15, 12))
             print(rules)
             # 2. compile each rule individually using the yara.compile method
             # 3. parse results
@@ -213,12 +179,12 @@ class YaraLanguageServer(object):
         self._logger.warning("provide_rename() is not yet implemented")
         new_symbol_name = params["newName"]
         symbol_pos = lsp.Position(line=params["position"]["line"], char=params["position"]["character"])
-        curr_symbol_name = resolve_symbol(params["textDocument"], symbol_pos)
+        curr_symbol_name = helpers.resolve_symbol(params["textDocument"], symbol_pos)
         # it's possible the user tries to rename a non-symbol
         if curr_symbol_name is None:
             return {}
         else:
-            rule_range = get_rule_range(params["textDocument"], symbol_pos)
+            rule_range = helpers.get_rule_range(params["textDocument"], symbol_pos)
             return {}
 
     async def read_request(self, reader: asyncio.StreamReader) -> dict:
