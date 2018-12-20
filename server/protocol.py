@@ -74,27 +74,14 @@ class Range(object):
         A range is comparable to a selection in an editor. Therefore the end position is exclusive
         '''
         if not isinstance(start, Position):
-            raise TypeError("Start position cannot be '{}'. Must be Position".format(type(start)))
+            raise TypeError("Start position cannot be {}. Must be Position".format(type(start)))
         elif not isinstance(end, Position):
-            raise TypeError("End position cannot be '{}'. Must be Position".format(type(end)))
+            raise TypeError("End position cannot be {}. Must be Position".format(type(end)))
         self.start = start
         self.end = end
 
     def __repr__(self):
         return "<Range(start={}, end={})>".format(self.start, self.end)
-
-class Location(object):
-    def __init__(self, locrange: Range, uri: str):
-        ''' Represents a location inside a resource
-        such as a line inside a text file
-        '''
-        if not isinstance(locrange, Range):
-            raise TypeError("Location range cannot be '{}'. Must be Range".format(type(locrange)))
-        self.range = locrange
-        self.uri = str(uri)
-
-    def __repr__(self):
-        return "<Location(range={}, uri={})>".format(self.range, self.uri)
 
 class Diagnostic(object):
     def __init__(self, locrange: Range, severity: int, code: int, message: str, source: str="yara", relatedInformation: List=[]):
@@ -105,13 +92,40 @@ class Diagnostic(object):
         self.code = int(code)
         self.message = str(message)
         if not isinstance(locrange, Range):
-            raise TypeError("Location range cannot be '{}'. Must be Range".format(type(locrange)))
+            raise TypeError("Location range cannot be {}. Must be Range".format(type(locrange)))
         self.range = locrange
         if not isinstance(relatedInformation, list):
-            raise TypeError("Location range cannot be '{}'. Must be a List of strings".format(type(relatedInformation)))
+            raise TypeError("Location range cannot be {}. Must be a List of strings".format(type(relatedInformation)))
         self.relatedInformation = relatedInformation
         self.severity = int(severity)
         self.source = str(source)
 
     def __repr__(self):
         return "<Diagnostic(sev={:d}, code={:d}, msg={})>".format(self.severity, self.code, self.message)
+
+class Location(object):
+    def __init__(self, locrange: Range, uri: str):
+        ''' Represents a location inside a resource
+        such as a line inside a text file
+        '''
+        if not isinstance(locrange, Range):
+            raise TypeError("Location range cannot be {}. Must be Range".format(type(locrange)))
+        self.range = locrange
+        self.uri = str(uri)
+
+    def __repr__(self):
+        return "<Location(range={}, uri={})>".format(self.range, self.uri)
+
+class LSPEncoder(json.JSONEncoder):
+    def default(self, obj):
+        ''' Custom JSON encoder '''
+        if isinstance(obj, Diagnostic):
+            pass
+        elif isinstance(obj, Location):
+            pass
+        elif isinstance(obj, Position):
+            pass
+        elif isinstance(obj, Range):
+            pass
+        else:
+            super().default(obj)
