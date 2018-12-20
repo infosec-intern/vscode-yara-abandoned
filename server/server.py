@@ -2,9 +2,10 @@
 import asyncio
 import json
 import logging
+import re
+from urllib.parse import unquote, urlsplit
 
 import protocol as lsp
-import utils
 
 try:
     import yara
@@ -14,12 +15,31 @@ except ModuleNotFoundError:
     HAS_YARA = False
 
 
+### UTILITY FUNCTIONS ###
+def parse_uri(file_uri: str, encoding="utf-8"):
+    return urlsplit(unquote(file_uri, encoding=encoding)).path
+
+def resolve_symbol(file_path: str, pos: lsp.Position, encoding="utf-8") -> str:
+    ''' Resolve a symbol located at the given position '''
+    pass
+
+def get_rule_range(file_path: str, pos: lsp.Position, encoding="utf-8") -> lsp.Range:
+    ''' Get the start and end boundaries for the current YARA rule based on a symbol's position '''
+    rule_start = re.compile(r"^rule ")
+    rule_end = re.compile(r"^}")
+    with open(file_path, "rb", encoding=encoding) as document:
+        for line in document.readlines():
+            print(line)
+
+### lANGUAGE SERVER IMPLEMENTATION ###
 class YaraLanguageServer(object):
     def __init__(self):
         ''' Handle the details of the VSCode language server protocol '''
         self._encoding = "utf-8"
         self._eol=b"\r\n"
         self._logger = logging.getLogger("yara")
+        # variable symbols have a few possible first characters
+        self._varchar = ["$", "#", "@", "!"]
         self.num_clients = 0
 
     async def handle_client(self, reader: asyncio.StreamReader, writer: asyncio.StreamWriter):
@@ -46,7 +66,7 @@ class YaraLanguageServer(object):
                 # if an id is present, this is a JSON-RPC request
                 if "id" in message:
                     if not has_started and method == "initialize":
-                        self.workspace = utils.parse_uri(message["params"]["rootUri"])
+                        self.workspace = parse_uri(message["params"]["rootUri"])
                         self._logger.info("Client workspace folder: %s", self.workspace)
                         client_options = message.get("params", {}).get("capabilities", {}).get("textDocument", {})
                         announcement = self.initialize(client_options)
@@ -75,7 +95,7 @@ class YaraLanguageServer(object):
                     if method == "initialized":
                         self._logger.info("Client has been successfully initialized")
                         has_started = True
-                        params = {"type": lsp.MESSAGETYPE_INFO, "message": "Successfully connected"}
+                        params = {"type": lsp.MessageType.INFO, "message": "Successfully connected"}
                         await self.send_notification("window/showMessageRequest", params, writer)
                     elif has_started and method == "exit":
                         self._logger.info("Client requested exit")
@@ -101,7 +121,7 @@ class YaraLanguageServer(object):
         server_options = {}
         if client_options.get("synchronization", {}).get("dynamicRegistration", False):
             # Documents are synced by always sending the full content of the document
-            server_options["textDocumentSync"] = lsp.TRANSPORTKIND_FULL
+            server_options["textDocumentSync"] = lsp.TextSyncKind.FULL
         if client_options.get("completion", {}).get("dynamicRegistration", False):
             server_options["completionProvider"] = {
                 # The server does not provide support to resolve additional information for a completion item
@@ -159,12 +179,12 @@ class YaraLanguageServer(object):
         self._logger.warning("provide_rename() is not yet implemented")
         new_symbol_name = params["newName"]
         symbol_pos = lsp.Position(line=params["position"]["line"], char=params["position"]["character"])
-        curr_symbol_name = utils.resolve_symbol(params["textDocument"], symbol_pos)
+        curr_symbol_name = resolve_symbol(params["textDocument"], symbol_pos)
         # it's possible the user tries to rename a non-symbol
         if curr_symbol_name is None:
             return {}
         else:
-            rule_range = utils.get_rule_range(params["textDocument"], symbol_pos)
+            rule_range = get_rule_range(params["textDocument"], symbol_pos)
             return {}
 
     async def read_request(self, reader: asyncio.StreamReader) -> dict:
