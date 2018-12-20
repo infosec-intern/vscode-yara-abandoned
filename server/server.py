@@ -106,11 +106,13 @@ class YaraLanguageServer(object):
                         current_workspace["config"] = message.get("params", {}).get("settings", {}).get("yara", {})
                         self._logger.debug("Changed workspace config to %s", json.dumps(current_workspace["config"]))
                         if current_workspace["config"].get("trace", {}).get("server", "off") == "on":
-                            # add another logging handler to output DEBUG logs to VSCode's channel
+                            # TODO: add another logging handler to output DEBUG logs to VSCode's channel
                             self._logger.info("Ignoring trace request for now")
                     elif has_started and method == "textDocument/didOpen":
+                        # TODO: compile the rule and return diagnostics
                         self._logger.debug("Ignoring textDocument/didOpen notification")
                     elif has_started and method == "textDocument/didSave":
+                        # TODO: compile the rule and return diagnostics
                         self._logger.debug("Ignoring textDocument/didSave notification")
 
     def initialize(self, client_options: dict) -> dict:
@@ -209,7 +211,7 @@ class YaraLanguageServer(object):
     async def remove_client(self, writer: asyncio.StreamWriter):
         ''' Close the cient input & output streams '''
         if writer.can_write_eof():
-            await writer.write_eof()
+            writer.write_eof()
         writer.close()
         await writer.wait_closed()
         self._logger.info("Disconnected client")
