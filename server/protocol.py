@@ -60,8 +60,9 @@ class Position(object):
         If the character value is greater than the line length it defaults back to the
         line length.
         '''
-        self.line = line
-        self.char = char
+        # rely on Python's runtime type conversions to ensure valid values are used
+        self.line = int(line)
+        self.char = int(char)
 
     def __repr__(self):
         return "<Position(line={:d}, char={:d})>".format(self.line, self.char)
@@ -72,6 +73,10 @@ class Range(object):
 
         A range is comparable to a selection in an editor. Therefore the end position is exclusive
         '''
+        if not isinstance(start, Position):
+            raise TypeError("Start position cannot be '{}'. Must be Position".format(type(start)))
+        elif not isinstance(end, Position):
+            raise TypeError("End position cannot be '{}'. Must be Position".format(type(end)))
         self.start = start
         self.end = end
 
@@ -83,24 +88,30 @@ class Location(object):
         ''' Represents a location inside a resource
         such as a line inside a text file
         '''
+        if not isinstance(locrange, Range):
+            raise TypeError("Location range cannot be '{}'. Must be Range".format(type(locrange)))
         self.range = locrange
-        self.uri = uri
+        self.uri = str(uri)
 
     def __repr__(self):
         return "<Location(range={}, uri={})>".format(self.range, self.uri)
 
 class Diagnostic(object):
-    def __init__(self, locrange: Range, severity: int, code: Union[int,str], message: str, source: str="yara", relatedInformation: List=[]):
+    def __init__(self, locrange: Range, severity: int, code: int, message: str, source: str="yara", relatedInformation: List=[]):
         ''' Represents a diagnostic, such as a compiler error or warning
 
         Diagnostic objects are only valid in the scope of a resource.
         '''
-        self.code = code
-        self.message = message
+        self.code = int(code)
+        self.message = str(message)
+        if not isinstance(locrange, Range):
+            raise TypeError("Location range cannot be '{}'. Must be Range".format(type(locrange)))
         self.range = locrange
+        if not isinstance(relatedInformation, list):
+            raise TypeError("Location range cannot be '{}'. Must be a List of strings".format(type(relatedInformation)))
         self.relatedInformation = relatedInformation
-        self.severity = severity
-        self.source = source
+        self.severity = int(severity)
+        self.source = str(source)
 
     def __repr__(self):
-        return "<Diagnostic(sev={:d}, code={}, msg={})>".format(self.severity, self.code, self.message)
+        return "<Diagnostic(sev={:d}, code={:d}, msg={})>".format(self.severity, self.code, self.message)
