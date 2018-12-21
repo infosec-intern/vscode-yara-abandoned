@@ -90,18 +90,17 @@ class YaraLanguageServer(object):
                         if current_workspace["config"].get("trace", {}).get("server", "off") == "on":
                             # TODO: add another logging handler to output DEBUG logs to VSCode's channel
                             self._logger.info("Ignoring trace request for now")
-                    elif has_started and method == "textDocument/didOpen":
-                        # ensure we only try to compile YARA files
-                        if message.get("params", {}).get("textDocument", {}).get("languageId", "") == "yara":
-                            document = message.get("params", {}).get("textDocument", {}).get("text", "")
-                            diagnostics = await self.provide_diagnostic(document)
-                            await self.send_response(None, diagnostics, writer)
                     elif has_started and method == "textDocument/didSave":
-                        file_path = helpers.parse_uri(message.get("params", {}).get("textDocument", {}).get("uri", ""))
+                        file_uri = message.get("params", {}).get("textDocument", {}).get("uri", "")
+                        file_path = helpers.parse_uri(file_uri)
                         with open(file_path, "rb") as ifile:
                             document = ifile.read().decode(self._encoding)
                             diagnostics = await self.provide_diagnostic(document)
-                            await self.send_response(None, diagnostics, writer)
+                            params = {
+                                "uri": file_uri,
+                                "diagnostics": diagnostics
+                            }
+                            await self.send_notification("textDocument/publishDiagnostics", params, writer)
 
     def initialize(self, client_options: dict) -> dict:
         '''Announce language support methods
@@ -160,19 +159,20 @@ class YaraLanguageServer(object):
                 if "condition:" in lines[index]:
                     # exact character doesn't actually matter here, just the line number
                     rule_range = helpers.get_rule_range(text_document, lsp.Position(index, 0))
-                    rule_text = "\n".join(lines[rule_range.start.line:rule_range.end.line])
-                    symbol_range = lsp.Range(
-                        start=lsp.Position(index, 0),
-                        end=lsp.Position(index, 0)
-                    )
-                    rules.append((rule_text, rule_range))
+                    rule = "\n".join(lines[rule_range.start.line:rule_range.end.line])
+                    # subtract 1 here because line 1 == offset 0
+                    rules.append((rule, rule_range.start.line-1))
             # 2. compile each rule individually
-            for rule_text, symbol_range in rules:
+            for rule, offset in rules:
                 try:
-                    yara.compile(source=rule_text)
+                    yara.compile(source=rule)
                 # 3. parse results
-                except yara.SyntaxError as err:
-                    line_no, msg = helpers.parse_result(str(err))
+                except yara.SyntaxError as error:
+                    line_no, msg = helpers.parse_result(str(error))
+                    symbol_range = lsp.Range(
+                        start=lsp.Position(offset+line_no, 0),
+                        end=lsp.Position(offset+line_no, 10000)
+                    )
                     diagnostics.append(
                         lsp.Diagnostic(
                             locrange=symbol_range,
@@ -181,8 +181,12 @@ class YaraLanguageServer(object):
                             message=msg
                         )
                     )
-                except yara.WarningError as warn:
-                    line_no, msg = helpers.parse_result(str(err))
+                except yara.WarningError as warning:
+                    line_no, msg = helpers.parse_result(str(warning))
+                    symbol_range = lsp.Range(
+                        start=lsp.Position(offset+line_no, 0),
+                        end=lsp.Position(offset+line_no, 10000)
+                    )
                     diagnostics.append(
                         lsp.Diagnostic(
                             locrange=symbol_range,
