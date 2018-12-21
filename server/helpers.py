@@ -1,4 +1,5 @@
 ''' Helper functions that don't quite fit elsewhere '''
+import platform
 import re
 from typing import Tuple
 from urllib.parse import unquote, urlsplit
@@ -13,7 +14,12 @@ def parse_uri(uri: str, encoding="utf-8"):
     :uri: URI string to be parsed
     :encoding: (Optional) string encoding to parse with
     '''
-    return urlsplit(unquote(uri, encoding=encoding)).path
+    file_path = urlsplit(unquote(uri, encoding=encoding)).path
+    if platform.system() == "Windows":
+        # urlsplit adds an extra slash to the beginning on windows
+        return "".join(file_path[1:])
+    else:
+        return file_path
 
 def resolve_symbol(document: str, pos: lsp.Position) -> str:
     '''Resolve a symbol located at the given position
@@ -49,7 +55,7 @@ def get_rule_range(document: str, pos: lsp.Position) -> lsp.Range:
         line = lines[index]
         match = end_pattern.match(line)
         if match:
-            end_pos = lsp.Position(line=index+1, char=0)
+            end_pos = lsp.Position(line=index, char=0)
             break
     return lsp.Range(start=start_pos, end=end_pos)
 
