@@ -35,6 +35,12 @@ class YaraLanguageServerTests(unittest.TestCase):
         self.assertEqual(line_no, 15)
         self.assertEqual(message, "invalid hex string \"$hex_string\": syntax error")
 
+    def test_helper_parse_uri(self):
+        ''' Ensure paths are properly parsed '''
+        path = "c:/one/two/three/four.txt"
+        file_uri = "file:///{}".format(path)
+        self.assertEqual(helpers.parse_uri(file_uri), path)
+
     #### PROTOCOL.PY TESTS ####
     def test_protocol_json_encoder(self):
         ''' Ensure objects are properly encoded to JSON dictionaries '''
@@ -78,9 +84,13 @@ class YaraLanguageServerTests(unittest.TestCase):
         ''' Test defintion provider '''
         self.assertTrue(False)
 
-    def test_server_diagnostic_success(self):
+    def test_server_diagnostics(self):
         ''' Test diagnostic provider successfully provides '''
         self.assertTrue(False)
+
+    def test_server_no_diagnostics(self):
+        ''' Test diagnostic provider does not provide anything '''
+        document = "rule NoDiagnostics { condition: true }"
 
     def test_server_diagnostic_rule_extraction(self):
         '''Ensure the diagnostic provider extracts the rules
@@ -138,6 +148,7 @@ if __name__ == "__main__":
     suite.addTest(YaraLanguageServerTests("test_protocol_json_encoder"))
     suite.addTest(YaraLanguageServerTests("test_helper_parse_result"))
     suite.addTest(YaraLanguageServerTests("test_helper_parse_result_multicolon"))
+    suite.addTest(YaraLanguageServerTests("test_helper_parse_uri"))
     # set up a runner and run
     runner = unittest.TextTestRunner(verbosity=2)
     results = runner.run(suite)
