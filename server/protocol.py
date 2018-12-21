@@ -84,12 +84,11 @@ class Range(object):
         return "<Range(start={}, end={})>".format(self.start, self.end)
 
 class Diagnostic(object):
-    def __init__(self, locrange: Range, severity: int, code: int, message: str, source: str="yara", relatedInformation: List=[]):
+    def __init__(self, locrange: Range, severity: int, message: str, relatedInformation: List=[]):
         ''' Represents a diagnostic, such as a compiler error or warning
 
         Diagnostic objects are only valid in the scope of a resource.
         '''
-        self.code = int(code)
         self.message = str(message)
         if not isinstance(locrange, Range):
             raise TypeError("Location range cannot be {}. Must be Range".format(type(locrange)))
@@ -98,7 +97,6 @@ class Diagnostic(object):
             raise TypeError("Location range cannot be {}. Must be a List of strings".format(type(relatedInformation)))
         self.relatedInformation = relatedInformation
         self.severity = int(severity)
-        self.source = str(source)
 
     def __repr__(self):
         return "<Diagnostic(sev={:d}, code={:d}, msg={})>".format(self.severity, self.code, self.message)
@@ -121,12 +119,10 @@ class JSONEncoder(json.JSONEncoder):
         ''' Custom JSON encoder '''
         if isinstance(obj, Diagnostic):
             return {
-                "code": obj.code,
                 "message": obj.message,
                 "range": obj.range,
                 "relatedInformation": obj.relatedInformation,
-                "severity": obj.severity,
-                "source": obj.source
+                "severity": obj.severity
             }
         elif isinstance(obj, Location):
             return {
