@@ -90,7 +90,8 @@ class YaraLanguageServerTests(unittest.TestCase):
 
     def test_server_no_diagnostics(self):
         ''' Test diagnostic provider does not provide anything '''
-        document = "rule NoDiagnostics { condition: true }"
+        # document = "rule NoDiagnostics { condition: true }"
+        self.assertTrue(False)
 
     def test_server_diagnostic_rule_extraction(self):
         '''Ensure the diagnostic provider extracts the rules
