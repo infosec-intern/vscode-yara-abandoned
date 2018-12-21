@@ -281,6 +281,6 @@ class YaraLanguageServer(object):
 
     async def write_data(self, message: str, writer: asyncio.StreamWriter):
         ''' Write a JSON-RPC message to the given stream with the proper encoding and formatting '''
-        self._logger.debug("output => %r", message.encode(self._encoding))
+        # self._logger.debug("output => %r", message.encode(self._encoding))
         writer.write("Content-Length: {:d}\r\n\r\n{:s}".format(len(message), message).encode(self._encoding))
         await writer.drain()
