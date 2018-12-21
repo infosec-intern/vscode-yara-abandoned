@@ -65,6 +65,12 @@ def parse_result(result: str) -> Tuple[int,str]:
     :result: Text to parse - takes the form:
             "line <number>: <message>"
     '''
-    meta, message = tuple(result.split(":"))
+    data = result.split(":")
+    if len(data) == 2:
+        meta, message = tuple(data)
+    elif len(data) > 2:
+        meta = data[0]
+        # repack the rest of the message string in case it contains colons
+        message = ":".join(data[1:])
     _, line_no = tuple(meta.split(" "))
     return int(line_no), message.strip()
