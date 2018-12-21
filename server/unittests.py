@@ -122,16 +122,6 @@ class YaraLanguageServerTests(unittest.TestCase):
         self.assertTrue(False)
 
     #### CONNECTION TESTS ####
-    def test_transport_opened(self):
-        ''' Ensure the transport mechanism is properly opened '''
-        try:
-            socket.create_connection(("127.0.0.1", 8471))
-            connected = True
-        except ConnectionRefusedError:
-            connected = False
-        finally:
-            self.assertTrue(connected)
-
     def test_transport_closed(self):
         ''' Ensure the transport mechanism is properly closed '''
         try:
@@ -142,6 +132,16 @@ class YaraLanguageServerTests(unittest.TestCase):
         finally:
             self.assertTrue(not_connected)
 
+    def test_transport_opened(self):
+        ''' Ensure the transport mechanism is properly opened '''
+        try:
+            socket.create_connection(("127.0.0.1", 8471))
+            connected = True
+        except ConnectionRefusedError:
+            connected = False
+        finally:
+            self.assertTrue(connected)
+
 
 if __name__ == "__main__":
     # add all the tet cases to be run
@@ -150,6 +150,8 @@ if __name__ == "__main__":
     suite.addTest(YaraLanguageServerTests("test_helper_parse_result"))
     suite.addTest(YaraLanguageServerTests("test_helper_parse_result_multicolon"))
     suite.addTest(YaraLanguageServerTests("test_helper_parse_uri"))
+    suite.addTest(YaraLanguageServerTests("test_transport_closed"))
+    suite.addTest(YaraLanguageServerTests("test_transport_opened"))
     # set up a runner and run
     runner = unittest.TextTestRunner(verbosity=2)
     results = runner.run(suite)
