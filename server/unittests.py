@@ -23,15 +23,17 @@ class YaraLanguageServerTests(unittest.TestCase):
     #### HELPER.PY TESTS ####
     def test_helper_parse_result(self):
         ''' Ensure the parse_result() function properly parses a given diagnostic '''
-        self.assertTrue(False)
+        result = "line 14: syntax error, unexpected <true>, expecting text string"
+        line_no, message = helpers.parse_result(result)
+        self.assertEqual(line_no, 14)
+        self.assertEqual(message, "syntax error, unexpected <true>, expecting text string")
 
     def test_helper_parse_result_multicolon(self):
         ''' Sometimes results have colons in the messages - ensure this doesn't affect things '''
-        self.assertTrue(False)
-
-    def test_helper_parse_result_nocolon(self):
-        ''' Ensure results with no colons don't raise too many exceptions '''
-        self.assertTrue(False)
+        result = "line 15: invalid hex string \"$hex_string\": syntax error"
+        line_no, message = helpers.parse_result(result)
+        self.assertEqual(line_no, 15)
+        self.assertEqual(message, "invalid hex string \"$hex_string\": syntax error")
 
     #### PROTOCOL.PY TESTS ####
     def test_protocol_json_encoder(self):
@@ -134,8 +136,8 @@ if __name__ == "__main__":
     # add all the tet cases to be run
     suite = unittest.TestSuite()
     suite.addTest(YaraLanguageServerTests("test_protocol_json_encoder"))
-    # suite.addTest(YaraLanguageServerTests("test_transport_opened"))
-    # suite.addTest(YaraLanguageServerTests("test_transport_closed"))
+    suite.addTest(YaraLanguageServerTests("test_helper_parse_result"))
+    suite.addTest(YaraLanguageServerTests("test_helper_parse_result_multicolon"))
     # set up a runner and run
     runner = unittest.TextTestRunner(verbosity=2)
     results = runner.run(suite)
