@@ -31,6 +31,16 @@ def resolve_symbol(document: str, pos: lsp.Position) -> str:
     symbol = ""
     return symbol
 
+def get_first_non_whitespace_index(line: str) -> int:
+    '''Get the first non-whitespace character index in a given line
+
+    :line: Text line to parse
+    '''
+    for index, char in enumerate(line):
+        if char.strip():
+            # self._logger.debug("first char is {} at position {:d}".format(char, index))
+            return index
+
 def get_rule_range(document: str, pos: lsp.Position) -> lsp.Range:
     '''Get the range of the YARA rule that a given symbol is in
 
