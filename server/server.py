@@ -225,7 +225,7 @@ class YaraLanguageServer(object):
                 data = await reader.readexactly(int(value))
             else:
                 data = await reader.readline()
-            # self._logger.debug("input <= %r", data)
+            self._logger.debug("input <= %r", data)
             request = json.loads(data.decode(self._encoding))
         return request
 

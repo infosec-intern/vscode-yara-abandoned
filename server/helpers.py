@@ -49,7 +49,7 @@ def parse_result(result: str) -> Tuple[int,str]:
     '''Parse the results from a YARA compilation attempt
 
     :result: Text to parse - takes the form:
-            "line <number>: <message>"
+            "line {number}: {message}"
     '''
     meta, message = tuple(result.split(":", maxsplit=1))
     _, line_no = tuple(meta.split(" "))
