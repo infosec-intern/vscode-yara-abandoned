@@ -89,6 +89,10 @@ class YaraLanguageServerTests(unittest.TestCase):
         self.assertEqual(json.dumps(diag, cls=protocol.JSONEncoder), json.dumps(diag_dict))
 
     #### SERVER.PY TESTS ####
+    def test_server_cmd_compile_rule(self):
+        ''' Test the "CompileRule" command is successfully executed '''
+        self.assertTrue(False)
+
     def test_server_code_completion(self):
         ''' Test code completion provider '''
         self.assertTrue(False)
