@@ -7,30 +7,6 @@ from urllib.parse import unquote, urlsplit
 import protocol as lsp
 
 
-def parse_uri(uri: str, encoding="utf-8"):
-    '''
-    Parse a path out of a given uri
-
-    :uri: URI string to be parsed
-    :encoding: (Optional) string encoding to parse with
-    '''
-    file_path = urlsplit(unquote(uri, encoding=encoding)).path
-    if platform.system() == "Windows":
-        # urlsplit adds an extra slash to the beginning on windows
-        return "".join(file_path[1:])
-    else:
-        return file_path
-
-def resolve_symbol(document: str, pos: lsp.Position) -> str:
-    '''Resolve a symbol located at the given position
-
-    :document: Text to search in
-               To determine line numbers, text is split at newlines, and carriage returns are ignored
-    :pos: Symbol position to base range off of
-    '''
-    symbol = ""
-    return symbol
-
 def get_first_non_whitespace_index(line: str) -> int:
     '''Get the first non-whitespace character index in a given line
 
@@ -78,3 +54,27 @@ def parse_result(result: str) -> Tuple[int,str]:
     meta, message = tuple(result.split(":", maxsplit=1))
     _, line_no = tuple(meta.split(" "))
     return int(line_no), message.strip()
+
+def parse_uri(uri: str, encoding="utf-8"):
+    '''
+    Parse a path out of a given uri
+
+    :uri: URI string to be parsed
+    :encoding: (Optional) string encoding to parse with
+    '''
+    file_path = urlsplit(unquote(uri, encoding=encoding)).path
+    if platform.system() == "Windows":
+        # urlsplit adds an extra slash to the beginning on windows
+        return "".join(file_path[1:])
+    else:
+        return file_path
+
+def resolve_symbol(document: str, pos: lsp.Position) -> str:
+    '''Resolve a symbol located at the given position
+
+    :document: Text to search in
+               To determine line numbers, text is split at newlines, and carriage returns are ignored
+    :pos: Symbol position to base range off of
+    '''
+    symbol = ""
+    return symbol
