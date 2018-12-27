@@ -101,6 +101,8 @@ class YaraLanguageServer(object):
                                 "diagnostics": diagnostics
                             }
                             await self.send_notification("textDocument/publishDiagnostics", params, writer)
+                    elif has_started and method == "workspace/executeCommand":
+                        self._logger.info(message)
 
     def initialize(self, client_options: dict) -> dict:
         '''Announce language support methods
@@ -151,48 +153,36 @@ class YaraLanguageServer(object):
         '''
         if HAS_YARA:
             diagnostics = []
-            rules = []
-            # 1. identify where each rule starts and ends
-            lines = text_document.split("\n")
-            for index in range(0, len(lines)):
-                if "condition:" in lines[index]:
-                    # exact character doesn't actually matter here, just the line number
-                    rule_range = helpers.get_rule_range(text_document, lsp.Position(index, 0))
-                    rule = "\n".join(lines[0:rule_range.end.line+1])
-                    # print(rule)
-                    # subtract 1 here because line 1 == offset 0
-                    rules.append(rule)
-            # 2. compile each rule individually
-            for rule in rules:
-                try:
-                    yara.compile(source=rule)
-                # 3. parse results
-                except yara.SyntaxError as error:
-                    line_no, msg = helpers.parse_result(str(error))
-                    symbol_range = lsp.Range(
-                        start=lsp.Position(line_no-1, 0),
-                        end=lsp.Position(line_no-1, 10000)
+            try:
+                yara.compile(source=text_document)
+            except yara.SyntaxError as error:
+                line_no, msg = helpers.parse_result(str(error))
+                first_char = helpers.get_first_non_whitespace_index(text_document.split("\n")[line_no-1])
+                symbol_range = lsp.Range(
+                    start=lsp.Position(line_no-1, first_char),
+                    end=lsp.Position(line_no-1, 10000)
+                )
+                diagnostics.append(
+                    lsp.Diagnostic(
+                        locrange=symbol_range,
+                        severity=lsp.DiagnosticSeverity.ERROR,
+                        message=msg
                     )
-                    diagnostics.append(
-                        lsp.Diagnostic(
-                            locrange=symbol_range,
-                            severity=lsp.DiagnosticSeverity.ERROR,
-                            message=msg
-                        )
+                )
+            except yara.WarningError as warning:
+                line_no, msg = helpers.parse_result(str(warning))
+                first_char = helpers.get_first_non_whitespace_index(text_document.split("\n")[line_no-1])
+                symbol_range = lsp.Range(
+                    start=lsp.Position(line_no-1, first_char),
+                    end=lsp.Position(line_no-1, 10000)
+                )
+                diagnostics.append(
+                    lsp.Diagnostic(
+                        locrange=symbol_range,
+                        severity=lsp.DiagnosticSeverity.WARNING,
+                        message=msg
                     )
-                except yara.WarningError as warning:
-                    line_no, msg = helpers.parse_result(str(warning))
-                    symbol_range = lsp.Range(
-                        start=lsp.Position(line_no-1, 0),
-                        end=lsp.Position(line_no-1, 10000)
-                    )
-                    diagnostics.append(
-                        lsp.Diagnostic(
-                            locrange=symbol_range,
-                            severity=lsp.DiagnosticSeverity.WARNING,
-                            message=msg
-                        )
-                    )
+                )
             return diagnostics
         else:
             self._logger.error("yara-python is not installed. Diagnostics are disabled")
