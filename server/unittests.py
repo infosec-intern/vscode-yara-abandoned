@@ -20,6 +20,23 @@ class YaraLanguageServerTests(unittest.TestCase):
         ''' Clean things up '''
         pass
 
+    #### CONFIG TESTS ####
+    def test_config_compile_on_save_false(self):
+        ''' Ensure documents are not compiled on save when false '''
+        self.assertFalse(True)
+
+    def test_config_compile_on_save_true(self):
+        ''' Ensure documents are compiled on save when true '''
+        self.assertTrue(False)
+
+    def test_config_require_imports_false(self):
+        ''' Ensure all code completion suggestions are sent when false '''
+        self.assertFalse(True)
+
+    def test_config_require_imports_true(self):
+        ''' Ensure only imported modules are suggested when true '''
+        self.assertTrue(False)
+
     #### HELPER.PY TESTS ####
     def test_helper_parse_result(self):
         ''' Ensure the parse_result() function properly parses a given diagnostic '''
