@@ -30,7 +30,7 @@ class YaraLanguageServer(object):
         :reader: asyncio StreamReader. The connected client will write to this stream
         :writer: asyncio.StreamWriter. The connected client will read from this stream
         '''
-        current_workspace = {"config": None}
+        config = {"config": {}}
         has_shutdown = False
         has_started = False
         self._logger.info("Client connected")
@@ -85,12 +85,12 @@ class YaraLanguageServer(object):
                         await self.send_response(None, {"success": proper_shutdown}, writer)
                         await self.remove_client(writer)
                     elif has_started and method == "workspace/didChangeConfiguration":
-                        current_workspace["config"] = message.get("params", {}).get("settings", {}).get("yara", {})
-                        self._logger.debug("Changed workspace config to %s", json.dumps(current_workspace["config"]))
-                        if current_workspace["config"].get("trace", {}).get("server", "off") == "on":
+                        config["config"] = message.get("params", {}).get("settings", {}).get("yara", {})
+                        self._logger.debug("Changed workspace config to %s", json.dumps(config["config"]))
+                        if config["config"].get("trace", {}).get("server", "off") == "on":
                             # TODO: add another logging handler to output DEBUG logs to VSCode's channel
                             self._logger.info("Ignoring trace request for now")
-                    elif has_started and method == "textDocument/didSave":
+                    elif has_started and config["config"].get("compile_on_save", False) and method == "textDocument/didSave":
                         file_uri = message.get("params", {}).get("textDocument", {}).get("uri", "")
                         file_path = helpers.parse_uri(file_uri)
                         with open(file_path, "rb") as ifile:
@@ -150,7 +150,6 @@ class YaraLanguageServer(object):
         :text_document: Contents of YARA rule file
         '''
         if HAS_YARA:
-            self._logger.warning("provide_diagnostic() is not yet implemented")
             diagnostics = []
             rules = []
             # 1. identify where each rule starts and ends
@@ -159,39 +158,38 @@ class YaraLanguageServer(object):
                 if "condition:" in lines[index]:
                     # exact character doesn't actually matter here, just the line number
                     rule_range = helpers.get_rule_range(text_document, lsp.Position(index, 0))
-                    rule = "\n".join(lines[rule_range.start.line:rule_range.end.line])
+                    rule = "\n".join(lines[0:rule_range.end.line+1])
+                    # print(rule)
                     # subtract 1 here because line 1 == offset 0
-                    rules.append((rule, rule_range.start.line-1))
+                    rules.append(rule)
             # 2. compile each rule individually
-            for rule, offset in rules:
+            for rule in rules:
                 try:
                     yara.compile(source=rule)
                 # 3. parse results
                 except yara.SyntaxError as error:
                     line_no, msg = helpers.parse_result(str(error))
                     symbol_range = lsp.Range(
-                        start=lsp.Position(offset+line_no, 0),
-                        end=lsp.Position(offset+line_no, 10000)
+                        start=lsp.Position(line_no-1, 0),
+                        end=lsp.Position(line_no-1, 10000)
                     )
                     diagnostics.append(
                         lsp.Diagnostic(
                             locrange=symbol_range,
                             severity=lsp.DiagnosticSeverity.ERROR,
-                            code=0,
                             message=msg
                         )
                     )
                 except yara.WarningError as warning:
                     line_no, msg = helpers.parse_result(str(warning))
                     symbol_range = lsp.Range(
-                        start=lsp.Position(offset+line_no, 0),
-                        end=lsp.Position(offset+line_no, 10000)
+                        start=lsp.Position(line_no-1, 0),
+                        end=lsp.Position(line_no-1, 10000)
                     )
                     diagnostics.append(
                         lsp.Diagnostic(
                             locrange=symbol_range,
                             severity=lsp.DiagnosticSeverity.WARNING,
-                            code=1,
                             message=msg
                         )
                     )
@@ -220,7 +218,7 @@ class YaraLanguageServer(object):
         if curr_symbol_name is None:
             return {}
         else:
-            rule_range = helpers.get_rule(params["textDocument"], symbol_pos)
+            rule_range = helpers.get_rule_range(params["textDocument"], symbol_pos)
             return {}
 
     async def read_request(self, reader: asyncio.StreamReader) -> dict:
@@ -281,6 +279,6 @@ class YaraLanguageServer(object):
 
     async def write_data(self, message: str, writer: asyncio.StreamWriter):
         ''' Write a JSON-RPC message to the given stream with the proper encoding and formatting '''
-        # self._logger.debug("output => %r", message.encode(self._encoding))
+        self._logger.debug("output => %r", message.encode(self._encoding))
         writer.write("Content-Length: {:d}\r\n\r\n{:s}".format(len(message), message).encode(self._encoding))
         await writer.drain()
