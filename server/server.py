@@ -157,10 +157,12 @@ class YaraLanguageServer(object):
                 yara.compile(source=text_document)
             except yara.SyntaxError as error:
                 line_no, msg = helpers.parse_result(str(error))
-                first_char = helpers.get_first_non_whitespace_index(text_document.split("\n")[line_no-1])
+                # VSCode is zero-indexed
+                line_no -= 1
+                first_char = helpers.get_first_non_whitespace_index(text_document.split("\n")[line_no])
                 symbol_range = lsp.Range(
-                    start=lsp.Position(line_no-1, first_char),
-                    end=lsp.Position(line_no-1, 10000)
+                    start=lsp.Position(line_no, first_char),
+                    end=lsp.Position(line_no, 10000)
                 )
                 diagnostics.append(
                     lsp.Diagnostic(
@@ -171,10 +173,12 @@ class YaraLanguageServer(object):
                 )
             except yara.WarningError as warning:
                 line_no, msg = helpers.parse_result(str(warning))
-                first_char = helpers.get_first_non_whitespace_index(text_document.split("\n")[line_no-1])
+                # VSCode is zero-indexed
+                line_no -= 1
+                first_char = helpers.get_first_non_whitespace_index(text_document.split("\n")[line_no])
                 symbol_range = lsp.Range(
-                    start=lsp.Position(line_no-1, first_char),
-                    end=lsp.Position(line_no-1, 10000)
+                    start=lsp.Position(line_no, first_char),
+                    end=lsp.Position(line_no, 10000)
                 )
                 diagnostics.append(
                     lsp.Diagnostic(
