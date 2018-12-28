@@ -260,6 +260,7 @@ class YaraLanguageServerTests(unittest.TestCase):
                 self.assertFalse(connection_closed, "Server connection refused")
         self.loop.run_until_complete(run())
 
+
 if __name__ == "__main__":
     # add all the tet cases to be run
     suite = unittest.TestSuite()
@@ -270,7 +271,7 @@ if __name__ == "__main__":
     suite.addTest(YaraLanguageServerTests("test_server_diagnostics"))
     suite.addTest(YaraLanguageServerTests("test_server_no_diagnostics"))
     # suite.addTest(YaraLanguageServerTests("test_transport_closed"))
-    suite.addTest(YaraLanguageServerTests("test_transport_opened"))
+    # suite.addTest(YaraLanguageServerTests("test_transport_opened"))
     # set up a runner and run
     runner = unittest.TextTestRunner(verbosity=2)
     results = runner.run(suite)
