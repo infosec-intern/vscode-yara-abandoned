@@ -19,20 +19,18 @@ class YaraLanguageServerTests(unittest.TestCase):
         self.server = server.YaraLanguageServer()
         self.server_address = "127.0.0.1"
         self.server_port = 8471
-        async def standup_server(callback, host: str, port: int):
-            socket_server = await asyncio.start_server(
-                client_connected_cb=callback,
-                host=host,
-                port=port)
-            async with socket_server:
-                await socket_server.serve_forever()
-        self.server_task = asyncio.ensure_future(standup_server(
-            callback=self.server.handle_client,
-            host=self.server_address,
-            port=self.server_port
-        ))
-        print(self.server_task)
-        print(dir(self.server_task))
+        # async def standup_server(callback, host: str, port: int):
+        #     socket_server = await asyncio.start_server(
+        #         client_connected_cb=callback,
+        #         host=host,
+        #         port=port)
+        #     async with socket_server:
+        #         await socket_server.serve_forever()
+        # self.server_task = asyncio.ensure_future(standup_server(
+        #     callback=self.server.handle_client,
+        #     host=self.server_address,
+        #     port=self.server_port
+        # ))
 
     def setUp(self):
         ''' Create a new loop and server for each test '''
@@ -148,7 +146,7 @@ class YaraLanguageServerTests(unittest.TestCase):
         ''' Test diagnostic provider successfully provides '''
         test_rule = self.rules_path.joinpath("simple_mistake.yar")
         async def run(text: str):
-            result = await self.server.provide_diagnostic()
+            result = await self.server.provide_diagnostic(text)
             self.assertEqual(len(result), 1)
             diagnostic = result[0]
             self.assertIsInstance(diagnostic, protocol.Diagnostic)
