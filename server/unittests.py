@@ -19,23 +19,23 @@ class YaraLanguageServerTests(unittest.TestCase):
         self.server = server.YaraLanguageServer()
         self.server_address = "127.0.0.1"
         self.server_port = 8471
-        # async def standup_server(callback, host: str, port: int):
-        #     socket_server = await asyncio.start_server(
-        #         client_connected_cb=callback,
-        #         host=host,
-        #         port=port)
-        #     async with socket_server:
-        #         await socket_server.serve_forever()
-        # self.server_task = asyncio.ensure_future(standup_server(
-        #     callback=self.server.handle_client,
-        #     host=self.server_address,
-        #     port=self.server_port
-        # ))
+        async def standup_server(callback, host: str, port: int):
+            socket_server = await asyncio.start_server(
+                client_connected_cb=callback,
+                host=host,
+                port=port)
+            async with socket_server:
+                await socket_server.serve_forever()
+        self.server_task = asyncio.ensure_future(standup_server(
+            callback=self.server.handle_client,
+            host=self.server_address,
+            port=self.server_port
+        ))
 
     def setUp(self):
         ''' Create a new loop and server for each test '''
         self.loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(None)
+        asyncio.set_event_loop(self.loop)
 
     @classmethod
     def tearDownClass(self):
@@ -59,18 +59,76 @@ class YaraLanguageServerTests(unittest.TestCase):
     #### CONFIG TESTS ####
     def test_config_compile_on_save_false(self):
         ''' Ensure documents are not compiled on save when false '''
+        change_config_request = {
+            "jsonrpc":"2.0",
+            "method": "workspace/didChangeConfiguration",
+            "params": {
+                "settings": {
+                    "yara": {"compile_on_save": False}
+                }
+            }
+        }
+        save_file = self.rules_path.joinpath("simple_mistake.yar").resolve()
+        save_request = {
+            "jsonrpc": "2.0",
+            "method":"textDocument/didSave",
+            "params": {
+                "textDocument": {
+                    "uri":"file:///{}".format(urlencode(save_file)),
+                    "version": 2
+                }
+            }
+        }
         self.assertFalse(True)
 
     def test_config_compile_on_save_true(self):
         ''' Ensure documents are compiled on save when true '''
+        change_config_request = {
+            "jsonrpc":"2.0",
+            "method": "workspace/didChangeConfiguration",
+            "params": {
+                "settings": {
+                    "yara": {"compile_on_save": True}
+                }
+            }
+        }
+        save_file = self.rules_path.joinpath("simple_mistake.yar").resolve()
+        save_request = {
+            "jsonrpc": "2.0",
+            "method":"textDocument/didSave",
+            "params": {
+                "textDocument": {
+                    "uri":"file:///{}".format(urlencode(save_file)),
+                    "version": 2
+                }
+            }
+        }
         self.assertTrue(False)
 
     def test_config_require_imports_false(self):
         ''' Ensure all code completion suggestions are sent when false '''
+        change_config_request = {
+            "jsonrpc":"2.0",
+            "method": "workspace/didChangeConfiguration",
+            "params": {
+                "settings": {
+                    "yara": {"require_imports": False}
+                }
+            }
+        }
         self.assertFalse(True)
 
     def test_config_require_imports_true(self):
         ''' Ensure only imported modules are suggested when true '''
+        change_config_request = {
+            "jsonrpc":"2.0",
+            "method": "workspace/didChangeConfiguration",
+            "params": {
+                "settings": {
+                    "yara": {"require_imports": True}
+                }
+            }
+        }
         self.assertTrue(False)
 
     #### HELPER.PY TESTS ####
@@ -231,7 +289,7 @@ if __name__ == "__main__":
     suite.addTest(YaraLanguageServerTests("test_server_diagnostics"))
     suite.addTest(YaraLanguageServerTests("test_server_no_diagnostics"))
     # suite.addTest(YaraLanguageServerTests("test_transport_closed"))
-    # suite.addTest(YaraLanguageServerTests("test_transport_opened"))
+    suite.addTest(YaraLanguageServerTests("test_transport_opened"))
     # set up a runner and run
     runner = unittest.TextTestRunner(verbosity=2)
     results = runner.run(suite)
