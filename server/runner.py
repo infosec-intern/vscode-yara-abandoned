@@ -23,6 +23,8 @@ def exc_handler(loop, context: dict):
     try:
         server = future.result()
         print("future result: %s" % server)
+    except KeyboardInterrupt:
+        logger.error("Stopping at user's request")
     except ConnectionResetError:
         logger.error("Client disconnected unexpectedly")
     except Exception as err:
@@ -45,9 +47,4 @@ async def main():
 
 
 if __name__ == "__main__":
-    try:
-        asyncio.run(main(), debug=True)
-    except KeyboardInterrupt:
-        logger.error("Stopping at user's request")
-    except Exception as err:
-        logging.exception(err)
+    asyncio.run(main(), debug=True)
