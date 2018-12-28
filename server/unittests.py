@@ -19,18 +19,6 @@ class YaraLanguageServerTests(unittest.TestCase):
         self.server = server.YaraLanguageServer()
         self.server_address = "127.0.0.1"
         self.server_port = 8471
-        async def standup_server(callback, host: str, port: int):
-            socket_server = await asyncio.start_server(
-                client_connected_cb=callback,
-                host=host,
-                port=port)
-            async with socket_server:
-                await socket_server.serve_forever()
-        self.server_task = asyncio.ensure_future(standup_server(
-            callback=self.server.handle_client,
-            host=self.server_address,
-            port=self.server_port
-        ))
 
     def setUp(self):
         ''' Create a new loop and server for each test '''
@@ -44,14 +32,7 @@ class YaraLanguageServerTests(unittest.TestCase):
 
     def tearDown(self):
         ''' Shut down the server created for this test '''
-        # async def cancel_task(task):
-        #     task.cancel()
-        #     try:
-        #         await task
-        #     except asyncio.CancelledError:
-        #         print("task cancelled")
         if self.loop.is_running():
-            # asyncio.run(cancel_task(self.server_task))
             self.loop.stop()
         if not self.loop.is_closed():
             self.loop.close()
