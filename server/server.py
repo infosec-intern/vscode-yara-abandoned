@@ -71,6 +71,15 @@ class YaraLanguageServer(object):
                     elif has_started and method == "textDocument/rename":
                         renames = await self.provide_rename(message["params"])
                         await self.send_response(message["id"], renames, writer)
+                    elif has_started and method == "workspace/executeCommand":
+                        cmd = message.get("params", {}).get("command", "")
+                        args = message.get("params", {}).get("arguments", [])
+                        if cmd == "yara.CompileRule":
+                            self._logger.info("Compiling rule per user's request")
+                        elif cmd == "yara.CompileAllRules":
+                            self._logger.info("Compiling all rules in workspace per user's request")
+                        else:
+                            self._logger.warning("Unknown command: %s [%s]", cmd, ",".join(args))
                 # if no id is present, this is a JSON-RPC notification
                 else:
                     if method == "initialized":
@@ -106,8 +115,6 @@ class YaraLanguageServer(object):
                                 "diagnostics": diagnostics
                             }
                             await self.send_notification("textDocument/publishDiagnostics", params, writer)
-                    elif has_started and method == "workspace/executeCommand":
-                        self._logger.info(message)
 
     def initialize(self, client_options: dict) -> dict:
         '''Announce language support methods
