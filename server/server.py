@@ -219,9 +219,31 @@ class YaraLanguageServer(object):
         return {}
 
     async def provide_reference(self, params: dict) -> dict:
-        ''' Respond to the textDocument/references request '''
+        '''The references request is sent from the client to the server to resolve project-wide references for the symbol denoted by the given text document position
+
+        Returns a (possibly empty) list of symbol Locations
+        '''
         self._logger.warning("provide_reference() is not yet implemented")
-        return {}
+        file_uri = params.get("textDocument", {}).get("uri", "")
+        results = []
+        if file_uri:
+            file_path = helpers.parse_uri(file_uri, encoding=self._encoding)
+            pos = lsp.Position(line=params["position"]["line"], char=params["position"]["character"])
+            with open(file_path, "r") as rule_file:
+                text = rule_file.read()
+                symbol = helpers.resolve_symbol(text, pos)
+                # check to see if the symbol is a variable or a rule name (currently the only valid symbols)
+                if symbol[0] in self._varchar:
+                    rule_range = helpers.get_rule_range(text, pos)
+                    yara_rule = text.split("\n")[rule_range.start.line:rule_range.end.line+1]
+                    print("\n".join(yara_rule))
+                    # any possible first character matching self._varchar must be treated as a reference
+                    var_regex = "[{}]{}\\b".format("".join(self._varchar), "".join(symbol[1:]))
+                    print(var_regex)
+                else:
+                    rules = filter(lambda l: l.startswith("rule {}".format(symbol)), text.split("\n"))
+                    print(list(rules))
+        return results
 
     async def provide_rename(self, params: dict) -> dict:
         ''' Respond to the textDocument/rename request '''
