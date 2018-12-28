@@ -144,29 +144,26 @@ class YaraLanguageServerTests(unittest.TestCase):
 
     def test_server_diagnostics(self):
         ''' Test diagnostic provider successfully provides '''
-        test_rule = self.rules_path.joinpath("simple_mistake.yar")
-        async def run(text: str):
-            result = await self.server.provide_diagnostic(text)
+        async def run():
+            document = "rule OneDiagnostic { condition: $true }"
+            result = await self.server.provide_diagnostic(document)
             self.assertEqual(len(result), 1)
             diagnostic = result[0]
             self.assertIsInstance(diagnostic, protocol.Diagnostic)
             self.assertIsInstance(diagnostic.range, protocol.Range)
             self.assertEqual(diagnostic.severity, 1)
             self.assertEqual(diagnostic.message, "undefined string \"$true\"")
-            self.assertEqual(diagnostic.range.start.line, 4)
-            self.assertEqual(diagnostic.range.end.line, 4)
-        self.loop.run_until_complete(run(test_rule.read_text()))
+            self.assertEqual(diagnostic.range.start.line, 0)
+            self.assertEqual(diagnostic.range.end.line, 0)
+        self.loop.run_until_complete(run())
 
     def test_server_no_diagnostics(self):
         ''' Test diagnostic provider does not provide anything '''
-        # document = "rule NoDiagnostics { condition: true }"
-        self.assertTrue(False)
-
-    def test_server_diagnostic_rule_extraction(self):
-        '''Ensure the diagnostic provider extracts the rules
-        properly and separately
-        '''
-        self.assertTrue(False)
+        async def run():
+            document = "rule NoDiagnostics { condition: true }"
+            result = await self.server.provide_diagnostic(document)
+            self.assertListEqual(result, [])
+        self.loop.run_until_complete(run())
 
     def test_server_exceptions_handled(self):
         ''' Test the server handles exceptions properly '''
@@ -232,6 +229,7 @@ if __name__ == "__main__":
     suite.addTest(YaraLanguageServerTests("test_helper_parse_result_multicolon"))
     suite.addTest(YaraLanguageServerTests("test_helper_parse_uri"))
     suite.addTest(YaraLanguageServerTests("test_server_diagnostics"))
+    suite.addTest(YaraLanguageServerTests("test_server_no_diagnostics"))
     # suite.addTest(YaraLanguageServerTests("test_transport_closed"))
     # suite.addTest(YaraLanguageServerTests("test_transport_opened"))
     # set up a runner and run
