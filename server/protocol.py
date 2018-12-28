@@ -99,7 +99,7 @@ class Diagnostic(object):
         self.severity = int(severity)
 
     def __repr__(self):
-        return "<Diagnostic(sev={:d}, msg={})>".format(self.severity, self.message)
+        return "<Diagnostic(severity={:d}, message={})>".format(self.severity, self.message)
 
 class Location(object):
     def __init__(self, locrange: Range, uri: str):
