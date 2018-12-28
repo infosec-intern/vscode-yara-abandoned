@@ -50,7 +50,7 @@ class YaraLanguageServer(object):
                     if not has_started and method == "initialize":
                         self.workspace = helpers.parse_uri(message["params"]["rootUri"], encoding=self._encoding)
                         self._logger.info("Client workspace folder: %s", self.workspace)
-                        client_options = message.get("params", {}).get("capabilities", {}).get("textDocument", {})
+                        client_options = message.get("params", {}).get("capabilities", {})
                         announcement = self.initialize(client_options)
                         await self.send_response(message["id"], announcement, writer)
                     elif has_started and method == "shutdown":
@@ -82,14 +82,13 @@ class YaraLanguageServer(object):
                         self._logger.info("Server exiting process per client request")
                         # first remove the client associated with this handler
                         await self.remove_client(writer)
-                        # then clean up all the remaining tasks
-                        loop = asyncio.get_event_loop()
-                        for task in asyncio.Task.all_tasks(loop=loop):
-                            task.cancel()
-                        # finally, stop the server
-                        loop.stop()
-                        loop.close()
-                        print("loop is closed:", loop.is_closed())
+                        # # then clean up all the remaining tasks
+                        # loop = asyncio.get_event_loop()
+                        # for task in asyncio.Task.all_tasks(loop=loop):
+                        #     task.cancel()
+                        # # finally, stop the server
+                        # loop.stop()
+                        # loop.close()
                     elif has_started and method == "workspace/didChangeConfiguration":
                         config["config"] = message.get("params", {}).get("settings", {}).get("yara", {})
                         self._logger.debug("Changed workspace config to %s", json.dumps(config["config"]))
@@ -115,26 +114,35 @@ class YaraLanguageServer(object):
 
         :client_options: Dictionary of registration options that the client supports
         '''
+        doc_options = client_options.get("textDocument", {})
+        ws_options = client_options.get("workspace", {})
         server_options = {}
-        if client_options.get("synchronization", {}).get("dynamicRegistration", False):
-            # Documents are synced by always sending the full content of the document
-            server_options["textDocumentSync"] = lsp.TextSyncKind.FULL
-        if client_options.get("completion", {}).get("dynamicRegistration", False):
+        if doc_options.get("completion", {}).get("dynamicRegistration", False):
             server_options["completionProvider"] = {
                 # The server does not provide support to resolve additional information for a completion item
                 "resolveProvider": False,
                 "triggerCharacters": ["."]
             }
-        if client_options.get("definition", {}).get("dynamicRegistration", False):
+        if doc_options.get("definition", {}).get("dynamicRegistration", False):
             server_options["definitionProvider"] = True
-        if client_options.get("references", {}).get("dynamicRegistration", False):
-            server_options["referencesProvider"] = True
-        # if client_options.get("documentHighlight", {}).get("dynamicRegistration", False):
+        # if doc_options.get("documentHighlight", {}).get("dynamicRegistration", False):
         #     server_options["documentHighlightProvider"] = True
-        if client_options.get("formatting", {}).get("dynamicRegistration", False):
+        if ws_options.get("executeCommand", {}).get("dynamicRegistration", False):
+            server_options["executeCommandProvider"] = {
+                "commands": [
+                    "yara.CompileRule",
+                    "yara.CompileAllRules"
+                ]
+            }
+        if doc_options.get("formatting", {}).get("dynamicRegistration", False):
             server_options["documentFormattingProvider"] = True
-        if client_options.get("rename", {}).get("dynamicRegistration", False):
+        if doc_options.get("references", {}).get("dynamicRegistration", False):
+            server_options["referencesProvider"] = True
+        if doc_options.get("rename", {}).get("dynamicRegistration", False):
             server_options["renameProvider"] = True
+        if doc_options.get("synchronization", {}).get("dynamicRegistration", False):
+            # Documents are synced by always sending the full content of the document
+            server_options["textDocumentSync"] = lsp.TextSyncKind.FULL
         return {"capabilities": server_options}
 
     async def provide_code_completion(self, params: dict) -> dict:
