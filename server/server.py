@@ -55,7 +55,6 @@ class YaraLanguageServer(object):
                         await self.send_response(message["id"], announcement, writer)
                     elif has_started and method == "shutdown":
                         self._logger.info("Client requested shutdown")
-                        has_shutdown = True
                         await self.send_response(message["id"], {}, writer)
                     elif has_started and method == "textDocument/completion":
                         completions = await self.provide_code_completion(message["params"])
@@ -80,17 +79,24 @@ class YaraLanguageServer(object):
                         params = {"type": lsp.MessageType.INFO, "message": "Successfully connected"}
                         await self.send_notification("window/showMessageRequest", params, writer)
                     elif has_started and method == "exit":
-                        self._logger.info("Client requested exit")
-                        proper_shutdown = 0 if has_shutdown else 1
-                        await self.send_response(None, {"success": proper_shutdown}, writer)
+                        self._logger.info("Server exiting process per client request")
+                        # first remove the client associated with this handler
                         await self.remove_client(writer)
+                        # then clean up all the remaining tasks
+                        loop = asyncio.get_event_loop()
+                        for task in asyncio.Task.all_tasks(loop=loop):
+                            task.cancel()
+                        # finally, stop the server
+                        loop.stop()
+                        loop.close()
+                        print("loop is closed:", loop.is_closed())
                     elif has_started and method == "workspace/didChangeConfiguration":
                         config["config"] = message.get("params", {}).get("settings", {}).get("yara", {})
                         self._logger.debug("Changed workspace config to %s", json.dumps(config["config"]))
                         if config["config"].get("trace", {}).get("server", "off") == "on":
                             # TODO: add another logging handler to output DEBUG logs to VSCode's channel
                             self._logger.info("Ignoring trace request for now")
-                    elif has_started and config["config"].get("compile_on_save", False) and method == "textDocument/didSave":
+                    elif has_started and method == "textDocument/didSave" and config["config"].get("compile_on_save", False):
                         file_uri = message.get("params", {}).get("textDocument", {}).get("uri", "")
                         file_path = helpers.parse_uri(file_uri)
                         with open(file_path, "rb") as ifile:

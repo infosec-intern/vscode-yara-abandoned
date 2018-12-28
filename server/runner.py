@@ -25,13 +25,9 @@ def exc_handler(loop, context: dict):
         print("future result: %s" % server)
     except ConnectionResetError:
         logger.error("Client disconnected unexpectedly")
-        loop.stop()
-        logger.info("Server is closed")
     except Exception as err:
         logger.critical("Unknown exception encountered")
         logger.exception(err)
-        loop.stop()
-        logger.info("Server is closed")
 
 async def main():
     ''' Program entrypoint '''
