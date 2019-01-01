@@ -169,6 +169,19 @@ class YaraLanguageServerTests(unittest.TestCase):
         ''' Test the "CompileRule" command is successfully executed '''
         self.assertTrue(False)
 
+    def test_server_cmd_compile_all_rules(self):
+        ''' Test the "CompileAllRules" command is successfully executed '''
+        request = {
+            "jsonrpc": "2.0",
+            "id": 1,
+            "method": "workspace/executeCommand",
+            "params": {
+                "command": "yara.CompileAllRules",
+                "arguments": []
+            }
+        }
+        self.assertTrue(False)
+
     def test_server_code_completion(self):
         ''' Test code completion provider '''
         self.assertTrue(False)
