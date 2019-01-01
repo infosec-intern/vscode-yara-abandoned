@@ -2,6 +2,7 @@
 import asyncio
 import json
 import logging
+from pathlib import Path
 import re
 
 import helpers
@@ -49,7 +50,7 @@ class YaraLanguageServer(object):
                 # if an id is present, this is a JSON-RPC request
                 if "id" in message:
                     if not has_started and method == "initialize":
-                        self.workspace = helpers.parse_uri(message["params"]["rootUri"], encoding=self._encoding)
+                        self.workspace = Path(helpers.parse_uri(message["params"]["rootUri"], encoding=self._encoding))
                         self._logger.info("Client workspace folder: %s", self.workspace)
                         client_options = message.get("params", {}).get("capabilities", {})
                         announcement = self.initialize(client_options)
@@ -78,7 +79,20 @@ class YaraLanguageServer(object):
                         if cmd == "yara.CompileRule":
                             self._logger.info("Compiling rule per user's request")
                         elif cmd == "yara.CompileAllRules":
-                            self._logger.info("Compiling all rules in workspace per user's request")
+                            self._logger.info("Compiling all rules in %s per user's request", self.workspace)
+                            files = [str(i.resolve()) for i in self.workspace.glob("**/*.yara")]
+                            files.extend([str(i.resolve()) for i in self.workspace.glob("**/*.yar")])
+                            for file_path in files:
+                                with open(file_path, "rb") as ifile:
+                                    document = ifile.read().decode(self._encoding)
+                                    diagnostics = await self.provide_diagnostic(document)
+                                    if diagnostics:
+                                        file_uri = helpers.create_file_uri(file_path)
+                                        params = {
+                                            "uri": file_uri,
+                                            "diagnostics": diagnostics
+                                        }
+                                        await self.send_notification("textDocument/publishDiagnostics", params, writer)
                         else:
                             self._logger.warning("Unknown command: %s [%s]", cmd, ",".join(args))
                 # if no id is present, this is a JSON-RPC notification
