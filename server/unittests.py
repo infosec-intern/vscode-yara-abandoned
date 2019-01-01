@@ -4,7 +4,7 @@ import logging
 from pathlib import Path
 import socket
 import unittest
-from urllib.parse import urlencode
+from urllib.parse import quote
 
 import helpers
 import protocol
@@ -55,7 +55,7 @@ class YaraLanguageServerTests(unittest.TestCase):
             "method":"textDocument/didSave",
             "params": {
                 "textDocument": {
-                    "uri":"file:///{}".format(urlencode(save_file)),
+                    "uri":"file:///{}".format(quote(save_file, safe="/\\")),
                     "version": 2
                 }
             }
@@ -79,7 +79,7 @@ class YaraLanguageServerTests(unittest.TestCase):
             "method":"textDocument/didSave",
             "params": {
                 "textDocument": {
-                    "uri":"file:///{}".format(urlencode(save_file)),
+                    "uri":"file:///{}".format(quote(save_file, safe="/\\")),
                     "version": 2
                 }
             }
@@ -189,7 +189,6 @@ class YaraLanguageServerTests(unittest.TestCase):
             self.assertEqual(len(result), 1)
             diagnostic = result[0]
             self.assertIsInstance(diagnostic, protocol.Diagnostic)
-            self.assertIsInstance(diagnostic.range, protocol.Range)
             self.assertEqual(diagnostic.severity, 1)
             self.assertEqual(diagnostic.message, "undefined string \"$true\"")
             self.assertEqual(diagnostic.range.start.line, 0)
@@ -216,9 +215,101 @@ class YaraLanguageServerTests(unittest.TestCase):
         ''' Test highlight provider '''
         self.assertTrue(False)
 
-    def test_server_references(self):
-        ''' Test reference provider '''
-        self.assertTrue(False)
+    def test_server_references_rules(self):
+        ''' Ensure the reference provider properly reolves any regular variables '''
+        async def run():
+            peek_rules = str(self.rules_path.joinpath("peek_rules.yara").resolve())
+            file_uri = "file:///{}".format(quote(peek_rules, safe="/\\"))
+            params = {
+                "textDocument": {"uri": file_uri},
+                "position": {"line": 42, "character": 12},
+                "context": {"includeDeclaration": True}
+            }
+            result = await self.server.provide_reference(params)
+            self.assertEqual(len(result), 2)
+            for index, location in enumerate(result):
+                self.assertIsInstance(location, protocol.Location)
+                self.assertEqual(location.uri, file_uri)
+                if index == 0:
+                    self.assertEqual(location.range.start.line, 5)
+                    self.assertEqual(location.range.start.char, 5)
+                    self.assertEqual(location.range.end.line, 5)
+                    self.assertEqual(location.range.end.char, 18)
+                elif index == 1:
+                    self.assertEqual(location.range.start.line, 42)
+                    self.assertEqual(location.range.start.char, 8)
+                    self.assertEqual(location.range.end.line, 42)
+                    self.assertEqual(location.range.end.char, 21)
+        self.loop.run_until_complete(run())
+
+    def test_server_references_variable(self):
+        ''' Ensure the reference provider properly reolves any rule names '''
+        async def run():
+            peek_rules = str(self.rules_path.joinpath("peek_rules.yara").resolve())
+            file_uri = "file:///{}".format(quote(peek_rules, safe="/\\"))
+            params = {
+                "textDocument": {"uri": file_uri},
+                "position": {"line": 28, "character": 12},
+                "context": {"includeDeclaration": True}
+            }
+            result = await self.server.provide_reference(params)
+            self.assertEqual(len(result), 3)
+            for index, location in enumerate(result):
+                self.assertIsInstance(location, protocol.Location)
+                self.assertEqual(location.uri, file_uri)
+                if index == 0:
+                    self.assertEqual(location.range.start.line, 21)
+                    self.assertEqual(location.range.start.char, 8)
+                    self.assertEqual(location.range.end.line, 21)
+                    self.assertEqual(location.range.end.char, 16)
+                elif index == 1:
+                    self.assertEqual(location.range.start.line, 28)
+                    self.assertEqual(location.range.start.char, 8)
+                    self.assertEqual(location.range.end.line, 28)
+                    self.assertEqual(location.range.end.char, 16)
+                elif index == 2:
+                    self.assertEqual(location.range.start.line, 29)
+                    self.assertEqual(location.range.start.char, 8)
+                    self.assertEqual(location.range.end.line, 29)
+                    self.assertEqual(location.range.end.char, 16)
+        self.loop.run_until_complete(run())
+
+    def test_server_references_wildcard(self):
+        ''' Ensure the reference provider properly resolves wildcard variables '''
+        async def run():
+            peek_rules = str(self.rules_path.joinpath("peek_rules.yara").resolve())
+            file_uri = "file:///{}".format(quote(peek_rules, safe="/\\"))
+            params = {
+                "textDocument": {"uri": file_uri},
+                "position": {"line": 30, "character": 12},
+                "context": {"includeDeclaration": True}
+            }
+            result = await self.server.provide_reference(params)
+            self.assertEqual(len(result), 4)
+            for index, location in enumerate(result):
+                self.assertIsInstance(location, protocol.Location)
+                self.assertEqual(location.uri, file_uri)
+                if index == 0:
+                    self.assertEqual(location.range.start.line, 19)
+                    self.assertEqual(location.range.start.char, 8)
+                    self.assertEqual(location.range.end.line, 19)
+                    self.assertEqual(location.range.end.char, 19)
+                elif index == 1:
+                    self.assertEqual(location.range.start.line, 20)
+                    self.assertEqual(location.range.start.char, 8)
+                    self.assertEqual(location.range.end.line, 20)
+                    self.assertEqual(location.range.end.char, 20)
+                elif index == 2:
+                    self.assertEqual(location.range.start.line, 24)
+                    self.assertEqual(location.range.start.char, 8)
+                    self.assertEqual(location.range.end.line, 24)
+                    self.assertEqual(location.range.end.char, 19)
+                elif index == 3:
+                    self.assertEqual(location.range.start.line, 30)
+                    self.assertEqual(location.range.start.char, 8)
+                    self.assertEqual(location.range.end.line, 30)
+                    self.assertEqual(location.range.end.char, 13)
+        self.loop.run_until_complete(run())
 
     def test_server_renames(self):
         ''' Test rename provider '''
@@ -270,6 +361,9 @@ if __name__ == "__main__":
     suite.addTest(YaraLanguageServerTests("test_helper_parse_uri"))
     suite.addTest(YaraLanguageServerTests("test_server_diagnostics"))
     suite.addTest(YaraLanguageServerTests("test_server_no_diagnostics"))
+    suite.addTest(YaraLanguageServerTests("test_server_references_rules"))
+    suite.addTest(YaraLanguageServerTests("test_server_references_variable"))
+    suite.addTest(YaraLanguageServerTests("test_server_references_wildcard"))
     # suite.addTest(YaraLanguageServerTests("test_transport_closed"))
     # suite.addTest(YaraLanguageServerTests("test_transport_opened"))
     # set up a runner and run
