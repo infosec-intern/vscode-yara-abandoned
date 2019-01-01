@@ -55,7 +55,7 @@ class YaraLanguageServerTests(unittest.TestCase):
             "method":"textDocument/didSave",
             "params": {
                 "textDocument": {
-                    "uri":"file:///{}".format(quote(save_file, safe="/\\")),
+                    "uri": helpers.create_file_uri(save_file),
                     "version": 2
                 }
             }
@@ -79,7 +79,7 @@ class YaraLanguageServerTests(unittest.TestCase):
             "method":"textDocument/didSave",
             "params": {
                 "textDocument": {
-                    "uri":"file:///{}".format(quote(save_file, safe="/\\")),
+                    "uri": helpers.create_file_uri(save_file),
                     "version": 2
                 }
             }
@@ -219,7 +219,7 @@ class YaraLanguageServerTests(unittest.TestCase):
         ''' Ensure the reference provider properly reolves any regular variables '''
         async def run():
             peek_rules = str(self.rules_path.joinpath("peek_rules.yara").resolve())
-            file_uri = "file:///{}".format(quote(peek_rules, safe="/\\"))
+            file_uri = helpers.create_file_uri(peek_rules)
             params = {
                 "textDocument": {"uri": file_uri},
                 "position": {"line": 42, "character": 12},
@@ -246,7 +246,7 @@ class YaraLanguageServerTests(unittest.TestCase):
         ''' Ensure the reference provider properly reolves any rule names '''
         async def run():
             peek_rules = str(self.rules_path.joinpath("peek_rules.yara").resolve())
-            file_uri = "file:///{}".format(quote(peek_rules, safe="/\\"))
+            file_uri = helpers.create_file_uri(peek_rules)
             params = {
                 "textDocument": {"uri": file_uri},
                 "position": {"line": 28, "character": 12},
@@ -278,7 +278,7 @@ class YaraLanguageServerTests(unittest.TestCase):
         ''' Ensure the reference provider properly resolves wildcard variables '''
         async def run():
             peek_rules = str(self.rules_path.joinpath("peek_rules.yara").resolve())
-            file_uri = "file:///{}".format(quote(peek_rules, safe="/\\"))
+            file_uri = helpers.create_file_uri(peek_rules)
             params = {
                 "textDocument": {"uri": file_uri},
                 "position": {"line": 30, "character": 12},

@@ -2,10 +2,17 @@
 import platform
 import re
 from typing import Tuple
-from urllib.parse import unquote, urlsplit
+from urllib.parse import quote, unquote, urlsplit
 
 import protocol as lsp
 
+
+def create_file_uri(path: str):
+    '''Create a URI given a file path
+
+    :path: Filepath to create a URI from
+    '''
+    return "file:///{}".format(quote(path, safe="/\\"))
 
 def get_first_non_whitespace_index(line: str) -> int:
     '''Get the first non-whitespace character index in a given line
