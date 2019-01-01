@@ -353,7 +353,6 @@ class YaraLanguageServerTests(unittest.TestCase):
 
 
 if __name__ == "__main__":
-    # add all the tet cases to be run
     suite = unittest.TestSuite()
     suite.addTest(YaraLanguageServerTests("test_protocol_json_encoder"))
     suite.addTest(YaraLanguageServerTests("test_helper_parse_result"))
@@ -366,7 +365,6 @@ if __name__ == "__main__":
     suite.addTest(YaraLanguageServerTests("test_server_references_wildcard"))
     # suite.addTest(YaraLanguageServerTests("test_transport_closed"))
     # suite.addTest(YaraLanguageServerTests("test_transport_opened"))
-    # set up a runner and run
     runner = unittest.TextTestRunner(verbosity=2)
     results = runner.run(suite)
     pct_coverage = ((results.testsRun - (len(results.failures) + len(results.errors))) / results.testsRun) * 100
