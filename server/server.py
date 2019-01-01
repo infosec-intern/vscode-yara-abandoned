@@ -2,6 +2,7 @@
 import asyncio
 import json
 import logging
+import re
 
 import helpers
 import protocol as lsp
@@ -223,7 +224,6 @@ class YaraLanguageServer(object):
 
         Returns a (possibly empty) list of symbol Locations
         '''
-        self._logger.warning("provide_reference() is not yet implemented")
         file_uri = params.get("textDocument", {}).get("uri", "")
         results = []
         if file_uri:
@@ -234,15 +234,29 @@ class YaraLanguageServer(object):
                 symbol = helpers.resolve_symbol(text, pos)
                 # check to see if the symbol is a variable or a rule name (currently the only valid symbols)
                 if symbol[0] in self._varchar:
-                    rule_range = helpers.get_rule_range(text, pos)
-                    yara_rule = text.split("\n")[rule_range.start.line:rule_range.end.line+1]
-                    print("\n".join(yara_rule))
+                    # gotta match the wildcard variables too
+                    if symbol[-1] == "*":
+                        symbol = symbol.replace("*", ".*?")
                     # any possible first character matching self._varchar must be treated as a reference
-                    var_regex = "[{}]{}\\b".format("".join(self._varchar), "".join(symbol[1:]))
-                    print(var_regex)
+                    pattern = "[{}]{}\\b".format("".join(self._varchar), "".join(symbol[1:]))
+                    rule_range = helpers.get_rule_range(text, pos)
+                    rule_lines = text.split("\n")[rule_range.start.line:rule_range.end.line+1]
+                    rel_offset = rule_range.start.line
                 else:
-                    rules = filter(lambda l: l.startswith("rule {}".format(symbol)), text.split("\n"))
-                    print(list(rules))
+                    rel_offset = 0
+                    pattern = "{}\\b".format(symbol)
+                    rule_lines = text.split("\n")
+
+                for index, line in enumerate(rule_lines):
+                    for match in re.finditer(pattern, line):
+                        if match:
+                            # index corresponds to line no. within each rule, not within file
+                            offset = rel_offset + index
+                            locrange = lsp.Range(
+                                start=lsp.Position(line=offset, char=match.start()),
+                                end=lsp.Position(line=offset, char=match.end())
+                            )
+                            results.append(lsp.Location(locrange, file_uri))
         return results
 
     async def provide_rename(self, params: dict) -> dict:
