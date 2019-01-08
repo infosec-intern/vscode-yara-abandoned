@@ -113,6 +113,12 @@ class YaraLanguageServerTests(unittest.TestCase):
         self.assertTrue(False)
 
     #### HELPER.PY TESTS ####
+    def test_helper_create_file_uri(self):
+        ''' Ensure file URIs are generated from paths '''
+        expected = "file:///{}".format(quote(str(self.rules_path).replace("\\", "/"), safe="/\\"))
+        output = helpers.create_file_uri(str(self.rules_path))
+        self.assertEqual(output, expected)
+
     def test_helper_parse_result(self):
         ''' Ensure the parse_result() function properly parses a given diagnostic '''
         result = "line 14: syntax error, unexpected <true>, expecting text string"
@@ -502,6 +508,7 @@ if __name__ == "__main__":
     suite.addTest(YaraLanguageServerTests("test_protocol_location"))
     suite.addTest(YaraLanguageServerTests("test_protocol_position"))
     suite.addTest(YaraLanguageServerTests("test_protocol_range"))
+    suite.addTest(YaraLanguageServerTests("test_helper_create_file_uri"))
     suite.addTest(YaraLanguageServerTests("test_helper_parse_result"))
     suite.addTest(YaraLanguageServerTests("test_helper_parse_result_multicolon"))
     suite.addTest(YaraLanguageServerTests("test_helper_parse_uri"))
