@@ -63,9 +63,9 @@ class YaraLanguageServer(object):
                     elif has_started and method == "textDocument/definition":
                         definition = await self.provide_definition(message["params"])
                         await self.send_response(message["id"], definition, writer)
-                    elif has_started and method == "textDocument/documentHighlight":
-                        highlights = await self.provide_highlight(message["params"])
-                        await self.send_response(message["id"], highlights, writer)
+                    # elif has_started and method == "textDocument/documentHighlight":
+                    #     highlights = await self.provide_highlight(message["params"])
+                    #     await self.send_response(message["id"], highlights, writer)
                     elif has_started and method == "textDocument/references":
                         references = await self.provide_reference(message["params"])
                         await self.send_response(message["id"], references, writer)
@@ -177,9 +177,41 @@ class YaraLanguageServer(object):
         return {}
 
     async def provide_definition(self, params: dict) -> dict:
-        ''' Respond to the textDocument/definition request '''
-        self._logger.warning("provide_definition() is not yet implemented")
-        return {}
+        '''Respond to the textDocument/definition request
+
+        Returns a (possibly empty) list of symbol Locations
+        '''
+        file_uri = params.get("textDocument", {}).get("uri", "")
+        results = []
+        if file_uri:
+            file_path = helpers.parse_uri(file_uri, encoding=self._encoding)
+            pos = lsp.Position(line=params["position"]["line"], char=params["position"]["character"])
+            with open(file_path, "r") as rule_file:
+                text = rule_file.read()
+                symbol = helpers.resolve_symbol(text, pos)
+                # check to see if the symbol is a variable or a rule name (currently the only valid symbols)
+                if symbol[0] in self._varchar:
+                    # gotta match the wildcard variables too
+                    pattern = "\\${} =\\s".format("".join(symbol[1:]))
+                    rule_range = helpers.get_rule_range(text, pos)
+                    rule_lines = text.split("\n")[rule_range.start.line:rule_range.end.line+1]
+                    rel_offset = rule_range.start.line
+                # else assume this is a rule symbol
+                else:
+                    pattern = "\\brule {}\\b".format(symbol)
+                    rule_lines = text.split("\n")
+                    rel_offset = 0
+
+                for index, line in enumerate(rule_lines):
+                    for match in re.finditer(pattern, line):
+                        if match:
+                            offset = rel_offset + index
+                            locrange = lsp.Range(
+                                start=lsp.Position(line=offset, char=match.start()),
+                                end=lsp.Position(line=offset, char=match.end())
+                            )
+                            results.append(lsp.Location(locrange, file_uri))
+        return results
 
     async def provide_diagnostic(self, text_document: str) -> dict:
         ''' Respond to the textDocument/publishDiagnostics request

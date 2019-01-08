@@ -40,5 +40,5 @@ rule RuleReferenceExample
     strings:
         $hex_string = "test"
     condition:
-        SyntaxExample and $hex_string
+        SyntaxExample and !hex_string[0] > 2
 }

@@ -209,9 +209,114 @@ class YaraLanguageServerTests(unittest.TestCase):
         ''' Ensure the server properly handles closed client connections '''
         self.assertTrue(False)
 
-    def test_server_definitions(self):
-        ''' Test defintion provider '''
-        self.assertTrue(False)
+    def test_server_definitions_rules(self):
+        ''' Ensure the definition provider properly resolves any rule names '''
+        async def run():
+            peek_rules = str(self.rules_path.joinpath("peek_rules.yara").resolve())
+            file_uri = helpers.create_file_uri(peek_rules)
+            params = {
+                "textDocument": {"uri": file_uri},
+                "position": {"line": 42, "character": 12}
+            }
+            result = await self.server.provide_definition(params)
+            self.assertEqual(len(result), 1)
+            self.assertIsInstance(result[0], protocol.Location)
+            self.assertEqual(result[0].uri, file_uri)
+            self.assertEqual(result[0].range.start.line, 5)
+            self.assertEqual(result[0].range.start.char, 0)
+            self.assertEqual(result[0].range.end.line, 5)
+            self.assertEqual(result[0].range.end.char, 18)
+        self.loop.run_until_complete(run())
+
+    def test_server_definitions_variables_count(self):
+        ''' Ensure the definition provider properly resolves #vars '''
+        async def run():
+            peek_rules = str(self.rules_path.joinpath("peek_rules.yara").resolve())
+            file_uri = helpers.create_file_uri(peek_rules)
+            params = {
+                "textDocument": {"uri": file_uri},
+                "position": {"line": 28, "character": 12}
+            }
+            result = await self.server.provide_definition(params)
+            self.assertEqual(len(result), 1)
+            self.assertIsInstance(result[0], protocol.Location)
+            self.assertEqual(result[0].uri, file_uri)
+            self.assertEqual(result[0].range.start.line, 21)
+            self.assertEqual(result[0].range.start.char, 8)
+            self.assertEqual(result[0].range.end.line, 21)
+            self.assertEqual(result[0].range.end.char, 19)
+        self.loop.run_until_complete(run())
+
+    def test_server_definitions_variables_length(self):
+        ''' Ensure the definition provider properly resolves !vars '''
+        async def run():
+            peek_rules = str(self.rules_path.joinpath("peek_rules.yara").resolve())
+            file_uri = helpers.create_file_uri(peek_rules)
+            params = {
+                "textDocument": {"uri": file_uri},
+                "position": {"line": 42, "character": 32}
+            }
+            result = await self.server.provide_definition(params)
+            self.assertEqual(len(result), 1)
+            self.assertIsInstance(result[0], protocol.Location)
+            self.assertEqual(result[0].uri, file_uri)
+            self.assertEqual(result[0].range.start.line, 40)
+            self.assertEqual(result[0].range.start.char, 8)
+            self.assertEqual(result[0].range.end.line, 40)
+            self.assertEqual(result[0].range.end.char, 22)
+        self.loop.run_until_complete(run())
+
+    def test_server_definitions_variables_location(self):
+        ''' Ensure the definition provider properly resolves @vars '''
+        async def run():
+            peek_rules = str(self.rules_path.joinpath("peek_rules.yara").resolve())
+            file_uri = helpers.create_file_uri(peek_rules)
+            params = {
+                "textDocument": {"uri": file_uri},
+                "position": {"line": 29, "character": 12}
+            }
+            result = await self.server.provide_definition(params)
+            self.assertEqual(len(result), 1)
+            self.assertIsInstance(result[0], protocol.Location)
+            self.assertEqual(result[0].uri, file_uri)
+            self.assertEqual(result[0].range.start.line, 21)
+            self.assertEqual(result[0].range.start.char, 8)
+            self.assertEqual(result[0].range.end.line, 21)
+            self.assertEqual(result[0].range.end.char, 19)
+        self.loop.run_until_complete(run())
+
+    def test_server_definitions_variables_regular(self):
+        ''' Ensure the definition provider properly resolves $vars '''
+        async def run():
+            peek_rules = str(self.rules_path.joinpath("peek_rules.yara").resolve())
+            file_uri = helpers.create_file_uri(peek_rules)
+            params = {
+                "textDocument": {"uri": file_uri},
+                "position": {"line": 24, "character": 12}
+            }
+            result = await self.server.provide_definition(params)
+            self.assertEqual(len(result), 1)
+            self.assertIsInstance(result[0], protocol.Location)
+            self.assertEqual(result[0].uri, file_uri)
+            self.assertEqual(result[0].range.start.line, 19)
+            self.assertEqual(result[0].range.start.char, 8)
+            self.assertEqual(result[0].range.end.line, 19)
+            self.assertEqual(result[0].range.end.char, 22)
+        self.loop.run_until_complete(run())
+
+    def test_server_no_definitions(self):
+        ''' Ensure the definition provider does not resolve a non-variable or non-rule '''
+        async def run():
+            peek_rules = str(self.rules_path.joinpath("peek_rules.yara").resolve())
+            file_uri = helpers.create_file_uri(peek_rules)
+            params = {
+                "textDocument": {"uri": file_uri},
+                "position": {"line": 27, "character": 12},
+                "context": {"includeDeclaration": True}
+            }
+            result = await self.server.provide_definition(params)
+            self.assertListEqual(result, [])
+        self.loop.run_until_complete(run())
 
     def test_server_diagnostics(self):
         ''' Test diagnostic provider successfully provides '''
@@ -248,7 +353,7 @@ class YaraLanguageServerTests(unittest.TestCase):
         self.assertTrue(False)
 
     def test_server_references_rules(self):
-        ''' Ensure the reference provider properly reolves any regular variables '''
+        ''' Ensure the reference provider properly resolves any rule names '''
         async def run():
             peek_rules = str(self.rules_path.joinpath("peek_rules.yara").resolve())
             file_uri = helpers.create_file_uri(peek_rules)
@@ -275,7 +380,7 @@ class YaraLanguageServerTests(unittest.TestCase):
         self.loop.run_until_complete(run())
 
     def test_server_references_variable(self):
-        ''' Ensure the reference provider properly reolves any rule names '''
+        ''' Ensure the reference provider properly resolves any regular variables '''
         async def run():
             peek_rules = str(self.rules_path.joinpath("peek_rules.yara").resolve())
             file_uri = helpers.create_file_uri(peek_rules)
@@ -393,6 +498,12 @@ if __name__ == "__main__":
     suite.addTest(YaraLanguageServerTests("test_helper_parse_result"))
     suite.addTest(YaraLanguageServerTests("test_helper_parse_result_multicolon"))
     suite.addTest(YaraLanguageServerTests("test_helper_parse_uri"))
+    suite.addTest(YaraLanguageServerTests("test_server_definitions_rules"))
+    suite.addTest(YaraLanguageServerTests("test_server_definitions_variables_count"))
+    suite.addTest(YaraLanguageServerTests("test_server_definitions_variables_length"))
+    suite.addTest(YaraLanguageServerTests("test_server_definitions_variables_location"))
+    suite.addTest(YaraLanguageServerTests("test_server_definitions_variables_regular"))
+    suite.addTest(YaraLanguageServerTests("test_server_no_definitions"))
     suite.addTest(YaraLanguageServerTests("test_server_diagnostics"))
     suite.addTest(YaraLanguageServerTests("test_server_no_diagnostics"))
     suite.addTest(YaraLanguageServerTests("test_server_references_rules"))
