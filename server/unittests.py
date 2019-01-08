@@ -119,6 +119,11 @@ class YaraLanguageServerTests(unittest.TestCase):
         output = helpers.create_file_uri(str(self.rules_path))
         self.assertEqual(output, expected)
 
+    def test_helper_get_first_non_whitespace_index(self):
+        ''' Ensure the index of the first non-whitespace is extracted from a string '''
+        index = helpers.get_first_non_whitespace_index("    test")
+        self.assertEqual(index, 4)
+
     def test_helper_parse_result(self):
         ''' Ensure the parse_result() function properly parses a given diagnostic '''
         result = "line 14: syntax error, unexpected <true>, expecting text string"
@@ -509,6 +514,7 @@ if __name__ == "__main__":
     suite.addTest(YaraLanguageServerTests("test_protocol_position"))
     suite.addTest(YaraLanguageServerTests("test_protocol_range"))
     suite.addTest(YaraLanguageServerTests("test_helper_create_file_uri"))
+    suite.addTest(YaraLanguageServerTests("test_helper_get_first_non_whitespace_index"))
     suite.addTest(YaraLanguageServerTests("test_helper_parse_result"))
     suite.addTest(YaraLanguageServerTests("test_helper_parse_result_multicolon"))
     suite.addTest(YaraLanguageServerTests("test_helper_parse_uri"))
