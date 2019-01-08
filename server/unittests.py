@@ -133,6 +133,13 @@ class YaraLanguageServerTests(unittest.TestCase):
         file_uri = "file:///{}".format(path)
         self.assertEqual(helpers.parse_uri(file_uri), path)
 
+    def test_helper_resolve_symbol(self):
+        ''' Ensure symbols are properly resolved '''
+        document = "rule ResolveSymbol {\n strings:\n  $a = \"test\"\n condition:\n  #a > 3\n}\n"
+        pos = protocol.Position(line=4, char=3)
+        symbol = helpers.resolve_symbol(document, pos)
+        self.assertEqual(symbol, "#a")
+
     #### PROTOCOL.PY TESTS ####
     def test_protocol_diagnostic(self):
         ''' Ensure Diagnostic is properly encoded to JSON dictionaries '''
@@ -498,6 +505,7 @@ if __name__ == "__main__":
     suite.addTest(YaraLanguageServerTests("test_helper_parse_result"))
     suite.addTest(YaraLanguageServerTests("test_helper_parse_result_multicolon"))
     suite.addTest(YaraLanguageServerTests("test_helper_parse_uri"))
+    suite.addTest(YaraLanguageServerTests("test_helper_resolve_symbol"))
     suite.addTest(YaraLanguageServerTests("test_server_definitions_rules"))
     suite.addTest(YaraLanguageServerTests("test_server_definitions_variables_count"))
     suite.addTest(YaraLanguageServerTests("test_server_definitions_variables_length"))
