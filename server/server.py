@@ -32,8 +32,7 @@ class YaraLanguageServer(object):
         :reader: asyncio StreamReader. The connected client will write to this stream
         :writer: asyncio.StreamWriter. The connected client will read from this stream
         '''
-        config = {"config": {}}
-        has_shutdown = False
+        config = {}
         has_started = False
         self._logger.info("Client connected")
         self.num_clients += 1
@@ -114,12 +113,12 @@ class YaraLanguageServer(object):
                         # loop.stop()
                         # loop.close()
                     elif has_started and method == "workspace/didChangeConfiguration":
-                        config["config"] = message.get("params", {}).get("settings", {}).get("yara", {})
-                        self._logger.debug("Changed workspace config to %s", json.dumps(config["config"]))
-                        if config["config"].get("trace", {}).get("server", "off") == "on":
+                        config = message.get("params", {}).get("settings", {}).get("yara", {})
+                        self._logger.debug("Changed workspace config to %s", json.dumps(config))
+                        if config.get("trace", {}).get("server", "off") == "on":
                             # TODO: add another logging handler to output DEBUG logs to VSCode's channel
                             self._logger.info("Ignoring trace request for now")
-                    elif has_started and method == "textDocument/didSave" and config["config"].get("compile_on_save", False):
+                    elif has_started and method == "textDocument/didSave" and config.get("compile_on_save", False):
                         file_uri = message.get("params", {}).get("textDocument", {}).get("uri", "")
                         file_path = helpers.parse_uri(file_uri)
                         with open(file_path, "rb") as ifile:
