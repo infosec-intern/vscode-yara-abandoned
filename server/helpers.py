@@ -94,10 +94,12 @@ def resolve_symbol(document: str, pos: lsp.Position) -> str:
             lb = index + 1
             break
         index -= 1
-    # find the right-bound of the symbol by looking forwards until a whitespace
+    # find the right-bound of the symbol by looking forwards until a whitespace or a non-alphanum/special char
     index = pos.char
     while True:
-        if index == line_end or not symbol_line[index].strip():
+        if index == line_end \
+        or not symbol_line[index].strip() \
+        or not (symbol_line[index].isalnum() or symbol_line[index] in "_*"):
             rb = index
             break
         index += 1
