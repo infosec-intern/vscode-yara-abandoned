@@ -172,8 +172,10 @@ class YaraLanguageServer(object):
         :params:
         '''
         self._logger.warning("provide_code_completion() is not yet implemented")
-        symbol_pos = lsp.Position(line=params["position"]["line"], char=params["position"]["character"])
-        completion_context = lsp.CompletionTriggerKind(params["context"]["triggerKind"])
+        line = params.get("position", {}).get("line", None)
+        char = params.get("position", {}).get("character", None)
+        symbol_pos = lsp.Position(line, char)
+        rule_path = helpers.parse_uri(params.get("textDocument", {}).get("uri", ""))
         return {}
 
     async def provide_definition(self, params: dict) -> dict:
@@ -191,7 +193,6 @@ class YaraLanguageServer(object):
                 symbol = helpers.resolve_symbol(text, pos)
                 # check to see if the symbol is a variable or a rule name (currently the only valid symbols)
                 if symbol[0] in self._varchar:
-                    # gotta match the wildcard variables too
                     pattern = "\\${} =\\s".format("".join(symbol[1:]))
                     rule_range = helpers.get_rule_range(text, pos)
                     rule_lines = text.split("\n")[rule_range.start.line:rule_range.end.line+1]
