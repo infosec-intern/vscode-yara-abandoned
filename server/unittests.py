@@ -49,7 +49,7 @@ class YaraLanguageServerTests(unittest.TestCase):
                 }
             }
         }
-        save_file = self.rules_path.joinpath("simple_mistake.yar").resolve()
+        save_file = str(self.rules_path.joinpath("simple_mistake.yar").resolve())
         save_request = {
             "jsonrpc": "2.0",
             "method":"textDocument/didSave",
@@ -73,7 +73,7 @@ class YaraLanguageServerTests(unittest.TestCase):
                 }
             }
         }
-        save_file = self.rules_path.joinpath("simple_mistake.yar").resolve()
+        save_file = str(self.rules_path.joinpath("simple_mistake.yar").resolve())
         save_request = {
             "jsonrpc": "2.0",
             "method":"textDocument/didSave",
@@ -126,7 +126,17 @@ class YaraLanguageServerTests(unittest.TestCase):
 
     def test_helper_get_rule_range(self):
         ''' Ensure YARA rules are parsed out and their range is returned '''
-        self.assertTrue(False)
+        async def run():
+            peek_rules = self.rules_path.joinpath("peek_rules.yara").resolve()
+            rules = peek_rules.read_text()
+            pos = protocol.Position(line=42, char=12)
+            result = helpers.get_rule_range(rules, pos)
+            self.assertIsInstance(result, protocol.Range)
+            self.assertEqual(result.start.line, 33)
+            self.assertEqual(result.start.char, 0)
+            self.assertEqual(result.end.line, 43)
+            self.assertEqual(result.end.char, 0)
+        self.loop.run_until_complete(run())
 
     def test_helper_parse_result(self):
         ''' Ensure the parse_result() function properly parses a given diagnostic '''
