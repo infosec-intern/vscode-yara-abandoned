@@ -11,7 +11,7 @@ import protocol
 import server
 
 
-class YaraLanguageServerTests(unittest.TestCase):
+class ConfigTests(unittest.TestCase):
     @classmethod
     def setUpClass(self):
         ''' Initialize tests '''
@@ -37,7 +37,6 @@ class YaraLanguageServerTests(unittest.TestCase):
         if not self.loop.is_closed():
             self.loop.close()
 
-    #### CONFIG TESTS ####
     def test_config_compile_on_save_false(self):
         ''' Ensure documents are not compiled on save when false '''
         change_config_request = {
@@ -112,7 +111,29 @@ class YaraLanguageServerTests(unittest.TestCase):
         }
         self.assertTrue(False)
 
-    #### HELPER.PY TESTS ####
+class HelperTests(unittest.TestCase):
+    @classmethod
+    def setUpClass(self):
+        ''' Initialize tests '''
+        self.rules_path = Path(__file__).parent.joinpath("..", "test", "rules").resolve()
+
+    def setUp(self):
+        ''' Create a new loop and server for each test '''
+        self.loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(self.loop)
+
+    @classmethod
+    def tearDownClass(self):
+        ''' Clean things up '''
+        pass
+
+    def tearDown(self):
+        ''' Shut down the server created for this test '''
+        if self.loop.is_running():
+            self.loop.stop()
+        if not self.loop.is_closed():
+            self.loop.close()
+
     def test_helper_create_file_uri(self):
         ''' Ensure file URIs are generated from paths '''
         expected = "file:///{}".format(quote(str(self.rules_path).replace("\\", "/"), safe="/\\"))
@@ -165,7 +186,29 @@ class YaraLanguageServerTests(unittest.TestCase):
         symbol = helpers.resolve_symbol(document, pos)
         self.assertEqual(symbol, "#a")
 
-    #### PROTOCOL.PY TESTS ####
+class ProtocolTests(unittest.TestCase):
+    @classmethod
+    def setUpClass(self):
+        ''' Initialize tests '''
+        self.rules_path = Path(__file__).parent.joinpath("..", "test", "rules").resolve()
+
+    def setUp(self):
+        ''' Create a new loop and server for each test '''
+        self.loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(self.loop)
+
+    @classmethod
+    def tearDownClass(self):
+        ''' Clean things up '''
+        pass
+
+    def tearDown(self):
+        ''' Shut down the server created for this test '''
+        if self.loop.is_running():
+            self.loop.stop()
+        if not self.loop.is_closed():
+            self.loop.close()
+
     def test_protocol_diagnostic(self):
         ''' Ensure Diagnostic is properly encoded to JSON dictionaries '''
         pos_dict = {"line": 10, "character": 15}
@@ -215,7 +258,32 @@ class YaraLanguageServerTests(unittest.TestCase):
         )
         self.assertEqual(json.dumps(rg, cls=protocol.JSONEncoder), json.dumps(rg_dict))
 
-    #### SERVER.PY TESTS ####
+class ServerTests(unittest.TestCase):
+    @classmethod
+    def setUpClass(self):
+        ''' Initialize tests '''
+        self.rules_path = Path(__file__).parent.joinpath("..", "test", "rules").resolve()
+        self.server = server.YaraLanguageServer()
+        self.server_address = "127.0.0.1"
+        self.server_port = 8471
+
+    def setUp(self):
+        ''' Create a new loop and server for each test '''
+        self.loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(self.loop)
+
+    @classmethod
+    def tearDownClass(self):
+        ''' Clean things up '''
+        pass
+
+    def tearDown(self):
+        ''' Shut down the server created for this test '''
+        if self.loop.is_running():
+            self.loop.stop()
+        if not self.loop.is_closed():
+            self.loop.close()
+
     def test_server_cmd_compile_rule(self):
         ''' Test the "CompileRule" command is successfully executed '''
         self.assertTrue(False)
@@ -495,7 +563,31 @@ class YaraLanguageServerTests(unittest.TestCase):
         '''
         self.assertTrue(False)
 
-    #### CONNECTION TESTS ####
+class TransportTests(unittest.TestCase):
+    @classmethod
+    def setUpClass(self):
+        ''' Initialize tests '''
+        self.rules_path = Path(__file__).parent.joinpath("..", "test", "rules").resolve()
+        self.server_address = "127.0.0.1"
+        self.server_port = 8471
+
+    def setUp(self):
+        ''' Create a new loop and server for each test '''
+        self.loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(self.loop)
+
+    @classmethod
+    def tearDownClass(self):
+        ''' Clean things up '''
+        pass
+
+    def tearDown(self):
+        ''' Shut down the server created for this test '''
+        if self.loop.is_running():
+            self.loop.stop()
+        if not self.loop.is_closed():
+            self.loop.close()
+
     def test_transport_closed(self):
         ''' Ensure the transport mechanism is properly closed '''
         async def run():
@@ -520,11 +612,19 @@ class YaraLanguageServerTests(unittest.TestCase):
                 self.assertFalse(connection_closed, "Server connection refused")
         self.loop.run_until_complete(run())
 
-
-if __name__ == "__main__":
+def run_test_suite(name: str, testcase: unittest.TestCase):
+    ''' Run a test suite and display results with the given name'''
     loader = unittest.TestLoader()
-    suite = loader.loadTestsFromTestCase(YaraLanguageServerTests)
-    runner = unittest.TextTestRunner(verbosity=2)
+    suite = loader.loadTestsFromTestCase(testcase)
+    runner = unittest.TextTestRunner(verbosity=0)
     results = runner.run(suite)
     pct_coverage = ((results.testsRun - (len(results.failures) + len(results.errors))) / results.testsRun) * 100
-    print("{:.1f}% test coverage".format(pct_coverage))
+    print("{} test coverage: {:.1f}%".format(name.capitalize(), pct_coverage))
+
+
+if __name__ == "__main__":
+    run_test_suite("config", ConfigTests)
+    run_test_suite("helper", HelperTests)
+    run_test_suite("protocol", ProtocolTests)
+    run_test_suite("server", ServerTests)
+    run_test_suite("transport", TransportTests)
