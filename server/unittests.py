@@ -310,15 +310,15 @@ class ServerTests(unittest.TestCase):
     def test_server_code_completion(self):
         ''' Test code completion provider '''
         async def run():
-            peek_rules = str(self.rules_path.joinpath("code_completion.yara").resolve())
-            file_uri = helpers.create_file_uri(peek_rules)
+            code_completion = str(self.rules_path.joinpath("code_completion.yara").resolve())
+            file_uri = helpers.create_file_uri(code_completion)
             params = {
                 "textDocument": {"uri": file_uri},
-                "position": {"line": 9, "character": 16}
+                "position": {"line": 9, "character": 15}
             }
             result = await self.server.provide_definition(params)
             self.assertEqual(len(result), 4)
-            for index, comp in enumerate(results):
+            for index, comp in enumerate(result):
                 self.assertIsInstance(comp, protocol.CompletionItem)
                 if index == 0:
                     self.assertEqual(comp.label, "filesystem")
@@ -651,12 +651,12 @@ def run_test_suite(name: str, testcase: unittest.TestCase):
 if __name__ == "__main__":
     import argparse
     parser = argparse.ArgumentParser()
-    parser.add_argument("-a", "--all", action="store_true")
-    parser.add_argument("-c", "--config", action="store_true")
-    parser.add_argument("-e", "--helper", action="store_true")
-    parser.add_argument("-p", "--protocol", action="store_true")
-    parser.add_argument("-s", "--server", action="store_true")
-    parser.add_argument("-t", "--transport", action="store_true")
+    parser.add_argument("-a", "--all", action="store_true", help="Run all tests")
+    parser.add_argument("-c", "--config", action="store_true", help="Run config tests")
+    parser.add_argument("-e", "--helper", action="store_true", help="Run helper tests")
+    parser.add_argument("-p", "--protocol", action="store_true", help="Run protocol tests")
+    parser.add_argument("-s", "--server", action="store_true", help="Run server tests")
+    parser.add_argument("-t", "--transport", action="store_true", help="Run transport tests")
     args = parser.parse_args()
 
     total_coverage = []
@@ -670,6 +670,8 @@ if __name__ == "__main__":
         total_coverage.append(run_test_suite("server", ServerTests))
     if args.all or args.transport:
         total_coverage.append(run_test_suite("transport", TransportTests))
+    if not (args.all or args.config or args.helper or args.protocol or args.server or args.transport):
+        parser.print_help()
 
     if len(total_coverage) > 1:
         print("\nTotal test coverage: {:.1f}%".format((sum(total_coverage) / len(total_coverage)) * 100))
