@@ -169,14 +169,17 @@ class YaraLanguageServer(object):
     async def provide_code_completion(self, params: dict) -> dict:
         '''Respond to the completionItem/resolve request
 
-        :params:
+        Returns a (possibly empty) list of completion items
         '''
-        self._logger.warning("provide_code_completion() is not yet implemented")
-        line = params.get("position", {}).get("line", None)
-        char = params.get("position", {}).get("character", None)
-        symbol_pos = lsp.Position(line, char)
-        rule_path = helpers.parse_uri(params.get("textDocument", {}).get("uri", ""))
-        return {}
+        file_uri = params.get("textDocument", {}).get("uri", "")
+        results = []
+        if file_uri:
+            file_path = helpers.parse_uri(file_uri, encoding=self._encoding)
+            pos = lsp.Position(line=params["position"]["line"], char=params["position"]["character"])
+            with open(file_path, "r") as rule_file:
+                text = rule_file.read()
+                symbol = helpers.resolve_symbol(text, pos)
+        return results
 
     async def provide_definition(self, params: dict) -> dict:
         '''Respond to the textDocument/definition request
