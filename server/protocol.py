@@ -32,6 +32,12 @@ class JsonRPCError(IntEnum):
     # Defined by the protocol
     REQUEST_CANCELLED = -32800
 
+class CompletionItemKind(IntEnum):
+    TEXT = 1
+    METHOD = 2
+    MODULE = 9
+    PROPERTY = 10
+
 class DiagnosticSeverity(IntEnum):
     ERROR = 1
     WARNING = 2
@@ -82,6 +88,14 @@ class Range(object):
 
     def __repr__(self):
         return "<Range(start={}, end={})>".format(self.start, self.end)
+
+class CompletionItem(object):
+    def __init__(self, label: str, kind=CompletionItemKind.TEXT):
+        self.label = str(label)
+        self.kind = int(kind)
+
+    def __repr__(self):
+        return "<CompletionItem(label={}, kind={:d})>".format(self.label, self.kind)
 
 class Diagnostic(object):
     def __init__(self, locrange: Range, severity: int, message: str, relatedInformation: List=[]):
@@ -138,6 +152,11 @@ class JSONEncoder(json.JSONEncoder):
             return {
                 "start": obj.start,
                 "end": obj.end
+            }
+        elif isinstance(obj, CompletionItem):
+            return {
+                "label": obj.label,
+                "kind": obj.kind
             }
         else:
             super().default(obj)

@@ -228,6 +228,12 @@ class ProtocolTests(unittest.TestCase):
         )
         self.assertEqual(json.dumps(diag, cls=protocol.JSONEncoder), json.dumps(diag_dict))
 
+    def test_protocol_completionitem(self):
+        ''' Ensure CompletionItem is properly encoded to JSON dictionaries '''
+        comp_dict = {"label": "test", "kind": protocol.CompletionItemKind.TEXT}
+        comp = protocol.CompletionItem(label=comp_dict["label"], kind=comp_dict["kind"])
+        self.assertEqual(json.dumps(comp, cls=protocol.JSONEncoder), json.dumps(comp_dict))
+
     def test_protocol_location(self):
         ''' Ensure Location is properly encoded to JSON dictionaries '''
         pos_dict = {"line": 10, "character": 15}
@@ -618,13 +624,16 @@ def run_test_suite(name: str, testcase: unittest.TestCase):
     suite = loader.loadTestsFromTestCase(testcase)
     runner = unittest.TextTestRunner(verbosity=0)
     results = runner.run(suite)
-    pct_coverage = ((results.testsRun - (len(results.failures) + len(results.errors))) / results.testsRun) * 100
-    print("{} test coverage: {:.1f}%".format(name.capitalize(), pct_coverage))
+    pct_coverage = (results.testsRun - (len(results.failures) + len(results.errors))) / results.testsRun
+    print("{} test coverage: {:.1f}%".format(name.capitalize(), pct_coverage * 100))
+    return pct_coverage
 
 
 if __name__ == "__main__":
-    run_test_suite("config", ConfigTests)
-    run_test_suite("helper", HelperTests)
-    run_test_suite("protocol", ProtocolTests)
-    run_test_suite("server", ServerTests)
-    run_test_suite("transport", TransportTests)
+    total_coverage = []
+    total_coverage.append(run_test_suite("config", ConfigTests))
+    total_coverage.append(run_test_suite("helper", HelperTests))
+    total_coverage.append(run_test_suite("protocol", ProtocolTests))
+    total_coverage.append(run_test_suite("server", ServerTests))
+    total_coverage.append(run_test_suite("transport", TransportTests))
+    print("\nTotal test coverage: {:.1f}%".format((sum(total_coverage) / len(total_coverage)) * 100))
