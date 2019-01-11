@@ -33,8 +33,8 @@ class JsonRPCError(IntEnum):
     REQUEST_CANCELLED = -32800
 
 class CompletionItemKind(IntEnum):
-    TEXT = 1
     METHOD = 2
+    CLASS = 7
     MODULE = 9
     PROPERTY = 10
 
@@ -90,7 +90,7 @@ class Range(object):
         return "<Range(start={}, end={})>".format(self.start, self.end)
 
 class CompletionItem(object):
-    def __init__(self, label: str, kind=CompletionItemKind.TEXT):
+    def __init__(self, label: str, kind=CompletionItemKind.CLASS):
         self.label = str(label)
         self.kind = int(kind)
 
