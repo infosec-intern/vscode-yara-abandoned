@@ -230,7 +230,7 @@ class ProtocolTests(unittest.TestCase):
 
     def test_protocol_completionitem(self):
         ''' Ensure CompletionItem is properly encoded to JSON dictionaries '''
-        comp_dict = {"label": "test", "kind": protocol.CompletionItemKind.TEXT}
+        comp_dict = {"label": "test", "kind": protocol.CompletionItemKind.CLASS}
         comp = protocol.CompletionItem(label=comp_dict["label"], kind=comp_dict["kind"])
         self.assertEqual(json.dumps(comp, cls=protocol.JSONEncoder), json.dumps(comp_dict))
 

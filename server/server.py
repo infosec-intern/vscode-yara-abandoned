@@ -25,6 +25,36 @@ class YaraLanguageServer(object):
         # variable symbols have a few possible first characters
         self._varchar = ["$", "#", "@", "!"]
         self.num_clients = 0
+        schema = Path(__file__).parent.joinpath("modules.json").resolve()
+        self.modules = json.loads(schema.read_text())
+
+    def _parse_modules_schema(self, symbols: list, schema: dict, depth: int) -> list:
+        '''
+        Parse the modules schema for completion items of a given list of symbols
+
+        :symbols: List of symbols to parse. Order indicates nesting levels
+        :schema: JSON schema as a dictionary
+        :depth: Current nesting depth
+        '''
+        current_symbol = symbols[depth]
+        self._logger.critical("current_symbol: %s", current_symbol)
+        items = []
+        # last possible item to complete
+        if depth == len(symbols) - 1:
+            for label, kind_str in schema.get(current_symbol, {}).items():
+                kind = lsp.CompletionItemKind.CLASS
+                if str(kind_str).lower() == "enum":
+                    kind = lsp.CompletionItemKind.ENUM
+                elif str(kind_str).lower() == "property":
+                    kind = lsp.CompletionItemKind.PROPERTY
+                elif str(kind_str).lower() == "method":
+                    kind = lsp.CompletionItemKind.METHOD
+                items.append(lsp.CompletionItem(label, kind))
+        elif current_symbol in schema:
+            child = schema[current_symbol]
+            if isinstance(child, dict):
+                items = self._parse_modules_schema(symbols, child, depth + 1)
+        return items
 
     async def handle_client(self, reader: asyncio.StreamReader, writer: asyncio.StreamWriter):
         '''React and respond to client messages
@@ -171,14 +201,23 @@ class YaraLanguageServer(object):
 
         Returns a (possibly empty) list of completion items
         '''
+        self._logger.critical(params)
         file_uri = params.get("textDocument", {}).get("uri", "")
+        trigger = params.get("context", {}).get("triggerCharacter", ".")
         results = []
         if file_uri:
             file_path = helpers.parse_uri(file_uri, encoding=self._encoding)
             pos = lsp.Position(line=params["position"]["line"], char=params["position"]["character"])
+            # need to change this from disk-based to getting the full contents of the document
+            # otherwise, Positions will get sent that don't yet exist on disk until the user
+            # saves the document being edited
             with open(file_path, "r") as rule_file:
                 text = rule_file.read()
                 symbol = helpers.resolve_symbol(text, pos)
+                # split up the symbols into component parts, leaving off the last trigger character
+                symbols = "".join(symbol[:len(symbol)-1]).split(trigger)
+                results = self._parse_modules_schema(symbols, self.modules, 0)
+                self._logger.debug(results)
         return results
 
     async def provide_definition(self, params: dict) -> dict:
