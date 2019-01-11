@@ -307,27 +307,49 @@ class ServerTests(unittest.TestCase):
         }
         self.assertTrue(False)
 
-    def test_server_code_completion(self):
-        ''' Test code completion provider '''
+    def test_server_code_completion_regular(self):
+        ''' Ensure provider completes code for an expected value '''
         async def run():
+            actual = []
             code_completion = str(self.rules_path.joinpath("code_completion.yara").resolve())
+            expected = ["network", "registry", "filesystem", "sync"]
             file_uri = helpers.create_file_uri(code_completion)
             params = {
                 "textDocument": {"uri": file_uri},
                 "position": {"line": 9, "character": 15}
             }
-            result = await self.server.provide_definition(params)
+            result = await self.server.provide_code_completion(params)
             self.assertEqual(len(result), 4)
-            for index, comp in enumerate(result):
-                self.assertIsInstance(comp, protocol.CompletionItem)
-                if index == 0:
-                    self.assertEqual(comp.label, "filesystem")
-                elif index == 1:
-                    self.assertEqual(comp.label, "network")
-                elif index == 2:
-                    self.assertEqual(comp.label, "registry")
-                elif index == 3:
-                    self.assertEqual(comp.label, "sync")
+            for completion in result:
+                self.assertIsInstance(completion, protocol.CompletionItem)
+                actual.append(completion.label)
+            self.assertListEqual(actual, expected)
+        self.loop.run_until_complete(run())
+
+    def test_server_code_completion_overflow(self):
+        ''' Ensure provider does not provide code for an overflow value (Position out-of-range) '''
+        async def run():
+            code_completion = str(self.rules_path.joinpath("code_completion.yara").resolve())
+            file_uri = helpers.create_file_uri(code_completion)
+            params = {
+                "textDocument": {"uri": file_uri},
+                "position": {"line": 9, "character": 25}
+            }
+            result = await self.server.provide_code_completion(params)
+            self.assertEqual(len(result), 0)
+        self.loop.run_until_complete(run())
+
+    def test_server_code_completion_unexpected(self):
+        ''' Ensure provider does not provide code for an unexpected value '''
+        async def run():
+            code_completion = str(self.rules_path.joinpath("code_completion.yara").resolve())
+            file_uri = helpers.create_file_uri(code_completion)
+            params = {
+                "textDocument": {"uri": file_uri},
+                "position": {"line": 8, "character": 25}
+            }
+            result = await self.server.provide_code_completion(params)
+            self.assertEqual(len(result), 0)
         self.loop.run_until_complete(run())
 
     def test_server_connection_closed(self):
