@@ -630,10 +630,27 @@ def run_test_suite(name: str, testcase: unittest.TestCase):
 
 
 if __name__ == "__main__":
+    import argparse
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-a", "--all", action="store_true")
+    parser.add_argument("-c", "--config", action="store_true")
+    parser.add_argument("-e", "--helper", action="store_true")
+    parser.add_argument("-p", "--protocol", action="store_true")
+    parser.add_argument("-s", "--server", action="store_true")
+    parser.add_argument("-t", "--transport", action="store_true")
+    args = parser.parse_args()
+
     total_coverage = []
-    total_coverage.append(run_test_suite("config", ConfigTests))
-    total_coverage.append(run_test_suite("helper", HelperTests))
-    total_coverage.append(run_test_suite("protocol", ProtocolTests))
-    total_coverage.append(run_test_suite("server", ServerTests))
-    total_coverage.append(run_test_suite("transport", TransportTests))
-    print("\nTotal test coverage: {:.1f}%".format((sum(total_coverage) / len(total_coverage)) * 100))
+    if args.all or args.config:
+        total_coverage.append(run_test_suite("config", ConfigTests))
+    if args.all or args.helper:
+        total_coverage.append(run_test_suite("helper", HelperTests))
+    if args.all or args.protocol:
+        total_coverage.append(run_test_suite("protocol", ProtocolTests))
+    if args.all or args.server:
+        total_coverage.append(run_test_suite("server", ServerTests))
+    if args.all or args.transport:
+        total_coverage.append(run_test_suite("transport", TransportTests))
+
+    if len(total_coverage) > 1:
+        print("\nTotal test coverage: {:.1f}%".format((sum(total_coverage) / len(total_coverage)) * 100))
