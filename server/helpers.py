@@ -90,7 +90,7 @@ def resolve_symbol(document: str, pos: lsp.Position) -> str:
     # find the left-bound of the symbol by looking backwards until a whitespace
     index = pos.char
     while True:
-        if not symbol_line[index].strip():
+        if not index == line_end and not symbol_line[index].strip():
             lb = index + 1
             break
         index -= 1
