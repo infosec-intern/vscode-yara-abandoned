@@ -309,7 +309,26 @@ class ServerTests(unittest.TestCase):
 
     def test_server_code_completion(self):
         ''' Test code completion provider '''
-        self.assertTrue(False)
+        async def run():
+            peek_rules = str(self.rules_path.joinpath("code_completion.yara").resolve())
+            file_uri = helpers.create_file_uri(peek_rules)
+            params = {
+                "textDocument": {"uri": file_uri},
+                "position": {"line": 9, "character": 16}
+            }
+            result = await self.server.provide_definition(params)
+            self.assertEqual(len(result), 4)
+            for index, comp in enumerate(results):
+                self.assertIsInstance(comp, protocol.CompletionItem)
+                if index == 0:
+                    self.assertEqual(comp.label, "filesystem")
+                elif index == 1:
+                    self.assertEqual(comp.label, "network")
+                elif index == 2:
+                    self.assertEqual(comp.label, "registry")
+                elif index == 3:
+                    self.assertEqual(comp.label, "sync")
+        self.loop.run_until_complete(run())
 
     def test_server_connection_closed(self):
         ''' Ensure the server properly handles closed client connections '''
@@ -622,7 +641,7 @@ def run_test_suite(name: str, testcase: unittest.TestCase):
     ''' Run a test suite and display results with the given name'''
     loader = unittest.TestLoader()
     suite = loader.loadTestsFromTestCase(testcase)
-    runner = unittest.TextTestRunner(verbosity=0)
+    runner = unittest.TextTestRunner(verbosity=2)
     results = runner.run(suite)
     pct_coverage = (results.testsRun - (len(results.failures) + len(results.errors))) / results.testsRun
     print("{} test coverage: {:.1f}%".format(name.capitalize(), pct_coverage * 100))
