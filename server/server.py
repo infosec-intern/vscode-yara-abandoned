@@ -37,7 +37,6 @@ class YaraLanguageServer(object):
         :depth: Current nesting depth
         '''
         current_symbol = symbols[depth]
-        self._logger.critical("current_symbol: %s", current_symbol)
         items = []
         # last possible item to complete
         if depth == len(symbols) - 1:
@@ -201,7 +200,6 @@ class YaraLanguageServer(object):
 
         Returns a (possibly empty) list of completion items
         '''
-        self._logger.critical(params)
         file_uri = params.get("textDocument", {}).get("uri", "")
         trigger = params.get("context", {}).get("triggerCharacter", ".")
         results = []
