@@ -28,6 +28,14 @@ class YaraLanguageServer(object):
         schema = Path(__file__).parent.joinpath("modules.json").resolve()
         self.modules = json.loads(schema.read_text())
 
+    def _get_document(self, file_uri: str, dirty_files: dict) -> str:
+        ''' Return the document text for a given file URI either from disk or memory '''
+        if file_uri in dirty_files:
+            return dirty_files[file_uri]
+        file_path = helpers.parse_uri(file_uri, encoding=self._encoding)
+        with open(file_path, "r") as rule_file:
+            return rule_file.read()
+
     def _parse_modules_schema(self, symbols: list, schema: dict, depth: int) -> list:
         '''
         Parse the modules schema for completion items of a given list of symbols
@@ -62,6 +70,8 @@ class YaraLanguageServer(object):
         :writer: asyncio.StreamWriter. The connected client will read from this stream
         '''
         config = {}
+        # file_uri => contents
+        dirty_files = {}
         has_started = False
         self._logger.info("Client connected")
         self.num_clients += 1
@@ -86,18 +96,30 @@ class YaraLanguageServer(object):
                     elif has_started and method == "shutdown":
                         self._logger.info("Client requested shutdown")
                         await self.send_response(message["id"], {}, writer)
+                        # explicitly clear the dirty files on shutdown
+                        for uri in dirty_files:
+                            del dirty_files[uri]
                     elif has_started and method == "textDocument/completion":
-                        completions = await self.provide_code_completion(message["params"])
-                        await self.send_response(message["id"], completions, writer)
+                        file_uri = params.get("textDocument", {}).get("uri", None)
+                        if file_uri:
+                            document = self._get_document(file_uri, dirty_files)
+                            completions = await self.provide_code_completion(message["params"], document)
+                            await self.send_response(message["id"], completions, writer)
                     elif has_started and method == "textDocument/definition":
-                        definition = await self.provide_definition(message["params"])
-                        await self.send_response(message["id"], definition, writer)
+                        file_uri = params.get("textDocument", {}).get("uri", None)
+                        if file_uri:
+                            document = self._get_document(file_uri, dirty_files)
+                            definition = await self.provide_definition(message["params"], document)
+                            await self.send_response(message["id"], definition, writer)
                     # elif has_started and method == "textDocument/documentHighlight":
                     #     highlights = await self.provide_highlight(message["params"])
                     #     await self.send_response(message["id"], highlights, writer)
                     elif has_started and method == "textDocument/references":
-                        references = await self.provide_reference(message["params"])
-                        await self.send_response(message["id"], references, writer)
+                        file_uri = params.get("textDocument", {}).get("uri", None)
+                        if file_uri:
+                            document = self._get_document(file_uri, dirty_files)
+                            references = await self.provide_reference(message["params"], document)
+                            await self.send_response(message["id"], references, writer)
                     elif has_started and method == "textDocument/rename":
                         renames = await self.provide_rename(message["params"])
                         await self.send_response(message["id"], renames, writer)
@@ -144,14 +166,25 @@ class YaraLanguageServer(object):
                     elif has_started and method == "workspace/didChangeConfiguration":
                         config = message.get("params", {}).get("settings", {}).get("yara", {})
                         self._logger.debug("Changed workspace config to %s", json.dumps(config))
-                        if config.get("trace", {}).get("server", "off") == "on":
-                            # TODO: add another logging handler to output DEBUG logs to VSCode's channel
-                            self._logger.info("Ignoring trace request for now")
-                    elif has_started and method == "textDocument/didSave" and config.get("compile_on_save", False):
+                    elif has_started and method == "textDocument/didChange":
+                        file_uri = message.get("params", {}).get("textDocument", {}).get("uri", None)
+                        if file_uri:
+                            self._logger.debug("Adding %s to dirty files list", file_uri)
+                            for changes in message.get("params", {}).get("contentChanges", []):
+                                # full text is submitted with each change
+                                change = changes.get("text", None)
+                                if change:
+                                    dirty_files[file_uri] = change
+                    elif has_started and method == "textDocument/didSave":
                         file_uri = message.get("params", {}).get("textDocument", {}).get("uri", "")
-                        file_path = helpers.parse_uri(file_uri)
-                        with open(file_path, "rb") as ifile:
-                            document = ifile.read().decode(self._encoding)
+                        # file is no longer dirty after saving
+                        if file_uri in self.dirty_files:
+                            del self.dirty_files[file_uri]
+                            self._logger.debug("Removed %s from dirty files list", file_uri)
+                        if config.get("compile_on_save", False):
+                            file_path = helpers.parse_uri(file_uri)
+                            with open(file_path, "rb") as ifile:
+                                document = ifile.read().decode(self._encoding)
                             diagnostics = await self.provide_diagnostic(document)
                             params = {
                                 "uri": file_uri,
@@ -195,79 +228,66 @@ class YaraLanguageServer(object):
             server_options["textDocumentSync"] = lsp.TextSyncKind.FULL
         return {"capabilities": server_options}
 
-    async def provide_code_completion(self, params: dict) -> dict:
+    async def provide_code_completion(self, params: dict, document: str) -> dict:
         '''Respond to the completionItem/resolve request
 
         Returns a (possibly empty) list of completion items
         '''
-        file_uri = params.get("textDocument", {}).get("uri", "")
-        trigger = params.get("context", {}).get("triggerCharacter", ".")
         results = []
-        if file_uri:
-            file_path = helpers.parse_uri(file_uri, encoding=self._encoding)
-            pos = lsp.Position(line=params["position"]["line"], char=params["position"]["character"])
-            # need to change this from disk-based to getting the full contents of the document
-            # otherwise, Positions will get sent that don't yet exist on disk until the user
-            # saves the document being edited
-            with open(file_path, "r") as rule_file:
-                text = rule_file.read()
-                symbol = helpers.resolve_symbol(text, pos)
-                # split up the symbols into component parts, leaving off the last trigger character
-                symbols = "".join(symbol[:len(symbol)-1]).split(trigger)
-                results = self._parse_modules_schema(symbols, self.modules, 0)
-                self._logger.debug(results)
+        trigger = params.get("context", {}).get("triggerCharacter", ".")
+        pos = lsp.Position(line=params["position"]["line"], char=params["position"]["character"])
+        symbol = helpers.resolve_symbol(document, pos)
+        # split up the symbols into component parts, leaving off the last trigger character
+        symbols = "".join(symbol[:len(symbol)-1]).split(trigger)
+        results = self._parse_modules_schema(symbols, self.modules, 0)
         return results
 
-    async def provide_definition(self, params: dict) -> dict:
+    async def provide_definition(self, params: dict, document: str) -> dict:
         '''Respond to the textDocument/definition request
 
         Returns a (possibly empty) list of symbol Locations
         '''
-        file_uri = params.get("textDocument", {}).get("uri", "")
         results = []
-        if file_uri:
-            file_path = helpers.parse_uri(file_uri, encoding=self._encoding)
-            pos = lsp.Position(line=params["position"]["line"], char=params["position"]["character"])
-            with open(file_path, "r") as rule_file:
-                text = rule_file.read()
-                symbol = helpers.resolve_symbol(text, pos)
-                # check to see if the symbol is a variable or a rule name (currently the only valid symbols)
-                if symbol[0] in self._varchar:
-                    pattern = "\\${} =\\s".format("".join(symbol[1:]))
-                    rule_range = helpers.get_rule_range(text, pos)
-                    rule_lines = text.split("\n")[rule_range.start.line:rule_range.end.line+1]
-                    rel_offset = rule_range.start.line
-                # else assume this is a rule symbol
-                else:
-                    pattern = "\\brule {}\\b".format(symbol)
-                    rule_lines = text.split("\n")
-                    rel_offset = 0
+        file_uri = params.get("textDocument", {}).get("uri", None)
+        pos = lsp.Position(line=params["position"]["line"], char=params["position"]["character"])
+        symbol = helpers.resolve_symbol(document, pos)
+        # check to see if the symbol is a variable or a rule name (currently the only valid symbols)
+        if symbol[0] in self._varchar:
+            pattern = "\\${} =\\s".format("".join(symbol[1:]))
+            rule_range = helpers.get_rule_range(document, pos)
+            rule_lines = document.split("\n")[rule_range.start.line:rule_range.end.line+1]
+            rel_offset = rule_range.start.line
+        # else assume this is a rule symbol
+        else:
+            pattern = "\\brule {}\\b".format(symbol)
+            rule_lines = document.split("\n")
+            rel_offset = 0
 
-                for index, line in enumerate(rule_lines):
-                    for match in re.finditer(pattern, line):
-                        if match:
-                            offset = rel_offset + index
-                            locrange = lsp.Range(
-                                start=lsp.Position(line=offset, char=match.start()),
-                                end=lsp.Position(line=offset, char=match.end())
-                            )
-                            results.append(lsp.Location(locrange, file_uri))
+        for index, line in enumerate(rule_lines):
+            for match in re.finditer(pattern, line):
+                if match:
+                    offset = rel_offset + index
+                    locrange = lsp.Range(
+                        start=lsp.Position(line=offset, char=match.start()),
+                        end=lsp.Position(line=offset, char=match.end())
+                    )
+                    results.append(lsp.Location(locrange, file_uri))
         return results
 
-    async def provide_diagnostic(self, text_document: str) -> dict:
+    async def provide_diagnostic(self, document: str) -> dict:
         ''' Respond to the textDocument/publishDiagnostics request
 
-        :text_document: Contents of YARA rule file
+        :document: Contents of YARA rule file
         '''
         if HAS_YARA:
             diagnostics = []
             try:
-                yara.compile(source=text_document)
+                yara.compile(source=document)
             except yara.SyntaxError as error:
                 line_no, msg = helpers.parse_result(str(error))
                 # VSCode is zero-indexed
                 line_no -= 1
-                first_char = helpers.get_first_non_whitespace_index(text_document.split("\n")[line_no])
+                first_char = helpers.get_first_non_whitespace_index(document.split("\n")[line_no])
                 symbol_range = lsp.Range(
                     start=lsp.Position(line_no, first_char),
                     end=lsp.Position(line_no, 10000)
@@ -283,7 +303,7 @@ class YaraLanguageServer(object):
                 line_no, msg = helpers.parse_result(str(warning))
                 # VSCode is zero-indexed
                 line_no -= 1
-                first_char = helpers.get_first_non_whitespace_index(text_document.split("\n")[line_no])
+                first_char = helpers.get_first_non_whitespace_index(document.split("\n")[line_no])
                 symbol_range = lsp.Range(
                     start=lsp.Position(line_no, first_char),
                     end=lsp.Position(line_no, 10000)
@@ -305,44 +325,40 @@ class YaraLanguageServer(object):
         self._logger.warning("provide_highlight() is not implemented")
         return {}
 
-    async def provide_reference(self, params: dict) -> dict:
+    async def provide_reference(self, params: dict, document: str) -> dict:
         '''The references request is sent from the client to the server to resolve project-wide references for the symbol denoted by the given text document position
 
         Returns a (possibly empty) list of symbol Locations
         '''
-        file_uri = params.get("textDocument", {}).get("uri", "")
         results = []
-        if file_uri:
-            file_path = helpers.parse_uri(file_uri, encoding=self._encoding)
-            pos = lsp.Position(line=params["position"]["line"], char=params["position"]["character"])
-            with open(file_path, "r") as rule_file:
-                text = rule_file.read()
-                symbol = helpers.resolve_symbol(text, pos)
-                # check to see if the symbol is a variable or a rule name (currently the only valid symbols)
-                if symbol[0] in self._varchar:
-                    # gotta match the wildcard variables too
-                    if symbol[-1] == "*":
-                        symbol = symbol.replace("*", ".*?")
-                    # any possible first character matching self._varchar must be treated as a reference
-                    pattern = "[{}]{}\\b".format("".join(self._varchar), "".join(symbol[1:]))
-                    rule_range = helpers.get_rule_range(text, pos)
-                    rule_lines = text.split("\n")[rule_range.start.line:rule_range.end.line+1]
-                    rel_offset = rule_range.start.line
-                else:
-                    rel_offset = 0
-                    pattern = "{}\\b".format(symbol)
-                    rule_lines = text.split("\n")
+        file_uri = params.get("textDocument", {}).get("uri", None)
+        pos = lsp.Position(line=params["position"]["line"], char=params["position"]["character"])
+        symbol = helpers.resolve_symbol(document, pos)
+        # check to see if the symbol is a variable or a rule name (currently the only valid symbols)
+        if symbol[0] in self._varchar:
+            # gotta match the wildcard variables too
+            if symbol[-1] == "*":
+                symbol = symbol.replace("*", ".*?")
+            # any possible first character matching self._varchar must be treated as a reference
+            pattern = "[{}]{}\\b".format("".join(self._varchar), "".join(symbol[1:]))
+            rule_range = helpers.get_rule_range(document, pos)
+            rule_lines = document.split("\n")[rule_range.start.line:rule_range.end.line+1]
+            rel_offset = rule_range.start.line
+        else:
+            rel_offset = 0
+            pattern = "{}\\b".format(symbol)
+            rule_lines = document.split("\n")
 
-                for index, line in enumerate(rule_lines):
-                    for match in re.finditer(pattern, line):
-                        if match:
-                            # index corresponds to line no. within each rule, not within file
-                            offset = rel_offset + index
-                            locrange = lsp.Range(
-                                start=lsp.Position(line=offset, char=match.start()),
-                                end=lsp.Position(line=offset, char=match.end())
-                            )
-                            results.append(lsp.Location(locrange, file_uri))
+        for index, line in enumerate(rule_lines):
+            for match in re.finditer(pattern, line):
+                if match:
+                    # index corresponds to line no. within each rule, not within file
+                    offset = rel_offset + index
+                    locrange = lsp.Range(
+                        start=lsp.Position(line=offset, char=match.start()),
+                        end=lsp.Position(line=offset, char=match.end())
+                    )
+                    results.append(lsp.Location(locrange, file_uri))
         return results
 
     async def provide_rename(self, params: dict) -> dict:

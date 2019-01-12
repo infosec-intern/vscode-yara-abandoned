@@ -291,7 +291,8 @@ class ServerTests(unittest.TestCase):
                 "textDocument": {"uri": file_uri},
                 "position": {"line": 9, "character": 15}
             }
-            result = await self.server.provide_code_completion(params)
+            document = self.server._get_document(file_uri, dirty_files={})
+            result = await self.server.provide_code_completion(params, document)
             self.assertEqual(len(result), 4)
             for completion in result:
                 self.assertIsInstance(completion, protocol.CompletionItem)
@@ -308,7 +309,8 @@ class ServerTests(unittest.TestCase):
                 "textDocument": {"uri": file_uri},
                 "position": {"line": 9, "character": 25}
             }
-            result = await self.server.provide_code_completion(params)
+            document = self.server._get_document(file_uri, dirty_files={})
+            result = await self.server.provide_code_completion(params, document)
             self.assertEqual(len(result), 0)
         self.loop.run_until_complete(run())
 
@@ -321,7 +323,8 @@ class ServerTests(unittest.TestCase):
                 "textDocument": {"uri": file_uri},
                 "position": {"line": 8, "character": 25}
             }
-            result = await self.server.provide_code_completion(params)
+            document = self.server._get_document(file_uri, dirty_files={})
+            result = await self.server.provide_code_completion(params, document)
             self.assertEqual(len(result), 0)
         self.loop.run_until_complete(run())
 
@@ -338,7 +341,8 @@ class ServerTests(unittest.TestCase):
                 "textDocument": {"uri": file_uri},
                 "position": {"line": 42, "character": 12}
             }
-            result = await self.server.provide_definition(params)
+            document = self.server._get_document(file_uri, dirty_files={})
+            result = await self.server.provide_definition(params, document)
             self.assertEqual(len(result), 1)
             self.assertIsInstance(result[0], protocol.Location)
             self.assertEqual(result[0].uri, file_uri)
@@ -357,7 +361,8 @@ class ServerTests(unittest.TestCase):
                 "textDocument": {"uri": file_uri},
                 "position": {"line": 28, "character": 12}
             }
-            result = await self.server.provide_definition(params)
+            document = self.server._get_document(file_uri, dirty_files={})
+            result = await self.server.provide_definition(params, document)
             self.assertEqual(len(result), 1)
             self.assertIsInstance(result[0], protocol.Location)
             self.assertEqual(result[0].uri, file_uri)
@@ -376,7 +381,8 @@ class ServerTests(unittest.TestCase):
                 "textDocument": {"uri": file_uri},
                 "position": {"line": 42, "character": 32}
             }
-            result = await self.server.provide_definition(params)
+            document = self.server._get_document(file_uri, dirty_files={})
+            result = await self.server.provide_definition(params, document)
             self.assertEqual(len(result), 1)
             self.assertIsInstance(result[0], protocol.Location)
             self.assertEqual(result[0].uri, file_uri)
@@ -395,7 +401,8 @@ class ServerTests(unittest.TestCase):
                 "textDocument": {"uri": file_uri},
                 "position": {"line": 29, "character": 12}
             }
-            result = await self.server.provide_definition(params)
+            document = self.server._get_document(file_uri, dirty_files={})
+            result = await self.server.provide_definition(params, document)
             self.assertEqual(len(result), 1)
             self.assertIsInstance(result[0], protocol.Location)
             self.assertEqual(result[0].uri, file_uri)
@@ -414,7 +421,8 @@ class ServerTests(unittest.TestCase):
                 "textDocument": {"uri": file_uri},
                 "position": {"line": 24, "character": 12}
             }
-            result = await self.server.provide_definition(params)
+            document = self.server._get_document(file_uri, dirty_files={})
+            result = await self.server.provide_definition(params, document)
             self.assertEqual(len(result), 1)
             self.assertIsInstance(result[0], protocol.Location)
             self.assertEqual(result[0].uri, file_uri)
@@ -452,7 +460,8 @@ class ServerTests(unittest.TestCase):
                 "position": {"line": 27, "character": 12},
                 "context": {"includeDeclaration": True}
             }
-            result = await self.server.provide_definition(params)
+            document = self.server._get_document(file_uri, dirty_files={})
+            result = await self.server.provide_definition(params, document)
             self.assertListEqual(result, [])
         self.loop.run_until_complete(run())
 
@@ -500,7 +509,8 @@ class ServerTests(unittest.TestCase):
                 "position": {"line": 42, "character": 12},
                 "context": {"includeDeclaration": True}
             }
-            result = await self.server.provide_reference(params)
+            document = self.server._get_document(file_uri, dirty_files={})
+            result = await self.server.provide_reference(params, document)
             self.assertEqual(len(result), 2)
             for index, location in enumerate(result):
                 self.assertIsInstance(location, protocol.Location)
@@ -527,7 +537,8 @@ class ServerTests(unittest.TestCase):
                 "position": {"line": 28, "character": 12},
                 "context": {"includeDeclaration": True}
             }
-            result = await self.server.provide_reference(params)
+            document = self.server._get_document(file_uri, dirty_files={})
+            result = await self.server.provide_reference(params, document)
             self.assertEqual(len(result), 3)
             for index, location in enumerate(result):
                 self.assertIsInstance(location, protocol.Location)
@@ -559,7 +570,8 @@ class ServerTests(unittest.TestCase):
                 "position": {"line": 30, "character": 12},
                 "context": {"includeDeclaration": True}
             }
-            result = await self.server.provide_reference(params)
+            document = self.server._get_document(file_uri, dirty_files={})
+            result = await self.server.provide_reference(params, document)
             self.assertEqual(len(result), 4)
             for index, location in enumerate(result):
                 self.assertIsInstance(location, protocol.Location)
