@@ -189,8 +189,7 @@ class HelperTests(unittest.TestCase):
 class ProtocolTests(unittest.TestCase):
     @classmethod
     def setUpClass(self):
-        ''' Initialize tests '''
-        self.rules_path = Path(__file__).parent.joinpath("..", "test", "rules").resolve()
+        pass
 
     def setUp(self):
         ''' Create a new loop and server for each test '''
@@ -614,7 +613,6 @@ class TransportTests(unittest.TestCase):
     @classmethod
     def setUpClass(self):
         ''' Initialize tests '''
-        self.rules_path = Path(__file__).parent.joinpath("..", "test", "rules").resolve()
         self.server_address = "127.0.0.1"
         self.server_port = 8471
 
