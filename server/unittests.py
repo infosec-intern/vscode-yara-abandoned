@@ -37,7 +37,7 @@ class ConfigTests(unittest.TestCase):
         if not self.loop.is_closed():
             self.loop.close()
 
-    def test_config_compile_on_save_false(self):
+    def test_compile_on_save_false(self):
         ''' Ensure documents are not compiled on save when false '''
         change_config_request = {
             "jsonrpc":"2.0",
@@ -61,7 +61,7 @@ class ConfigTests(unittest.TestCase):
         }
         self.assertFalse(True)
 
-    def test_config_compile_on_save_true(self):
+    def test_compile_on_save_true(self):
         ''' Ensure documents are compiled on save when true '''
         change_config_request = {
             "jsonrpc":"2.0",
@@ -108,18 +108,18 @@ class HelperTests(unittest.TestCase):
         if not self.loop.is_closed():
             self.loop.close()
 
-    def test_helper_create_file_uri(self):
+    def test_create_file_uri(self):
         ''' Ensure file URIs are generated from paths '''
         expected = "file:///{}".format(quote(str(self.rules_path).replace("\\", "/"), safe="/\\"))
         output = helpers.create_file_uri(str(self.rules_path))
         self.assertEqual(output, expected)
 
-    def test_helper_get_first_non_whitespace_index(self):
+    def test_get_first_non_whitespace_index(self):
         ''' Ensure the index of the first non-whitespace is extracted from a string '''
         index = helpers.get_first_non_whitespace_index("    test")
         self.assertEqual(index, 4)
 
-    def test_helper_get_rule_range(self):
+    def test_get_rule_range(self):
         ''' Ensure YARA rules are parsed out and their range is returned '''
         async def run():
             peek_rules = self.rules_path.joinpath("peek_rules.yara").resolve()
@@ -133,27 +133,27 @@ class HelperTests(unittest.TestCase):
             self.assertEqual(result.end.char, 0)
         self.loop.run_until_complete(run())
 
-    def test_helper_parse_result(self):
+    def test_parse_result(self):
         ''' Ensure the parse_result() function properly parses a given diagnostic '''
         result = "line 14: syntax error, unexpected <true>, expecting text string"
         line_no, message = helpers.parse_result(result)
         self.assertEqual(line_no, 14)
         self.assertEqual(message, "syntax error, unexpected <true>, expecting text string")
 
-    def test_helper_parse_result_multicolon(self):
+    def test_parse_result_multicolon(self):
         ''' Sometimes results have colons in the messages - ensure this doesn't affect things '''
         result = "line 15: invalid hex string \"$hex_string\": syntax error"
         line_no, message = helpers.parse_result(result)
         self.assertEqual(line_no, 15)
         self.assertEqual(message, "invalid hex string \"$hex_string\": syntax error")
 
-    def test_helper_parse_uri(self):
+    def test_parse_uri(self):
         ''' Ensure paths are properly parsed '''
         path = "c:/one/two/three/four.txt"
         file_uri = "file:///{}".format(path)
         self.assertEqual(helpers.parse_uri(file_uri), path)
 
-    def test_helper_resolve_symbol(self):
+    def test_resolve_symbol(self):
         ''' Ensure symbols are properly resolved '''
         document = "rule ResolveSymbol {\n strings:\n  $a = \"test\"\n condition:\n  #a > 3\n}\n"
         pos = protocol.Position(line=4, char=3)
@@ -182,7 +182,7 @@ class ProtocolTests(unittest.TestCase):
         if not self.loop.is_closed():
             self.loop.close()
 
-    def test_protocol_diagnostic(self):
+    def test_diagnostic(self):
         ''' Ensure Diagnostic is properly encoded to JSON dictionaries '''
         pos_dict = {"line": 10, "character": 15}
         pos = protocol.Position(line=pos_dict["line"], char=pos_dict["character"])
@@ -201,13 +201,13 @@ class ProtocolTests(unittest.TestCase):
         )
         self.assertEqual(json.dumps(diag, cls=protocol.JSONEncoder), json.dumps(diag_dict))
 
-    def test_protocol_completionitem(self):
+    def test_completionitem(self):
         ''' Ensure CompletionItem is properly encoded to JSON dictionaries '''
         comp_dict = {"label": "test", "kind": protocol.CompletionItemKind.CLASS}
         comp = protocol.CompletionItem(label=comp_dict["label"], kind=comp_dict["kind"])
         self.assertEqual(json.dumps(comp, cls=protocol.JSONEncoder), json.dumps(comp_dict))
 
-    def test_protocol_location(self):
+    def test_location(self):
         ''' Ensure Location is properly encoded to JSON dictionaries '''
         pos_dict = {"line": 10, "character": 15}
         pos = protocol.Position(line=pos_dict["line"], char=pos_dict["character"])
@@ -220,13 +220,13 @@ class ProtocolTests(unittest.TestCase):
         )
         self.assertEqual(json.dumps(loc, cls=protocol.JSONEncoder), json.dumps(loc_dict))
 
-    def test_protocol_position(self):
+    def test_position(self):
         ''' Ensure Position is properly encoded to JSON dictionaries '''
         pos_dict = {"line": 10, "character": 15}
         pos = protocol.Position(line=pos_dict["line"], char=pos_dict["character"])
         self.assertEqual(json.dumps(pos, cls=protocol.JSONEncoder), json.dumps(pos_dict))
 
-    def test_protocol_range(self):
+    def test_range(self):
         ''' Ensure Range is properly encoded to JSON dictionaries '''
         pos_dict = {"line": 10, "character": 15}
         pos = protocol.Position(line=pos_dict["line"], char=pos_dict["character"])
@@ -625,7 +625,7 @@ class TransportTests(unittest.TestCase):
         if not self.loop.is_closed():
             self.loop.close()
 
-    def test_transport_closed(self):
+    def test_closed(self):
         ''' Ensure the transport mechanism is properly closed '''
         async def run():
             try:
@@ -637,7 +637,7 @@ class TransportTests(unittest.TestCase):
                 self.assertTrue(connection_closed, "Server connection remains open")
         self.loop.run_until_complete(run())
 
-    def test_transport_opened(self):
+    def test_opened(self):
         ''' Ensure the transport mechanism is properly opened '''
         async def run():
             try:
