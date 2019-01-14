@@ -3,6 +3,6 @@ env/
 *.pyc
 .vscode/
 __pycache__/
-*.log
+*.log*
 out/
 *.js
