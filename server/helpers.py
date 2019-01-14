@@ -86,11 +86,11 @@ def resolve_symbol(document: str, pos: lsp.Position) -> str:
     '''
     symbol_line = document.split("\n")[pos.line]
     line_end = len(symbol_line)
-    # self._logger.debug("symbol line: %s", symbol_line)
     # find the left-bound of the symbol by looking backwards until a whitespace
     index = pos.char
     while True:
-        if not index == line_end and not symbol_line[index].strip():
+        if index == 0 \
+        or not symbol_line[index].strip():
             lb = index + 1
             break
         index -= 1
@@ -103,5 +103,4 @@ def resolve_symbol(document: str, pos: lsp.Position) -> str:
             rb = index
             break
         index += 1
-    # self._logger.debug("symbol: %s", symbol_line[lb:rb])
     return symbol_line[lb:rb]
