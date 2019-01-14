@@ -210,24 +210,24 @@ class YaraLanguageServer(object):
         # typically the trigger is at the end of a line, so subtract one to avoid an IndexError
         pos = lsp.Position(line=params["position"]["line"], char=params["position"]["character"]-1)
         symbol = helpers.resolve_symbol(document, pos)
-        self._logger.info("symbol: %s", symbol)
         # split up the symbols into component parts, leaving off the last trigger character
         symbols = symbol.split(trigger)
         schema = self.modules
         for depth, symbol in enumerate(symbols):
-            self._logger.info("symbols[%d]: %s", depth, symbol)
             if symbol in schema:
                 # if we're at the last symbol, return completion items
                 if depth == len(symbols) - 1:
-                    for label, kind_str in schema.get(symbol, {}).items():
-                        kind = lsp.CompletionItemKind.CLASS
-                        if str(kind_str).lower() == "enum":
-                            kind = lsp.CompletionItemKind.ENUM
-                        elif str(kind_str).lower() == "property":
-                            kind = lsp.CompletionItemKind.PROPERTY
-                        elif str(kind_str).lower() == "method":
-                            kind = lsp.CompletionItemKind.METHOD
-                        results.append(lsp.CompletionItem(label, kind))
+                    completion_items = schema.get(symbol, {})
+                    if isinstance(completion_items, dict):
+                        for label, kind_str in completion_items.items():
+                            kind = lsp.CompletionItemKind.CLASS
+                            if str(kind_str).lower() == "enum":
+                                kind = lsp.CompletionItemKind.ENUM
+                            elif str(kind_str).lower() == "property":
+                                kind = lsp.CompletionItemKind.PROPERTY
+                            elif str(kind_str).lower() == "method":
+                                kind = lsp.CompletionItemKind.METHOD
+                            results.append(lsp.CompletionItem(label, kind))
                 else:
                     schema = schema[symbol]
         return results
