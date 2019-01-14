@@ -38,7 +38,6 @@ class ConfigTests(unittest.TestCase):
             self.loop.close()
 
     def test_compile_on_save_false(self):
-        ''' Ensure documents are not compiled on save when false '''
         change_config_request = {
             "jsonrpc":"2.0",
             "method": "workspace/didChangeConfiguration",
@@ -62,7 +61,6 @@ class ConfigTests(unittest.TestCase):
         self.assertFalse(True)
 
     def test_compile_on_save_true(self):
-        ''' Ensure documents are compiled on save when true '''
         change_config_request = {
             "jsonrpc":"2.0",
             "method": "workspace/didChangeConfiguration",
@@ -264,11 +262,9 @@ class ServerTests(unittest.TestCase):
             self.loop.close()
 
     def test_cmd_compile_rule(self):
-        ''' Test the "CompileRule" command is successfully executed '''
         self.assertTrue(False)
 
     def test_cmd_compile_all_rules(self):
-        ''' Test the "CompileAllRules" command is successfully executed '''
         request = {
             "jsonrpc": "2.0",
             "id": 1,
@@ -281,7 +277,6 @@ class ServerTests(unittest.TestCase):
         self.assertTrue(False)
 
     def test_code_completion_regular(self):
-        ''' Ensure provider completes code for an expected value '''
         async def run():
             actual = []
             code_completion = str(self.rules_path.joinpath("code_completion.yara").resolve())
@@ -301,7 +296,6 @@ class ServerTests(unittest.TestCase):
         self.loop.run_until_complete(run())
 
     def test_code_completion_overflow(self):
-        ''' Ensure provider does not provide code for an overflow value (Position out-of-range) '''
         async def run():
             code_completion = str(self.rules_path.joinpath("code_completion.yara").resolve())
             file_uri = helpers.create_file_uri(code_completion)
@@ -315,7 +309,6 @@ class ServerTests(unittest.TestCase):
         self.loop.run_until_complete(run())
 
     def test_code_completion_unexpected(self):
-        ''' Ensure provider does not provide code for an unexpected value '''
         async def run():
             code_completion = str(self.rules_path.joinpath("code_completion.yara").resolve())
             file_uri = helpers.create_file_uri(code_completion)
@@ -329,11 +322,9 @@ class ServerTests(unittest.TestCase):
         self.loop.run_until_complete(run())
 
     def test_connection_closed(self):
-        ''' Ensure the server properly handles closed client connections '''
         self.assertTrue(False)
 
     def test_definitions_rules(self):
-        ''' Ensure the definition provider properly resolves any rule names '''
         async def run():
             peek_rules = str(self.rules_path.joinpath("peek_rules.yara").resolve())
             file_uri = helpers.create_file_uri(peek_rules)
@@ -353,7 +344,6 @@ class ServerTests(unittest.TestCase):
         self.loop.run_until_complete(run())
 
     def test_definitions_variables_count(self):
-        ''' Ensure the definition provider properly resolves #vars '''
         async def run():
             peek_rules = str(self.rules_path.joinpath("peek_rules.yara").resolve())
             file_uri = helpers.create_file_uri(peek_rules)
@@ -373,7 +363,6 @@ class ServerTests(unittest.TestCase):
         self.loop.run_until_complete(run())
 
     def test_definitions_variables_length(self):
-        ''' Ensure the definition provider properly resolves !vars '''
         async def run():
             peek_rules = str(self.rules_path.joinpath("peek_rules.yara").resolve())
             file_uri = helpers.create_file_uri(peek_rules)
@@ -393,7 +382,6 @@ class ServerTests(unittest.TestCase):
         self.loop.run_until_complete(run())
 
     def test_definitions_variables_location(self):
-        ''' Ensure the definition provider properly resolves @vars '''
         async def run():
             peek_rules = str(self.rules_path.joinpath("peek_rules.yara").resolve())
             file_uri = helpers.create_file_uri(peek_rules)
@@ -413,7 +401,6 @@ class ServerTests(unittest.TestCase):
         self.loop.run_until_complete(run())
 
     def test_definitions_variables_regular(self):
-        ''' Ensure the definition provider properly resolves $vars '''
         async def run():
             peek_rules = str(self.rules_path.joinpath("peek_rules.yara").resolve())
             file_uri = helpers.create_file_uri(peek_rules)
@@ -451,7 +438,6 @@ class ServerTests(unittest.TestCase):
         self.assertTrue(False)
 
     def test_no_definitions(self):
-        ''' Ensure the definition provider does not resolve a non-variable or non-rule '''
         async def run():
             peek_rules = str(self.rules_path.joinpath("peek_rules.yara").resolve())
             file_uri = helpers.create_file_uri(peek_rules)
@@ -466,7 +452,6 @@ class ServerTests(unittest.TestCase):
         self.loop.run_until_complete(run())
 
     def test_diagnostics(self):
-        ''' Test diagnostic provider successfully provides '''
         async def run():
             document = "rule OneDiagnostic { condition: $true }"
             result = await self.server.provide_diagnostic(document)
@@ -480,7 +465,6 @@ class ServerTests(unittest.TestCase):
         self.loop.run_until_complete(run())
 
     def test_no_diagnostics(self):
-        ''' Test diagnostic provider does not provide anything '''
         async def run():
             document = "rule NoDiagnostics { condition: true }"
             result = await self.server.provide_diagnostic(document)
@@ -488,19 +472,15 @@ class ServerTests(unittest.TestCase):
         self.loop.run_until_complete(run())
 
     def test_exceptions_handled(self):
-        ''' Test the server handles exceptions properly '''
         self.assertTrue(False)
 
     def test_exit(self):
-        ''' Test the server exits its process '''
         self.assertTrue(False)
 
     def test_highlights(self):
-        ''' Test highlight provider '''
         self.assertTrue(False)
 
     def test_references_rules(self):
-        ''' Ensure the reference provider properly resolves any rule names '''
         async def run():
             peek_rules = str(self.rules_path.joinpath("peek_rules.yara").resolve())
             file_uri = helpers.create_file_uri(peek_rules)
@@ -528,7 +508,6 @@ class ServerTests(unittest.TestCase):
         self.loop.run_until_complete(run())
 
     def test_references_variable(self):
-        ''' Ensure the reference provider properly resolves any regular variables '''
         async def run():
             peek_rules = str(self.rules_path.joinpath("peek_rules.yara").resolve())
             file_uri = helpers.create_file_uri(peek_rules)
@@ -561,7 +540,6 @@ class ServerTests(unittest.TestCase):
         self.loop.run_until_complete(run())
 
     def test_references_wildcard(self):
-        ''' Ensure the reference provider properly resolves wildcard variables '''
         async def run():
             peek_rules = str(self.rules_path.joinpath("peek_rules.yara").resolve())
             file_uri = helpers.create_file_uri(peek_rules)
@@ -599,18 +577,13 @@ class ServerTests(unittest.TestCase):
         self.loop.run_until_complete(run())
 
     def test_renames(self):
-        ''' Test rename provider '''
         self.assertTrue(False)
 
     def test_shutdown(self):
-        ''' Test the server understands the shutdown message '''
         request = {"jsonrpc":"2.0","id":1,"method":"shutdown","params":None}
         self.assertTrue(False)
 
     def test_single_instance(self):
-        ''' Test to make sure there is only a single
-        instance of the server when multiple clients connect
-        '''
         self.assertTrue(False)
 
 class TransportTests(unittest.TestCase):
@@ -638,7 +611,6 @@ class TransportTests(unittest.TestCase):
             self.loop.close()
 
     def test_closed(self):
-        ''' Ensure the transport mechanism is properly closed '''
         async def run():
             try:
                 reader, _ = await asyncio.open_connection(self.server_address, self.server_port)
