@@ -311,7 +311,7 @@ class ServerTests(unittest.TestCase):
             }
             document = self.server._get_document(file_uri, dirty_files={})
             result = await self.server.provide_code_completion(params, document)
-            self.assertEqual(len(result), 0)
+            self.assertListEqual(result, [])
         self.loop.run_until_complete(run())
 
     def test_code_completion_unexpected(self):
@@ -325,7 +325,7 @@ class ServerTests(unittest.TestCase):
             }
             document = self.server._get_document(file_uri, dirty_files={})
             result = await self.server.provide_code_completion(params, document)
-            self.assertEqual(len(result), 0)
+            self.assertListEqual(result, [])
         self.loop.run_until_complete(run())
 
     def test_connection_closed(self):
