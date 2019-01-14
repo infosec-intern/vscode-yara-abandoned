@@ -84,23 +84,26 @@ def resolve_symbol(document: str, pos: lsp.Position) -> str:
                To determine line numbers, text is split at newlines, and carriage returns are ignored
     :pos: Symbol position to base range off of
     '''
-    symbol_line = document.split("\n")[pos.line]
-    line_end = len(symbol_line)
-    # find the left-bound of the symbol by looking backwards until a whitespace
-    index = pos.char
-    while True:
-        if index == 0 \
-        or not symbol_line[index].strip():
-            lb = index + 1
-            break
-        index -= 1
-    # find the right-bound of the symbol by looking forwards until a whitespace or a non-alphanum/special char
-    index = pos.char
-    while True:
-        if index == line_end \
-        or not symbol_line[index].strip() \
-        or not (symbol_line[index].isalnum() or symbol_line[index] in "_*"):
-            rb = index
-            break
-        index += 1
-    return symbol_line[lb:rb]
+    try:
+        symbol_line = document.split("\n")[pos.line]
+        line_end = len(symbol_line)
+        # find the left-bound of the symbol by looking backwards until a whitespace
+        index = pos.char
+        while True:
+            if index == 0 \
+            or not symbol_line[index].strip():
+                lb = index + 1
+                break
+            index -= 1
+        # find the right-bound of the symbol by looking forwards until a whitespace or a non-alphanum/special char
+        index = pos.char
+        while True:
+            if index == line_end \
+            or not symbol_line[index].strip() \
+            or not (symbol_line[index].isalnum() or symbol_line[index] in "_*"):
+                rb = index
+                break
+            index += 1
+        return symbol_line[lb:rb]
+    except IndexError:
+        return ""

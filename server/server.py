@@ -210,6 +210,8 @@ class YaraLanguageServer(object):
         # typically the trigger is at the end of a line, so subtract one to avoid an IndexError
         pos = lsp.Position(line=params["position"]["line"], char=params["position"]["character"]-1)
         symbol = helpers.resolve_symbol(document, pos)
+        if not symbol:
+            return []
         # split up the symbols into component parts, leaving off the last trigger character
         symbols = symbol.split(trigger)
         schema = self.modules
@@ -241,6 +243,8 @@ class YaraLanguageServer(object):
         file_uri = params.get("textDocument", {}).get("uri", None)
         pos = lsp.Position(line=params["position"]["line"], char=params["position"]["character"])
         symbol = helpers.resolve_symbol(document, pos)
+        if not symbol:
+            return []
         # check to see if the symbol is a variable or a rule name (currently the only valid symbols)
         if symbol[0] in self._varchar:
             pattern = "\\${} =\\s".format("".join(symbol[1:]))
@@ -324,6 +328,8 @@ class YaraLanguageServer(object):
         file_uri = params.get("textDocument", {}).get("uri", None)
         pos = lsp.Position(line=params["position"]["line"], char=params["position"]["character"])
         symbol = helpers.resolve_symbol(document, pos)
+        if not symbol:
+            return []
         # check to see if the symbol is a variable or a rule name (currently the only valid symbols)
         if symbol[0] in self._varchar:
             # gotta match the wildcard variables too
@@ -356,9 +362,9 @@ class YaraLanguageServer(object):
         self._logger.warning("provide_rename() is not yet implemented")
         new_symbol_name = params["newName"]
         symbol_pos = lsp.Position(line=params["position"]["line"], char=params["position"]["character"])
-        curr_symbol_name = helpers.resolve_symbol(params["textDocument"], symbol_pos)
+        symbol = helpers.resolve_symbol(params["textDocument"], symbol_pos)
         # it's possible the user tries to rename a non-symbol
-        if curr_symbol_name is None:
+        if not symbol:
             return {}
         else:
             rule_range = helpers.get_rule_range(params["textDocument"], symbol_pos)
