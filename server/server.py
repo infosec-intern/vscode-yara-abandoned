@@ -36,33 +36,6 @@ class YaraLanguageServer(object):
         with open(file_path, "r") as rule_file:
             return rule_file.read()
 
-    def _parse_modules_schema(self, symbols: list, schema: dict, depth: int) -> list:
-        '''
-        Parse the modules schema for completion items of a given list of symbols
-
-        :symbols: List of symbols to parse. Order indicates nesting levels
-        :schema: JSON schema as a dictionary
-        :depth: Current nesting depth
-        '''
-        current_symbol = symbols[depth]
-        items = []
-        # last possible item to complete
-        if depth == len(symbols) - 1:
-            for label, kind_str in schema.get(current_symbol, {}).items():
-                kind = lsp.CompletionItemKind.CLASS
-                if str(kind_str).lower() == "enum":
-                    kind = lsp.CompletionItemKind.ENUM
-                elif str(kind_str).lower() == "property":
-                    kind = lsp.CompletionItemKind.PROPERTY
-                elif str(kind_str).lower() == "method":
-                    kind = lsp.CompletionItemKind.METHOD
-                items.append(lsp.CompletionItem(label, kind))
-        elif current_symbol in schema:
-            child = schema[current_symbol]
-            if isinstance(child, dict):
-                items = self._parse_modules_schema(symbols, child, depth + 1)
-        return items
-
     async def handle_client(self, reader: asyncio.StreamReader, writer: asyncio.StreamWriter):
         '''React and respond to client messages
 
@@ -97,16 +70,15 @@ class YaraLanguageServer(object):
                         self._logger.info("Client requested shutdown")
                         await self.send_response(message["id"], {}, writer)
                         # explicitly clear the dirty files on shutdown
-                        for uri in dirty_files:
-                            del dirty_files[uri]
+                        dirty_files.clear()
                     elif has_started and method == "textDocument/completion":
-                        file_uri = params.get("textDocument", {}).get("uri", None)
+                        file_uri = message.get("params", {}).get("textDocument", {}).get("uri", None)
                         if file_uri:
                             document = self._get_document(file_uri, dirty_files)
                             completions = await self.provide_code_completion(message["params"], document)
                             await self.send_response(message["id"], completions, writer)
                     elif has_started and method == "textDocument/definition":
-                        file_uri = params.get("textDocument", {}).get("uri", None)
+                        file_uri = message.get("params", {}).get("textDocument", {}).get("uri", None)
                         if file_uri:
                             document = self._get_document(file_uri, dirty_files)
                             definition = await self.provide_definition(message["params"], document)
@@ -115,7 +87,7 @@ class YaraLanguageServer(object):
                     #     highlights = await self.provide_highlight(message["params"])
                     #     await self.send_response(message["id"], highlights, writer)
                     elif has_started and method == "textDocument/references":
-                        file_uri = params.get("textDocument", {}).get("uri", None)
+                        file_uri = message.get("params", {}).get("textDocument", {}).get("uri", None)
                         if file_uri:
                             document = self._get_document(file_uri, dirty_files)
                             references = await self.provide_reference(message["params"], document)
@@ -235,11 +207,12 @@ class YaraLanguageServer(object):
         '''
         results = []
         trigger = params.get("context", {}).get("triggerCharacter", ".")
-        pos = lsp.Position(line=params["position"]["line"], char=params["position"]["character"])
+        pos = lsp.Position(line=params["position"]["line"], char=params["position"]["character"]-1)
         symbol = helpers.resolve_symbol(document, pos)
+        self._logger.info("symbol: %s", symbol)
         # split up the symbols into component parts, leaving off the last trigger character
-        symbols = "".join(symbol[:len(symbol)-1]).split(trigger)
-        results = self._parse_modules_schema(symbols, self.modules, 0)
+        symbols = symbol.split(trigger)
+        self._logger.info("symbols: %s", symbols)
         return results
 
     async def provide_definition(self, params: dict, document: str) -> dict:
