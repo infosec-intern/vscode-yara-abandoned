@@ -35,8 +35,8 @@ class JsonRPCError(IntEnum):
 class CompletionItemKind(IntEnum):
     METHOD = 2
     CLASS = 7
-    MODULE = 9
     PROPERTY = 10
+    ENUM = 13
 
 class DiagnosticSeverity(IntEnum):
     ERROR = 1
