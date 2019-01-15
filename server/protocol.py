@@ -91,6 +91,7 @@ class Range(object):
 
 class CompletionItem(object):
     def __init__(self, label: str, kind=CompletionItemKind.CLASS):
+        ''' Suggested items for the programmer '''
         self.label = str(label)
         self.kind = int(kind)
 
@@ -128,10 +129,34 @@ class Location(object):
     def __repr__(self):
         return "<Location(range={}, uri={})>".format(self.range, self.uri)
 
+class TextEdit(object):
+    def __init__(self, locrange: Range, new_text: str):
+        ''' A textual edit applicable to a text document '''
+        self.newText = new_text
+        self.range = locrange
+
+    def __repr__(self):
+        return "<TextEdit(range={}, newText={})>".format(self.range, self.newText)
+
+class WorkspaceEdit(object):
+    # requiring the changes param in opposition to docs because
+    # this doesn't support documentChanges yet
+    def __init__(self, changes: List):
+        ''' Represents changes to many resources managed in the workspace '''
+        self.changes = changes
+
+    def __repr__(self):
+        return "<WorkspaceEdit(len(changes)={:d})>".format(len(self.changes))
+
 class JSONEncoder(json.JSONEncoder):
     def default(self, obj):
         ''' Custom JSON encoder '''
-        if isinstance(obj, Diagnostic):
+        if isinstance(obj, CompletionItem):
+            return {
+                "label": obj.label,
+                "kind": obj.kind
+            }
+        elif isinstance(obj, Diagnostic):
             return {
                 "message": obj.message,
                 "range": obj.range,
@@ -153,10 +178,14 @@ class JSONEncoder(json.JSONEncoder):
                 "start": obj.start,
                 "end": obj.end
             }
-        elif isinstance(obj, CompletionItem):
+        elif isinstance(obj, TextEdit):
             return {
-                "label": obj.label,
-                "kind": obj.kind
+                "newText": obj.newText,
+                "range": obj.range
+            }
+        elif isinstance(obj, WorkspaceEdit):
+            return {
+                "changes": obj.changes
             }
         else:
             super().default(obj)
