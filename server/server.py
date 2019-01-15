@@ -93,8 +93,11 @@ class YaraLanguageServer(object):
                             references = await self.provide_reference(message["params"], document)
                             await self.send_response(message["id"], references, writer)
                     elif has_started and method == "textDocument/rename":
-                        renames = await self.provide_rename(message["params"])
-                        await self.send_response(message["id"], renames, writer)
+                        file_uri = message.get("params", {}).get("textDocument", {}).get("uri", None)
+                        if file_uri:
+                            document = self._get_document(file_uri, dirty_files)
+                            renames = await self.provide_rename(message["params"], document)
+                            await self.send_response(message["id"], renames, writer)
                     elif has_started and method == "workspace/executeCommand":
                         cmd = message.get("params", {}).get("command", "")
                         args = message.get("params", {}).get("arguments", [])
@@ -189,8 +192,8 @@ class YaraLanguageServer(object):
                     "yara.CompileAllRules"
                 ]
             }
-        if doc_options.get("formatting", {}).get("dynamicRegistration", False):
-            server_options["documentFormattingProvider"] = True
+        # if doc_options.get("formatting", {}).get("dynamicRegistration", False):
+        #     server_options["documentFormattingProvider"] = True
         if doc_options.get("references", {}).get("dynamicRegistration", False):
             server_options["referencesProvider"] = True
         if doc_options.get("rename", {}).get("dynamicRegistration", False):
@@ -357,18 +360,32 @@ class YaraLanguageServer(object):
                     results.append(lsp.Location(locrange, file_uri))
         return results
 
-    async def provide_rename(self, params: dict) -> dict:
+    async def provide_rename(self, params: dict, document: str) -> dict:
         ''' Respond to the textDocument/rename request '''
-        self._logger.warning("provide_rename() is not yet implemented")
-        new_symbol_name = params["newName"]
-        symbol_pos = lsp.Position(line=params["position"]["line"], char=params["position"]["character"])
-        symbol = helpers.resolve_symbol(params["textDocument"], symbol_pos)
-        # it's possible the user tries to rename a non-symbol
-        if not symbol:
-            return {}
+        results = []
+        file_uri = params.get("textDocument", {}).get("uri", None)
+        pos = lsp.Position(line=params["position"]["line"], char=params["position"]["character"])
+        old_text = helpers.resolve_symbol(document, pos)
+        new_text = params.get("newName", None)
+        if new_text is None:
+            self._logger.warning("No text to rename symbol to. Skipping")
+            return []
+        elif new_text == old_text:
+            self._logger.warning("New rename symbol is the same as the old. Skipping")
+            return []
+        elif old_text.endswith("*"):
+            self._logger.warning("Cannot rename wildcard symbols. Skipping")
+            return []
+        # let provide_reference() determine symbol or rule
+        # and therefore what scope to look into
+        refs = await self.provide_reference(params, document)
+        results = [lsp.TextEdit(ref.range, new_text) for ref in refs]
+        print(results)
+        if len(results) > 0:
+            return lsp.WorkspaceEdit(changes=results)
         else:
-            rule_range = helpers.get_rule_range(params["textDocument"], symbol_pos)
-            return {}
+            self._logger.warning("No symbol references found to rename. Skipping")
+            return []
 
     async def read_request(self, reader: asyncio.StreamReader) -> dict:
         ''' Read data from the client '''
