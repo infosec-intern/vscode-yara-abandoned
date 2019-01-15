@@ -380,7 +380,6 @@ class YaraLanguageServer(object):
         # and therefore what scope to look into
         refs = await self.provide_reference(params, document)
         results = [lsp.TextEdit(ref.range, new_text) for ref in refs]
-        print(results)
         if len(results) > 0:
             return lsp.WorkspaceEdit(changes=results)
         else:
