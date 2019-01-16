@@ -4,9 +4,9 @@ For more info: https://microsoft.github.io/language-server-protocol/specificatio
 '''
 from enum import IntEnum
 import json
-from typing import List, Union
+from typing import Union
 
-EOL: List = ["\n", "\r\n", "\r"]
+EOL: list = ["\n", "\r\n", "\r"]
 
 # Protocol Constants
 class CompletionTriggerKind(IntEnum):
@@ -99,7 +99,7 @@ class CompletionItem(object):
         return "<CompletionItem(label={}, kind={:d})>".format(self.label, self.kind)
 
 class Diagnostic(object):
-    def __init__(self, locrange: Range, severity: int, message: str, relatedInformation: List=[]):
+    def __init__(self, locrange: Range, severity: int, message: str, relatedInformation: list=[]):
         ''' Represents a diagnostic, such as a compiler error or warning
 
         Diagnostic objects are only valid in the scope of a resource.
@@ -109,7 +109,7 @@ class Diagnostic(object):
             raise TypeError("Location range cannot be {}. Must be Range".format(type(locrange)))
         self.range = locrange
         if not isinstance(relatedInformation, list):
-            raise TypeError("Location range cannot be {}. Must be a List of strings".format(type(relatedInformation)))
+            raise TypeError("Location range cannot be {}. Must be a list of strings".format(type(relatedInformation)))
         self.relatedInformation = relatedInformation
         self.severity = int(severity)
 
@@ -141,12 +141,14 @@ class TextEdit(object):
 class WorkspaceEdit(object):
     # requiring the changes param in opposition to docs because
     # this doesn't support documentChanges yet
-    def __init__(self, changes: List):
+    def __init__(self, changes: dict):
         ''' Represents changes to many resources managed in the workspace '''
+        if not isinstance(changes, list):
+            raise TypeError("Changes cannot be {}. Must be a list of TextEdit changes".format(type(changes)))
         self.changes = changes
 
     def __repr__(self):
-        return "<WorkspaceEdit(len(changes)={:d})>".format(len(self.changes))
+        return "<WorkspaceEdit(len(changes)=[{}])>".format(", ".join(self.changes))
 
 class JSONEncoder(json.JSONEncoder):
     def default(self, obj):
