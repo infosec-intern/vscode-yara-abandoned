@@ -3,6 +3,7 @@ import json
 import logging
 import logging.handlers
 
+from exceptions import ServerExit
 from server import YaraLanguageServer
 
 logger = logging.getLogger("yara")
@@ -23,6 +24,13 @@ def exc_handler(loop, context: dict):
     try:
         server = future.result()
         print("future result: %s" % server)
+    except ServerExit as err:
+        server_task = context["future"]
+        logger.info(err)
+        # incomplete. needs more work to ensure server is closed
+        if not server_task.done():
+            server_task.cancel()
+            loop.close()
     except KeyboardInterrupt:
         logger.error("Stopping at user's request")
     except ConnectionResetError:

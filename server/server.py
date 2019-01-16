@@ -5,6 +5,7 @@ import logging
 from pathlib import Path
 import re
 
+from exceptions import ServerExit
 import helpers
 import protocol as lsp
 
@@ -131,6 +132,7 @@ class YaraLanguageServer(object):
                         self._logger.info("Server exiting process per client request")
                         # first remove the client associated with this handler
                         await self.remove_client(writer)
+                        raise ServerExit("Server exiting process per client request")
                         # # then clean up all the remaining tasks
                         # loop = asyncio.get_event_loop()
                         # for task in asyncio.Task.all_tasks(loop=loop):
