@@ -577,7 +577,19 @@ class ServerTests(unittest.TestCase):
         self.loop.run_until_complete(run())
 
     def test_renames(self):
-        self.assertTrue(False)
+        async def run():
+            peek_rules = str(self.rules_path.joinpath("peek_rules.yara").resolve())
+            file_uri = helpers.create_file_uri(peek_rules)
+            params = {
+                "textDocument": {"uri": file_uri},
+                "position": {"line": 29, "character": 12},
+                "newName": "test_rename"
+            }
+            document = self.server._get_document(file_uri, dirty_files={})
+            result = await self.server.provide_rename(params, document)
+            self.assertEqual(len(result), 1)
+            self.assertIsInstance(result[0], protocol.WorkspaceEdit)
+        self.loop.run_until_complete(run())
 
     def test_shutdown(self):
         request = {"jsonrpc":"2.0","id":1,"method":"shutdown","params":None}
