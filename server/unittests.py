@@ -419,24 +419,6 @@ class ServerTests(unittest.TestCase):
             self.assertEqual(result[0].range.end.char, 22)
         self.loop.run_until_complete(run())
 
-    def test_dirty_files(self):
-        peek_rules = str(self.rules_path.joinpath("peek_rules.yara").resolve())
-        file_uri = helpers.create_file_uri(peek_rules)
-        unsaved_changes = "rule ResolveSymbol {\n strings:\n  $a = \"test\"\n condition:\n  #a > 3\n}\n"
-        did_change_request = {
-            "jsonrpc":"2.0",
-            "method": "textDocument/didChange",
-            "params": {
-                "textDocument": {
-                    "uri": file_uri,
-                    "version":1
-                }, "contentChanges": [{
-                    "text": unsaved_changes
-                }]
-            }
-        }
-        self.assertTrue(False)
-
     def test_no_definitions(self):
         async def run():
             peek_rules = str(self.rules_path.joinpath("peek_rules.yara").resolve())
@@ -470,6 +452,24 @@ class ServerTests(unittest.TestCase):
             result = await self.server.provide_diagnostic(document)
             self.assertListEqual(result, [])
         self.loop.run_until_complete(run())
+
+    def test_dirty_files(self):
+        peek_rules = str(self.rules_path.joinpath("peek_rules.yara").resolve())
+        file_uri = helpers.create_file_uri(peek_rules)
+        unsaved_changes = "rule ResolveSymbol {\n strings:\n  $a = \"test\"\n condition:\n  #a > 3\n}\n"
+        did_change_request = {
+            "jsonrpc":"2.0",
+            "method": "textDocument/didChange",
+            "params": {
+                "textDocument": {
+                    "uri": file_uri,
+                    "version":1
+                }, "contentChanges": [{
+                    "text": unsaved_changes
+                }]
+            }
+        }
+        self.assertTrue(False)
 
     def test_exceptions_handled(self):
         self.assertTrue(False)
