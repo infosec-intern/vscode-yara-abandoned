@@ -150,6 +150,12 @@ class YaraLanguageServer(object):
                                 change = changes.get("text", None)
                                 if change:
                                     dirty_files[file_uri] = change
+                    elif has_started and method == "textDocument/didClose":
+                        file_uri = message.get("params", {}).get("textDocument", {}).get("uri", "")
+                        # file is no longer dirty after closing
+                        if file_uri in dirty_files:
+                            del dirty_files[file_uri]
+                            self._logger.debug("Removed %s from dirty files list", file_uri)
                     elif has_started and method == "textDocument/didSave":
                         file_uri = message.get("params", {}).get("textDocument", {}).get("uri", "")
                         # file is no longer dirty after saving
