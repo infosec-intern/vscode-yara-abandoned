@@ -203,7 +203,7 @@ class YaraLanguageServer(object):
             server_options["textDocumentSync"] = lsp.TextSyncKind.FULL
         return {"capabilities": server_options}
 
-    async def provide_code_completion(self, params: dict, document: str) -> dict:
+    async def provide_code_completion(self, params: dict, document: str) -> list:
         '''Respond to the completionItem/resolve request
 
         Returns a (possibly empty) list of completion items
@@ -237,7 +237,7 @@ class YaraLanguageServer(object):
                     schema = schema[symbol]
         return results
 
-    async def provide_definition(self, params: dict, document: str) -> dict:
+    async def provide_definition(self, params: dict, document: str) -> list:
         '''Respond to the textDocument/definition request
 
         Returns a (possibly empty) list of symbol Locations
@@ -271,7 +271,7 @@ class YaraLanguageServer(object):
                     results.append(lsp.Location(locrange, file_uri))
         return results
 
-    async def provide_diagnostic(self, document: str) -> dict:
+    async def provide_diagnostic(self, document: str) -> list:
         ''' Respond to the textDocument/publishDiagnostics request
 
         :document: Contents of YARA rule file
@@ -317,12 +317,12 @@ class YaraLanguageServer(object):
             self._logger.error("yara-python is not installed. Diagnostics are disabled")
             return []
 
-    async def provide_highlight(self, params: dict) -> dict:
+    async def provide_highlight(self, params: dict) -> list:
         ''' Respond to the textDocument/documentHighlight request '''
         self._logger.warning("provide_highlight() is not implemented")
-        return {}
+        return []
 
-    async def provide_reference(self, params: dict, document: str) -> dict:
+    async def provide_reference(self, params: dict, document: str) -> list:
         '''The references request is sent from the client to the server to resolve project-wide references for the symbol denoted by the given text document position
 
         Returns a (possibly empty) list of symbol Locations
@@ -360,31 +360,34 @@ class YaraLanguageServer(object):
                     results.append(lsp.Location(locrange, file_uri))
         return results
 
-    async def provide_rename(self, params: dict, document: str) -> dict:
+    async def provide_rename(self, params: dict, document: str) -> list:
         ''' Respond to the textDocument/rename request '''
-        results = []
-        file_uri = params.get("textDocument", {}).get("uri", None)
-        pos = lsp.Position(line=params["position"]["line"], char=params["position"]["character"])
-        old_text = helpers.resolve_symbol(document, pos)
-        new_text = params.get("newName", None)
-        if new_text is None:
-            self._logger.warning("No text to rename symbol to. Skipping")
-            return []
-        elif new_text == old_text:
-            self._logger.warning("New rename symbol is the same as the old. Skipping")
-            return []
-        elif old_text.endswith("*"):
-            self._logger.warning("Cannot rename wildcard symbols. Skipping")
-            return []
-        # let provide_reference() determine symbol or rule
-        # and therefore what scope to look into
-        refs = await self.provide_reference(params, document)
-        results = [lsp.TextEdit(ref.range, new_text) for ref in refs]
-        if len(results) > 0:
-            return lsp.WorkspaceEdit(changes=results)
-        else:
-            self._logger.warning("No symbol references found to rename. Skipping")
-            return []
+        self._logger.warning("provide_rename() is not implemented")
+        return []
+        # results = []
+        # file_uri = params.get("textDocument", {}).get("uri", None)
+        # pos = lsp.Position(line=params["position"]["line"], char=params["position"]["character"])
+        # old_text = helpers.resolve_symbol(document, pos)
+        # new_text = params.get("newName", None)
+        # if new_text is None:
+        #     self._logger.warning("No text to rename symbol to. Skipping")
+        #     return []
+        # elif new_text == old_text:
+        #     self._logger.warning("New rename symbol is the same as the old. Skipping")
+        #     return []
+        # elif old_text.endswith("*"):
+        #     self._logger.warning("Cannot rename wildcard symbols. Skipping")
+        #     return []
+        # # let provide_reference() determine symbol or rule
+        # # and therefore what scope to look into
+        # refs = await self.provide_reference(params, document)
+        # edits = [lsp.TextEdit(ref.range, new_text) for ref in refs]
+        # results.append(lsp.WorkspaceEdit(changes=edits))
+        # if len(results) > 0:
+        #     return results
+        # else:
+        #     self._logger.warning("No symbol references found to rename. Skipping")
+        #     return []
 
     async def read_request(self, reader: asyncio.StreamReader) -> dict:
         ''' Read data from the client '''
