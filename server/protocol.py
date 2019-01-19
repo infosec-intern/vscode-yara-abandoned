@@ -129,27 +129,6 @@ class Location(object):
     def __repr__(self):
         return "<Location(range={}, uri={})>".format(self.range, self.uri)
 
-class TextEdit(object):
-    def __init__(self, locrange: Range, new_text: str):
-        ''' A textual edit applicable to a text document '''
-        self.newText = new_text
-        self.range = locrange
-
-    def __repr__(self):
-        return "<TextEdit(range={}, newText={})>".format(self.range, self.newText)
-
-class WorkspaceEdit(object):
-    # requiring the changes param in opposition to docs because
-    # this doesn't support documentChanges yet
-    def __init__(self, changes: dict):
-        ''' Represents changes to many resources managed in the workspace '''
-        if not isinstance(changes, list):
-            raise TypeError("Changes cannot be {}. Must be a list of TextEdit changes".format(type(changes)))
-        self.changes = changes
-
-    def __repr__(self):
-        return "<WorkspaceEdit(len(changes)=[{}])>".format(", ".join(self.changes))
-
 class JSONEncoder(json.JSONEncoder):
     def default(self, obj):
         ''' Custom JSON encoder '''
@@ -179,15 +158,6 @@ class JSONEncoder(json.JSONEncoder):
             return {
                 "start": obj.start,
                 "end": obj.end
-            }
-        elif isinstance(obj, TextEdit):
-            return {
-                "newText": obj.newText,
-                "range": obj.range
-            }
-        elif isinstance(obj, WorkspaceEdit):
-            return {
-                "changes": obj.changes
             }
         else:
             super().default(obj)
