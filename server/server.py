@@ -204,8 +204,8 @@ class YaraLanguageServer(object):
         #     server_options["documentFormattingProvider"] = True
         if doc_options.get("references", {}).get("dynamicRegistration", False):
             server_options["referencesProvider"] = True
-        if doc_options.get("rename", {}).get("dynamicRegistration", False):
-            server_options["renameProvider"] = True
+        # if doc_options.get("rename", {}).get("dynamicRegistration", False):
+        #     server_options["renameProvider"] = True
         if doc_options.get("synchronization", {}).get("dynamicRegistration", False):
             # Documents are synced by always sending the full content of the document
             server_options["textDocumentSync"] = lsp.TextSyncKind.FULL
