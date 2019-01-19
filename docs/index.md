@@ -1,4 +1,4 @@
-![Source - raw.githubusercontent.com/blacktop/docker-yara/master/logo.png](../images/logo.png)
+![Source Image from blacktop/docker-yara](../images/logo.png "Source Image from blacktop/docker-yara")
 
 # YARA for Visual Studio Code
 Rich language support for the YARA pattern matching language
