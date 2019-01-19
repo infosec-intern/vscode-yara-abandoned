@@ -1,4 +1,4 @@
-![Source - https://raw.githubusercontent.com/blacktop/docker-yara/master/logo.png](../images/logo.png)
+![Source - raw.githubusercontent.com/blacktop/docker-yara/master/logo.png](../images/logo.png)
 
 # YARA for Visual Studio Code
 Rich language support for the YARA pattern matching language
