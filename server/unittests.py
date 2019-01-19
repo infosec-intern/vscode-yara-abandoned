@@ -463,24 +463,21 @@ class ServerTests(unittest.TestCase):
         peek_rules = str(self.rules_path.joinpath("peek_rules.yara").resolve())
         file_uri = helpers.create_file_uri(peek_rules)
         unsaved_changes = "rule ResolveSymbol {\n strings:\n  $a = \"test\"\n condition:\n  #a > 3\n}\n"
-        did_change_request = {
-            "jsonrpc":"2.0",
-            "method": "textDocument/didChange",
-            "params": {
-                "textDocument": {
-                    "uri": file_uri,
-                    "version":1
-                }, "contentChanges": [{
-                    "text": unsaved_changes
-                }]
-            }
+        dirty_files = {
+            file_uri: unsaved_changes
         }
-        self.assertTrue(False)
+        document = self.server._get_document(file_uri, dirty_files)
+        self.assertEqual(document, unsaved_changes)
 
     def test_exceptions_handled(self):
         self.assertTrue(False)
 
     def test_exit(self):
+        request = {
+            "jsonrpc": "2.0",
+            "method": "exit",
+            "params": {}
+        }
         self.assertTrue(False)
 
     def test_highlights(self):
@@ -582,6 +579,7 @@ class ServerTests(unittest.TestCase):
                     self.assertEqual(location.range.end.char, 13)
         self.loop.run_until_complete(run())
 
+    @unittest.skip(reason="Still not sure if I want to provide renames")
     def test_renames(self):
         async def run():
             peek_rules = str(self.rules_path.joinpath("peek_rules.yara").resolve())
