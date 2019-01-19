@@ -262,6 +262,15 @@ class ServerTests(unittest.TestCase):
             self.loop.close()
 
     def test_cmd_compile_rule(self):
+        request = {
+            "jsonrpc": "2.0",
+            "id": 1,
+            "method": "workspace/executeCommand",
+            "params": {
+                "command": "yara.CompileRule",
+                "arguments": []
+            }
+        }
         self.assertTrue(False)
 
     def test_cmd_compile_all_rules(self):
@@ -320,9 +329,6 @@ class ServerTests(unittest.TestCase):
             result = await self.server.provide_code_completion(params, document)
             self.assertListEqual(result, [])
         self.loop.run_until_complete(run())
-
-    def test_connection_closed(self):
-        self.assertTrue(False)
 
     def test_definitions_rules(self):
         async def run():
