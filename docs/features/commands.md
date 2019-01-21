@@ -12,4 +12,4 @@ Compile the given YARA rule file
 ## yara.CompileAllRules
 Compile all rule files in the current workspace
 
-[logo]: ../../images/logo.png "Source Image from blacktop/docker-yara"
+[logo]: https://raw.githubusercontent.com/infosec-intern/vscode-yara/master/images/logo.png "Source Image from blacktop/docker-yara"

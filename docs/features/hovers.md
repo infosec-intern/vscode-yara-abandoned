@@ -8,5 +8,5 @@ I've been thinking about using metadata (description, purpose, etc.), but this v
 
 ![Hover support][hover]
 
-[logo]: ../../images/logo.png "Source Image from blacktop/docker-yara"
-[hover]: ../../images/hover.gif "Hover support"
+[logo]: https://raw.githubusercontent.com/infosec-intern/vscode-yara/master/images/logo.png "Source Image from blacktop/docker-yara"
+[hover]: https://raw.githubusercontent.com/infosec-intern/vscode-yara/master/images/hover.gif "Hover support"

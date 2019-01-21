@@ -7,5 +7,5 @@ For more information about writing with modules, see [the YARA documention](http
 
 ![Code Completion for YARA modules][cc]
 
-[logo]: ../../images/logo.png "Source Image from blacktop/docker-yara"
-[cc]: ../../images/code_completion.gif "Code Completion for YARA modules"
+[logo]: https://raw.githubusercontent.com/infosec-intern/vscode-yara/master/images/logo.png "Source Image from blacktop/docker-yara"
+[cc]: https://raw.githubusercontent.com/infosec-intern/vscode-yara/master/images/code_completion.gif "Code Completion for YARA modules"
