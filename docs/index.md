@@ -12,4 +12,5 @@ This repository was formerly listed as [textmate-yara](https://github.com/infose
 * [Definitions](./features/definitions.md)
 * [Diagnostics](./features/diagnostics.md)
 * [Highlights](./features/highlights.md)
+* [Hovers](./features/hovers.md)
 * [References](./features/references.md)
