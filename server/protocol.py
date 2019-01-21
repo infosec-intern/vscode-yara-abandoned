@@ -2,7 +2,7 @@
 
 For more info: https://microsoft.github.io/language-server-protocol/specification
 '''
-from enum import IntEnum
+from enum import Enum, IntEnum
 import json
 from typing import Union
 
@@ -43,6 +43,10 @@ class DiagnosticSeverity(IntEnum):
     WARNING = 2
     INFO = 3
     HINT = 4
+
+class MarkupKind(Enum):
+    Markdown = "markdown"
+    Plaintext = "plaintext"
 
 class MessageType(IntEnum):
     ERROR = 1
@@ -129,6 +133,29 @@ class Location(object):
     def __repr__(self):
         return "<Location(range={}, uri={})>".format(self.range, self.uri)
 
+class MarkupContent(object):
+    def __init__(self, kind: MarkupKind, content: str):
+        ''' Represents a string value which content
+        is interpreted base on its kind flag
+        '''
+        if not isinstance(kind, MarkupKind):
+            raise TypeError("Markup kind cannot be {}. Must be MarkupKind".format(type(kind)))
+        self.kind = kind
+        self.value = str(content)
+
+class Hover(object):
+    def __init__(self, contents: MarkupContent, locrange: Range=None):
+        ''' Represents hover information at
+        a given text document position
+        '''
+        if locrange:
+            if not isinstance(locrange, Range):
+                raise TypeError("Location range cannot be {}. Must be Range".format(type(locrange)))
+            self.range = locrange
+        if not isinstance(contents, MarkupContent):
+            raise TypeError("Contents cannot be {}. Must be MarkupContent".format(type(contents)))
+        self.contents = contents
+
 class JSONEncoder(json.JSONEncoder):
     def default(self, obj):
         ''' Custom JSON encoder '''
@@ -144,11 +171,28 @@ class JSONEncoder(json.JSONEncoder):
                 "relatedInformation": obj.relatedInformation,
                 "severity": obj.severity
             }
+        elif isinstance(obj, Hover):
+            if hasattr(obj, "range"):
+                return {
+                    "range": obj.range,
+                    "contents": obj.contents
+                }
+            else:
+                return {
+                    "contents": obj.contents
+                }
         elif isinstance(obj, Location):
             return {
                 "range": obj.range,
                 "uri": obj.uri
             }
+        elif isinstance(obj, MarkupContent):
+            return {
+                "kind": obj.kind,
+                "value": obj.value
+            }
+        elif isinstance(obj, MarkupKind):
+            return obj.value
         elif isinstance(obj, Position):
             return {
                 "line": obj.line,

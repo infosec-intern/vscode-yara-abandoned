@@ -25,6 +25,7 @@ class YaraLanguageServer(object):
         self._logger = logging.getLogger("yara")
         # variable symbols have a few possible first characters
         self._varchar = ["$", "#", "@", "!"]
+        self.hover_langs = [lsp.MarkupKind.Markdown, lsp.MarkupKind.Plaintext]
         self.num_clients = 0
         schema = Path(__file__).parent.joinpath("modules.json").resolve()
         self.modules = json.loads(schema.read_text())
@@ -87,6 +88,12 @@ class YaraLanguageServer(object):
                     # elif has_started and method == "textDocument/documentHighlight":
                     #     highlights = await self.provide_highlight(message["params"])
                     #     await self.send_response(message["id"], highlights, writer)
+                    elif has_started and method == "textDocument/hover":
+                        file_uri = message.get("params", {}).get("textDocument", {}).get("uri", None)
+                        if file_uri:
+                            document = self._get_document(file_uri, dirty_files)
+                            hovers = await self.provide_hover(message["params"], document)
+                            await self.send_response(message["id"], hovers, writer)
                     elif has_started and method == "textDocument/references":
                         file_uri = message.get("params", {}).get("textDocument", {}).get("uri", None)
                         if file_uri:
@@ -193,6 +200,9 @@ class YaraLanguageServer(object):
             server_options["definitionProvider"] = True
         # if doc_options.get("documentHighlight", {}).get("dynamicRegistration", False):
         #     server_options["documentHighlightProvider"] = True
+        if doc_options.get("hover", {}).get("dynamicRegistration", False):
+            server_options["hoverProvider"] = True
+            self.hover_langs = doc_options.get("hover", {}).get("contentFormat", self.hover_langs)
         if ws_options.get("executeCommand", {}).get("dynamicRegistration", False):
             server_options["executeCommandProvider"] = {
                 "commands": [
@@ -260,23 +270,27 @@ class YaraLanguageServer(object):
         if symbol[0] in self._varchar:
             pattern = "\\${} =\\s".format("".join(symbol[1:]))
             rule_range = helpers.get_rule_range(document, pos)
-            rule_lines = document.split("\n")[rule_range.start.line:rule_range.end.line+1]
+            match_lines = document.split("\n")[rule_range.start.line:rule_range.end.line+1]
             rel_offset = rule_range.start.line
         # else assume this is a rule symbol
         else:
             pattern = "\\brule {}\\b".format(symbol)
-            rule_lines = document.split("\n")
+            match_lines = document.split("\n")
             rel_offset = 0
 
-        for index, line in enumerate(rule_lines):
-            for match in re.finditer(pattern, line):
-                if match:
-                    offset = rel_offset + index
-                    locrange = lsp.Range(
-                        start=lsp.Position(line=offset, char=match.start()),
-                        end=lsp.Position(line=offset, char=match.end())
-                    )
-                    results.append(lsp.Location(locrange, file_uri))
+        try:
+            for index, line in enumerate(match_lines):
+                for match in re.finditer(pattern, line):
+                    if match:
+                        offset = rel_offset + index
+                        locrange = lsp.Range(
+                            start=lsp.Position(line=offset, char=match.start()),
+                            end=lsp.Position(line=offset, char=match.end())
+                        )
+                        results.append(lsp.Location(locrange, file_uri))
+        except re.error as err:
+            self._logger.error(err)
+            #TODO: notify user an error occurred when retrieving definition
         return results
 
     async def provide_diagnostic(self, document: str) -> list:
@@ -325,10 +339,25 @@ class YaraLanguageServer(object):
             self._logger.error("yara-python is not installed. Diagnostics are disabled")
             return []
 
-    async def provide_highlight(self, params: dict) -> list:
+    async def provide_highlight(self, params: dict, document: str) -> list:
         ''' Respond to the textDocument/documentHighlight request '''
         self._logger.warning("provide_highlight() is not implemented")
         return []
+
+    async def provide_hover(self, params: dict, document: str) -> list:
+        ''' Respond to the textDocument/hover request '''
+        definitions = await self.provide_definition(params, document)
+        if len(definitions) > 0:
+            # only care about the first definition; although there shouldn't be more
+            try:
+                definition = definitions[0]
+                line = document.split("\n")[definition.range.start.line]
+                value = line.split(" = ")[1]
+                contents = lsp.MarkupContent(lsp.MarkupKind.Plaintext, content=value)
+                return lsp.Hover(contents)
+            except IndexError as err:
+                self._logger.error(err)
+        return None
 
     async def provide_reference(self, params: dict, document: str) -> list:
         '''The references request is sent from the client to the server to resolve project-wide references for the symbol denoted by the given text document position

@@ -483,6 +483,34 @@ class ServerTests(unittest.TestCase):
     def test_highlights(self):
         self.assertTrue(False)
 
+    def test_hover(self):
+        async def run():
+            peek_rules = str(self.rules_path.joinpath("peek_rules.yara").resolve())
+            file_uri = helpers.create_file_uri(peek_rules)
+            params = {
+                "textDocument": {"uri": file_uri},
+                "position": {"line": 29, "character": 12}
+            }
+            document = self.server._get_document(file_uri, dirty_files={})
+            result = await self.server.provide_hover(params, document)
+            self.assertIsInstance(result, protocol.Hover)
+            self.assertEqual(result.contents.kind, protocol.MarkupKind.Plaintext)
+            self.assertEqual(result.contents.value, "\"double string\" wide nocase fullword")
+        self.loop.run_until_complete(run())
+
+    def test_no_hover(self):
+        async def run():
+            peek_rules = str(self.rules_path.joinpath("peek_rules.yara").resolve())
+            file_uri = helpers.create_file_uri(peek_rules)
+            params = {
+                "textDocument": {"uri": file_uri},
+                "position": {"line": 25, "character": 12}
+            }
+            document = self.server._get_document(file_uri, dirty_files={})
+            result = await self.server.provide_hover(params, document)
+            self.assertIs(result, None)
+        self.loop.run_until_complete(run())
+
     def test_references_rules(self):
         async def run():
             peek_rules = str(self.rules_path.joinpath("peek_rules.yara").resolve())
