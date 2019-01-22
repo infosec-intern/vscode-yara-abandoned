@@ -480,6 +480,7 @@ class ServerTests(unittest.TestCase):
         }
         self.assertTrue(False)
 
+    @unittest.skip(reason="Still not sure if I want to provide highlights")
     def test_highlights(self):
         self.assertTrue(False)
 
@@ -509,6 +510,19 @@ class ServerTests(unittest.TestCase):
             document = self.server._get_document(file_uri, dirty_files={})
             result = await self.server.provide_hover(params, document)
             self.assertIs(result, None)
+        self.loop.run_until_complete(run())
+
+    def test_no_references(self):
+        async def run():
+            alienspy = str(self.rules_path.joinpath("apt_alienspy_rat.yar").resolve())
+            file_uri = helpers.create_file_uri(alienspy)
+            params = {
+                "textDocument": {"uri": file_uri},
+                "position": {"line": 47, "character": 99},
+            }
+            document = self.server._get_document(file_uri, dirty_files={})
+            result = await self.server.provide_reference(params, document)
+            self.assertListEqual(result, [])
         self.loop.run_until_complete(run())
 
     def test_references_rules(self):
