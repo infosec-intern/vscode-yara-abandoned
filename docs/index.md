@@ -20,8 +20,8 @@ Some common sequences are provided as snippets, to allow easy auto-completion fo
 * rule skeletons
 * for loops
 * `meta:`, `strings:`, and `condition:` blocks
-* standard module imports
-* any/all keywords
+* import statements for standard modules
+* "any" and "all" keywords
 
 ## Requirements
 With the new language server protocol, Python 3.5 or higher is required, due to the heavy use of the `asyncio` library.
