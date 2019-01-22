@@ -51,136 +51,139 @@ class YaraLanguageServer(object):
         self._logger.info("Client connected")
         self.num_clients += 1
         while True:
-            if reader.at_eof():
-                self._logger.warning("Client has closed")
-                self.num_clients -= 1
-                break
-            message = await self.read_request(reader)
-            # this matches some kind of JSON-RPC message
-            if "jsonrpc" in message:
-                method = message.get("method", "")
-                self._logger.info("Client sent a '%s' message", method)
-                # if an id is present, this is a JSON-RPC request
-                if "id" in message:
-                    if not has_started and method == "initialize":
-                        self.workspace = Path(helpers.parse_uri(message["params"]["rootUri"], encoding=self._encoding))
-                        self._logger.info("Client workspace folder: %s", self.workspace)
-                        client_options = message.get("params", {}).get("capabilities", {})
-                        announcement = self.initialize(client_options)
-                        await self.send_response(message["id"], announcement, writer)
-                    elif has_started and method == "shutdown":
-                        self._logger.info("Client requested shutdown")
-                        await self.send_response(message["id"], {}, writer)
-                        # explicitly clear the dirty files on shutdown
-                        dirty_files.clear()
-                    elif has_started and method == "textDocument/completion":
-                        file_uri = message.get("params", {}).get("textDocument", {}).get("uri", None)
-                        if file_uri:
-                            document = self._get_document(file_uri, dirty_files)
-                            completions = await self.provide_code_completion(message["params"], document)
-                            await self.send_response(message["id"], completions, writer)
-                    elif has_started and method == "textDocument/definition":
-                        file_uri = message.get("params", {}).get("textDocument", {}).get("uri", None)
-                        if file_uri:
-                            document = self._get_document(file_uri, dirty_files)
-                            definition = await self.provide_definition(message["params"], document)
-                            await self.send_response(message["id"], definition, writer)
-                    # elif has_started and method == "textDocument/documentHighlight":
-                    #     highlights = await self.provide_highlight(message["params"])
-                    #     await self.send_response(message["id"], highlights, writer)
-                    elif has_started and method == "textDocument/hover":
-                        file_uri = message.get("params", {}).get("textDocument", {}).get("uri", None)
-                        if file_uri:
-                            document = self._get_document(file_uri, dirty_files)
-                            hovers = await self.provide_hover(message["params"], document)
-                            await self.send_response(message["id"], hovers, writer)
-                    elif has_started and method == "textDocument/references":
-                        file_uri = message.get("params", {}).get("textDocument", {}).get("uri", None)
-                        if file_uri:
-                            document = self._get_document(file_uri, dirty_files)
-                            references = await self.provide_reference(message["params"], document)
-                            await self.send_response(message["id"], references, writer)
-                    elif has_started and method == "textDocument/rename":
-                        file_uri = message.get("params", {}).get("textDocument", {}).get("uri", None)
-                        if file_uri:
-                            document = self._get_document(file_uri, dirty_files)
-                            renames = await self.provide_rename(message["params"], document)
-                            await self.send_response(message["id"], renames, writer)
-                    elif has_started and method == "workspace/executeCommand":
-                        cmd = message.get("params", {}).get("command", "")
-                        args = message.get("params", {}).get("arguments", [])
-                        if cmd == "yara.CompileRule":
-                            self._logger.info("Compiling rule per user's request")
-                        elif cmd == "yara.CompileAllRules":
-                            self._logger.info("Compiling all rules in %s per user's request", self.workspace)
-                            files = [str(i.resolve()) for i in self.workspace.glob("**/*.yara")]
-                            files.extend([str(i.resolve()) for i in self.workspace.glob("**/*.yar")])
-                            for file_path in files:
+            try:
+                if reader.at_eof():
+                    self._logger.warning("Client has closed")
+                    self.num_clients -= 1
+                    break
+                message = await self.read_request(reader)
+                # this matches some kind of JSON-RPC message
+                if "jsonrpc" in message:
+                    method = message.get("method", "")
+                    self._logger.info("Client sent a '%s' message", method)
+                    # if an id is present, this is a JSON-RPC request
+                    if "id" in message:
+                        if not has_started and method == "initialize":
+                            self.workspace = Path(helpers.parse_uri(message["params"]["rootUri"], encoding=self._encoding))
+                            self._logger.info("Client workspace folder: %s", self.workspace)
+                            client_options = message.get("params", {}).get("capabilities", {})
+                            announcement = self.initialize(client_options)
+                            await self.send_response(message["id"], announcement, writer)
+                        elif has_started and method == "shutdown":
+                            self._logger.info("Client requested shutdown")
+                            await self.send_response(message["id"], {}, writer)
+                            # explicitly clear the dirty files on shutdown
+                            dirty_files.clear()
+                        elif has_started and method == "textDocument/completion":
+                            file_uri = message.get("params", {}).get("textDocument", {}).get("uri", None)
+                            if file_uri:
+                                document = self._get_document(file_uri, dirty_files)
+                                completions = await self.provide_code_completion(message["params"], document)
+                                await self.send_response(message["id"], completions, writer)
+                        elif has_started and method == "textDocument/definition":
+                            file_uri = message.get("params", {}).get("textDocument", {}).get("uri", None)
+                            if file_uri:
+                                document = self._get_document(file_uri, dirty_files)
+                                definition = await self.provide_definition(message["params"], document)
+                                await self.send_response(message["id"], definition, writer)
+                        # elif has_started and method == "textDocument/documentHighlight":
+                        #     highlights = await self.provide_highlight(message["params"])
+                        #     await self.send_response(message["id"], highlights, writer)
+                        elif has_started and method == "textDocument/hover":
+                            file_uri = message.get("params", {}).get("textDocument", {}).get("uri", None)
+                            if file_uri:
+                                document = self._get_document(file_uri, dirty_files)
+                                hovers = await self.provide_hover(message["params"], document)
+                                await self.send_response(message["id"], hovers, writer)
+                        elif has_started and method == "textDocument/references":
+                            file_uri = message.get("params", {}).get("textDocument", {}).get("uri", None)
+                            if file_uri:
+                                document = self._get_document(file_uri, dirty_files)
+                                references = await self.provide_reference(message["params"], document)
+                                await self.send_response(message["id"], references, writer)
+                        elif has_started and method == "textDocument/rename":
+                            file_uri = message.get("params", {}).get("textDocument", {}).get("uri", None)
+                            if file_uri:
+                                document = self._get_document(file_uri, dirty_files)
+                                renames = await self.provide_rename(message["params"], document)
+                                await self.send_response(message["id"], renames, writer)
+                        elif has_started and method == "workspace/executeCommand":
+                            cmd = message.get("params", {}).get("command", "")
+                            args = message.get("params", {}).get("arguments", [])
+                            if cmd == "yara.CompileRule":
+                                self._logger.info("Compiling rule per user's request")
+                            elif cmd == "yara.CompileAllRules":
+                                self._logger.info("Compiling all rules in %s per user's request", self.workspace)
+                                files = [str(i.resolve()) for i in self.workspace.glob("**/*.yara")]
+                                files.extend([str(i.resolve()) for i in self.workspace.glob("**/*.yar")])
+                                for file_path in files:
+                                    with open(file_path, "rb") as ifile:
+                                        document = ifile.read().decode(self._encoding)
+                                        diagnostics = await self.provide_diagnostic(document)
+                                        if diagnostics:
+                                            file_uri = helpers.create_file_uri(file_path)
+                                            params = {
+                                                "uri": file_uri,
+                                                "diagnostics": diagnostics
+                                            }
+                                            await self.send_notification("textDocument/publishDiagnostics", params, writer)
+                            else:
+                                self._logger.warning("Unknown command: %s [%s]", cmd, ",".join(args))
+                    # if no id is present, this is a JSON-RPC notification
+                    else:
+                        if method == "initialized":
+                            self._logger.info("Client has been successfully initialized")
+                            has_started = True
+                            params = {"type": lsp.MessageType.INFO, "message": "Successfully connected"}
+                            await self.send_notification("window/showMessageRequest", params, writer)
+                        elif has_started and method == "exit":
+                            self._logger.info("Server exiting process per client request")
+                            # first remove the client associated with this handler
+                            await self.remove_client(writer)
+                            raise ServerExit("Server exiting process per client request")
+                            # # then clean up all the remaining tasks
+                            # loop = asyncio.get_event_loop()
+                            # for task in asyncio.Task.all_tasks(loop=loop):
+                            #     task.cancel()
+                            # # finally, stop the server
+                            # loop.stop()
+                            # loop.close()
+                        elif has_started and method == "workspace/didChangeConfiguration":
+                            config = message.get("params", {}).get("settings", {}).get("yara", {})
+                            self._logger.debug("Changed workspace config to %s", json.dumps(config))
+                        elif has_started and method == "textDocument/didChange":
+                            file_uri = message.get("params", {}).get("textDocument", {}).get("uri", None)
+                            if file_uri:
+                                self._logger.debug("Adding %s to dirty files list", file_uri)
+                                for changes in message.get("params", {}).get("contentChanges", []):
+                                    # full text is submitted with each change
+                                    change = changes.get("text", None)
+                                    if change:
+                                        dirty_files[file_uri] = change
+                        elif has_started and method == "textDocument/didClose":
+                            file_uri = message.get("params", {}).get("textDocument", {}).get("uri", "")
+                            # file is no longer dirty after closing
+                            if file_uri in dirty_files:
+                                del dirty_files[file_uri]
+                                self._logger.debug("Removed %s from dirty files list", file_uri)
+                        elif has_started and method == "textDocument/didSave":
+                            file_uri = message.get("params", {}).get("textDocument", {}).get("uri", "")
+                            # file is no longer dirty after saving
+                            if file_uri in dirty_files:
+                                del dirty_files[file_uri]
+                                self._logger.debug("Removed %s from dirty files list", file_uri)
+                            if config.get("compile_on_save", False):
+                                file_path = helpers.parse_uri(file_uri)
                                 with open(file_path, "rb") as ifile:
                                     document = ifile.read().decode(self._encoding)
-                                    diagnostics = await self.provide_diagnostic(document)
-                                    if diagnostics:
-                                        file_uri = helpers.create_file_uri(file_path)
-                                        params = {
-                                            "uri": file_uri,
-                                            "diagnostics": diagnostics
-                                        }
-                                        await self.send_notification("textDocument/publishDiagnostics", params, writer)
-                        else:
-                            self._logger.warning("Unknown command: %s [%s]", cmd, ",".join(args))
-                # if no id is present, this is a JSON-RPC notification
-                else:
-                    if method == "initialized":
-                        self._logger.info("Client has been successfully initialized")
-                        has_started = True
-                        params = {"type": lsp.MessageType.INFO, "message": "Successfully connected"}
-                        await self.send_notification("window/showMessageRequest", params, writer)
-                    elif has_started and method == "exit":
-                        self._logger.info("Server exiting process per client request")
-                        # first remove the client associated with this handler
-                        await self.remove_client(writer)
-                        raise ServerExit("Server exiting process per client request")
-                        # # then clean up all the remaining tasks
-                        # loop = asyncio.get_event_loop()
-                        # for task in asyncio.Task.all_tasks(loop=loop):
-                        #     task.cancel()
-                        # # finally, stop the server
-                        # loop.stop()
-                        # loop.close()
-                    elif has_started and method == "workspace/didChangeConfiguration":
-                        config = message.get("params", {}).get("settings", {}).get("yara", {})
-                        self._logger.debug("Changed workspace config to %s", json.dumps(config))
-                    elif has_started and method == "textDocument/didChange":
-                        file_uri = message.get("params", {}).get("textDocument", {}).get("uri", None)
-                        if file_uri:
-                            self._logger.debug("Adding %s to dirty files list", file_uri)
-                            for changes in message.get("params", {}).get("contentChanges", []):
-                                # full text is submitted with each change
-                                change = changes.get("text", None)
-                                if change:
-                                    dirty_files[file_uri] = change
-                    elif has_started and method == "textDocument/didClose":
-                        file_uri = message.get("params", {}).get("textDocument", {}).get("uri", "")
-                        # file is no longer dirty after closing
-                        if file_uri in dirty_files:
-                            del dirty_files[file_uri]
-                            self._logger.debug("Removed %s from dirty files list", file_uri)
-                    elif has_started and method == "textDocument/didSave":
-                        file_uri = message.get("params", {}).get("textDocument", {}).get("uri", "")
-                        # file is no longer dirty after saving
-                        if file_uri in dirty_files:
-                            del dirty_files[file_uri]
-                            self._logger.debug("Removed %s from dirty files list", file_uri)
-                        if config.get("compile_on_save", False):
-                            file_path = helpers.parse_uri(file_uri)
-                            with open(file_path, "rb") as ifile:
-                                document = ifile.read().decode(self._encoding)
-                            diagnostics = await self.provide_diagnostic(document)
-                            params = {
-                                "uri": file_uri,
-                                "diagnostics": diagnostics
-                            }
-                            await self.send_notification("textDocument/publishDiagnostics", params, writer)
+                                diagnostics = await self.provide_diagnostic(document)
+                                params = {
+                                    "uri": file_uri,
+                                    "diagnostics": diagnostics
+                                }
+                                await self.send_notification("textDocument/publishDiagnostics", params, writer)
+            except Exception as err:
+                self._logger.exception(err)
 
     def initialize(self, client_options: dict) -> dict:
         '''Announce language support methods
@@ -385,16 +388,20 @@ class YaraLanguageServer(object):
             pattern = "{}\\b".format(symbol)
             rule_lines = document.split("\n")
 
-        for index, line in enumerate(rule_lines):
-            for match in re.finditer(pattern, line):
-                if match:
-                    # index corresponds to line no. within each rule, not within file
-                    offset = rel_offset + index
-                    locrange = lsp.Range(
-                        start=lsp.Position(line=offset, char=match.start()),
-                        end=lsp.Position(line=offset, char=match.end())
-                    )
-                    results.append(lsp.Location(locrange, file_uri))
+        try:
+            for index, line in enumerate(rule_lines):
+                for match in re.finditer(pattern, line):
+                    if match:
+                        # index corresponds to line no. within each rule, not within file
+                        offset = rel_offset + index
+                        locrange = lsp.Range(
+                            start=lsp.Position(line=offset, char=match.start()),
+                            end=lsp.Position(line=offset, char=match.end())
+                        )
+                        results.append(lsp.Location(locrange, file_uri))
+        except re.error as err:
+            self._logger.error(err)
+            #TODO: notify user an error occurred when retrieving definition
         return results
 
     async def provide_rename(self, params: dict, document: str) -> list:
