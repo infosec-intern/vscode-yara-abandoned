@@ -28,9 +28,9 @@ def exc_handler(loop, context: dict):
         server_task = context["future"]
         logger.info(err)
         # incomplete. needs more work to ensure server is closed
-        if not server_task.done():
-            server_task.cancel()
-            loop.close()
+        # if not server_task.done():
+        #     server_task.cancel()
+        #     loop.close()
     except KeyboardInterrupt:
         logger.error("Stopping at user's request")
     except ConnectionResetError:
