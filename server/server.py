@@ -141,7 +141,7 @@ class YaraLanguageServer(object):
                             self._logger.info("Server exiting process per client request")
                             # first remove the client associated with this handler
                             await self.remove_client(writer)
-                            raise ServerExit("Server exiting process per client request")
+                            raise ce.ServerExit("Server exiting process per client request")
                             # # then clean up all the remaining tasks
                             # loop = asyncio.get_event_loop()
                             # for task in asyncio.Task.all_tasks(loop=loop):
@@ -195,7 +195,7 @@ class YaraLanguageServer(object):
                 self._logger.error(err)
                 params = {
                     "type": lsp.MessageType.ERROR,
-                    "message": err
+                    "message": str(err)
                 }
                 await self.send_notification("window/showMessage", params, writer)
             except Exception as err:
@@ -316,6 +316,9 @@ class YaraLanguageServer(object):
                         )
                         results.append(lsp.Location(locrange, file_uri))
             return results
+        except re.error:
+            self._logger.debug("Error building regex pattern: %s", pattern)
+            return []
         except Exception as err:
             raise ce.DefinitionError("Could not offer definition for symbol '{}': {}".format(symbol, err))
 
@@ -436,6 +439,9 @@ class YaraLanguageServer(object):
                         )
                         results.append(lsp.Location(locrange, file_uri))
             return results
+        except re.error:
+            self._logger.debug("Error building regex pattern: %s", pattern)
+            return []
         except Exception as err:
             raise ce.SymbolReferenceError("Could not find references for '{}': {}".format(symbol, err))
 
