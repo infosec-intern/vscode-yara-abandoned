@@ -184,6 +184,11 @@ class YaraLanguageServer(object):
                                 await self.send_notification("textDocument/publishDiagnostics", params, writer)
             except Exception as err:
                 self._logger.exception(err)
+                params = {
+                    "type": lsp.MessageType.ERROR,
+                    "message": "An error occurred: {}".format(err)
+                }
+                await self.send_notification("window/showMessage", params, writer)
 
     def initialize(self, client_options: dict) -> dict:
         '''Announce language support methods
@@ -281,19 +286,15 @@ class YaraLanguageServer(object):
             match_lines = document.split("\n")
             rel_offset = 0
 
-        try:
-            for index, line in enumerate(match_lines):
-                for match in re.finditer(pattern, line):
-                    if match:
-                        offset = rel_offset + index
-                        locrange = lsp.Range(
-                            start=lsp.Position(line=offset, char=match.start()),
-                            end=lsp.Position(line=offset, char=match.end())
-                        )
-                        results.append(lsp.Location(locrange, file_uri))
-        except re.error as err:
-            self._logger.error(err)
-            #TODO: notify user an error occurred when retrieving definition
+        for index, line in enumerate(match_lines):
+            for match in re.finditer(pattern, line):
+                if match:
+                    offset = rel_offset + index
+                    locrange = lsp.Range(
+                        start=lsp.Position(line=offset, char=match.start()),
+                        end=lsp.Position(line=offset, char=match.end())
+                    )
+                    results.append(lsp.Location(locrange, file_uri))
         return results
 
     async def provide_diagnostic(self, document: str) -> list:
@@ -388,20 +389,16 @@ class YaraLanguageServer(object):
             pattern = "{}\\b".format(symbol)
             rule_lines = document.split("\n")
 
-        try:
-            for index, line in enumerate(rule_lines):
-                for match in re.finditer(pattern, line):
-                    if match:
-                        # index corresponds to line no. within each rule, not within file
-                        offset = rel_offset + index
-                        locrange = lsp.Range(
-                            start=lsp.Position(line=offset, char=match.start()),
-                            end=lsp.Position(line=offset, char=match.end())
-                        )
-                        results.append(lsp.Location(locrange, file_uri))
-        except re.error as err:
-            self._logger.error(err)
-            #TODO: notify user an error occurred when retrieving definition
+        for index, line in enumerate(rule_lines):
+            for match in re.finditer(pattern, line):
+                if match:
+                    # index corresponds to line no. within each rule, not within file
+                    offset = rel_offset + index
+                    locrange = lsp.Range(
+                        start=lsp.Position(line=offset, char=match.start()),
+                        end=lsp.Position(line=offset, char=match.end())
+                    )
+                    results.append(lsp.Location(locrange, file_uri))
         return results
 
     async def provide_rename(self, params: dict, document: str) -> list:
