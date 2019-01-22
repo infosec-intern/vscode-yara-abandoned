@@ -30,9 +30,9 @@ In addition, `yara-python` must be installed. If it is not installed, this exten
 
 **Note:** If you are on Windows, you might have to set the `$INCLUDE` environment variable before buidling this environment, so that when `yara-python` is compiled for your local system, Python knows where to find the appropriate DLLs.
 On Windows 10, this would probably look like:
-```sh
-set INCLUDE="C:\Program Files (x86)\Windows Kits\10\Include"
-py -3 -m pip install yara-python
+```powershell
+> set INCLUDE="C:\Program Files (x86)\Windows Kits\10\Include"
+> py -3 -m pip install yara-python
 ```
 
 ## Problems?
