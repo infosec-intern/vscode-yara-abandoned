@@ -1,2 +1,0 @@
-class ServerExit(Exception):
-    pass
