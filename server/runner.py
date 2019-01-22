@@ -22,15 +22,14 @@ def exc_handler(loop, context: dict):
     ''' Appropriately handle exceptions '''
     future = context["future"]
     try:
-        server = future.result()
-        print("future result: %s" % server)
+        future.result()
     except ServerExit as err:
         server_task = context["future"]
         logger.info(err)
         # incomplete. needs more work to ensure server is closed
-        # if not server_task.done():
-        #     server_task.cancel()
-        #     loop.close()
+        if not server_task.done():
+            server_task.cancel()
+            loop.close()
     except KeyboardInterrupt:
         logger.error("Stopping at user's request")
     except ConnectionResetError:
@@ -46,13 +45,13 @@ async def main():
     socket_server = await asyncio.start_server(
         client_connected_cb=yaralangserver.handle_client,
         host="127.0.0.1",
-        port=8471)
+        port=8471,
+        start_serving=False
+    )
     socket_server.get_loop().set_exception_handler(exc_handler)
     servhost, servport = socket_server.sockets[0].getsockname()
     logger.info("Serving on tcp://%s:%d", servhost, servport)
-    async with socket_server:
-        await socket_server.serve_forever()
-
+    await socket_server.serve_forever()
 
 if __name__ == "__main__":
     asyncio.run(main(), debug=True)

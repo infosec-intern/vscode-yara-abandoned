@@ -143,12 +143,12 @@ class YaraLanguageServer(object):
                             await self.remove_client(writer)
                             raise ce.ServerExit("Server exiting process per client request")
                             # # then clean up all the remaining tasks
-                            # loop = asyncio.get_event_loop()
-                            # for task in asyncio.Task.all_tasks(loop=loop):
-                            #     task.cancel()
+                            loop = asyncio.get_event_loop()
+                            for task in asyncio.Task.all_tasks(loop=loop):
+                                task.cancel()
                             # # finally, stop the server
-                            # loop.stop()
-                            # loop.close()
+                            loop.stop()
+                            loop.close()
                         elif has_started and method == "workspace/didChangeConfiguration":
                             config = message.get("params", {}).get("settings", {}).get("yara", {})
                             self._logger.debug("Changed workspace config to %s", json.dumps(config))
@@ -196,13 +196,6 @@ class YaraLanguageServer(object):
                 params = {
                     "type": lsp.MessageType.ERROR,
                     "message": str(err)
-                }
-                await self.send_notification("window/showMessage", params, writer)
-            except Exception as err:
-                self._logger.error(err)
-                params = {
-                    "type": lsp.MessageType.ERROR,
-                    "message": "An error occurred: {}".format(err)
                 }
                 await self.send_notification("window/showMessage", params, writer)
 
