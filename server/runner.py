@@ -3,7 +3,7 @@ import json
 import logging
 import logging.handlers
 
-from exceptions import ServerExit
+from custom_err import ServerExit
 from server import YaraLanguageServer
 
 logger = logging.getLogger("yara")

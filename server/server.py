@@ -5,7 +5,7 @@ import logging
 from pathlib import Path
 import re
 
-from exceptions import ServerExit
+import custom_err as ce
 import helpers
 import protocol as lsp
 
@@ -25,6 +25,7 @@ class YaraLanguageServer(object):
         self._logger = logging.getLogger("yara")
         # variable symbols have a few possible first characters
         self._varchar = ["$", "#", "@", "!"]
+        self.diagnostics_warned = False
         self.hover_langs = [lsp.MarkupKind.Markdown, lsp.MarkupKind.Plaintext]
         self.num_clients = 0
         schema = Path(__file__).parent.joinpath("modules.json").resolve()
@@ -182,8 +183,23 @@ class YaraLanguageServer(object):
                                     "diagnostics": diagnostics
                                 }
                                 await self.send_notification("textDocument/publishDiagnostics", params, writer)
+            except ce.NoYaraPython as err:
+                self._logger.warning(err)
+                params = {
+                    "type": lsp.MessageType.WARNING,
+                    "message": err
+                }
+                await self.send_notification("window/showMessage", params, writer)
+            except (ce.CodeCompletionError, ce.DefinitionError, ce.DiagnosticError, \
+                    ce.HighlightError, ce.HoverError, ce.RenameError, ce.SymbolReferenceError) as err:
+                self._logger.error(err)
+                params = {
+                    "type": lsp.MessageType.ERROR,
+                    "message": err
+                }
+                await self.send_notification("window/showMessage", params, writer)
             except Exception as err:
-                self._logger.exception(err)
+                self._logger.error(err)
                 params = {
                     "type": lsp.MessageType.ERROR,
                     "message": "An error occurred: {}".format(err)
@@ -234,34 +250,37 @@ class YaraLanguageServer(object):
 
         Returns a (possibly empty) list of completion items
         '''
-        results = []
-        trigger = params.get("context", {}).get("triggerCharacter", ".")
-        # typically the trigger is at the end of a line, so subtract one to avoid an IndexError
-        pos = lsp.Position(line=params["position"]["line"], char=params["position"]["character"]-1)
-        symbol = helpers.resolve_symbol(document, pos)
-        if not symbol:
-            return []
-        # split up the symbols into component parts, leaving off the last trigger character
-        symbols = symbol.split(trigger)
-        schema = self.modules
-        for depth, symbol in enumerate(symbols):
-            if symbol in schema:
-                # if we're at the last symbol, return completion items
-                if depth == len(symbols) - 1:
-                    completion_items = schema.get(symbol, {})
-                    if isinstance(completion_items, dict):
-                        for label, kind_str in completion_items.items():
-                            kind = lsp.CompletionItemKind.CLASS
-                            if str(kind_str).lower() == "enum":
-                                kind = lsp.CompletionItemKind.ENUM
-                            elif str(kind_str).lower() == "property":
-                                kind = lsp.CompletionItemKind.PROPERTY
-                            elif str(kind_str).lower() == "method":
-                                kind = lsp.CompletionItemKind.METHOD
-                            results.append(lsp.CompletionItem(label, kind))
-                else:
-                    schema = schema[symbol]
-        return results
+        try:
+            results = []
+            trigger = params.get("context", {}).get("triggerCharacter", ".")
+            # typically the trigger is at the end of a line, so subtract one to avoid an IndexError
+            pos = lsp.Position(line=params["position"]["line"], char=params["position"]["character"]-1)
+            symbol = helpers.resolve_symbol(document, pos)
+            if not symbol:
+                return []
+            # split up the symbols into component parts, leaving off the last trigger character
+            symbols = symbol.split(trigger)
+            schema = self.modules
+            for depth, symbol in enumerate(symbols):
+                if symbol in schema:
+                    # if we're at the last symbol, return completion items
+                    if depth == len(symbols) - 1:
+                        completion_items = schema.get(symbol, {})
+                        if isinstance(completion_items, dict):
+                            for label, kind_str in completion_items.items():
+                                kind = lsp.CompletionItemKind.CLASS
+                                if str(kind_str).lower() == "enum":
+                                    kind = lsp.CompletionItemKind.ENUM
+                                elif str(kind_str).lower() == "property":
+                                    kind = lsp.CompletionItemKind.PROPERTY
+                                elif str(kind_str).lower() == "method":
+                                    kind = lsp.CompletionItemKind.METHOD
+                                results.append(lsp.CompletionItem(label, kind))
+                    else:
+                        schema = schema[symbol]
+            return results
+        except Exception as err:
+            raise ce.CodeCompletionError("Could not offer completion items: {}".format(err))
 
     async def provide_definition(self, params: dict, document: str) -> list:
         '''Respond to the textDocument/definition request
@@ -274,94 +293,110 @@ class YaraLanguageServer(object):
         symbol = helpers.resolve_symbol(document, pos)
         if not symbol:
             return []
-        # check to see if the symbol is a variable or a rule name (currently the only valid symbols)
-        if symbol[0] in self._varchar:
-            pattern = "\\${} =\\s".format("".join(symbol[1:]))
-            rule_range = helpers.get_rule_range(document, pos)
-            match_lines = document.split("\n")[rule_range.start.line:rule_range.end.line+1]
-            rel_offset = rule_range.start.line
-        # else assume this is a rule symbol
-        else:
-            pattern = "\\brule {}\\b".format(symbol)
-            match_lines = document.split("\n")
-            rel_offset = 0
+        try:
+            # check to see if the symbol is a variable or a rule name (currently the only valid symbols)
+            if symbol[0] in self._varchar:
+                pattern = "\\${} =\\s".format("".join(symbol[1:]))
+                rule_range = helpers.get_rule_range(document, pos)
+                match_lines = document.split("\n")[rule_range.start.line:rule_range.end.line+1]
+                rel_offset = rule_range.start.line
+            # else assume this is a rule symbol
+            else:
+                pattern = "\\brule {}\\b".format(symbol)
+                match_lines = document.split("\n")
+                rel_offset = 0
 
-        for index, line in enumerate(match_lines):
-            for match in re.finditer(pattern, line):
-                if match:
-                    offset = rel_offset + index
-                    locrange = lsp.Range(
-                        start=lsp.Position(line=offset, char=match.start()),
-                        end=lsp.Position(line=offset, char=match.end())
-                    )
-                    results.append(lsp.Location(locrange, file_uri))
-        return results
+            for index, line in enumerate(match_lines):
+                for match in re.finditer(pattern, line):
+                    if match:
+                        offset = rel_offset + index
+                        locrange = lsp.Range(
+                            start=lsp.Position(line=offset, char=match.start()),
+                            end=lsp.Position(line=offset, char=match.end())
+                        )
+                        results.append(lsp.Location(locrange, file_uri))
+            return results
+        except Exception as err:
+            raise ce.DefinitionError("Could not offer definition for symbol '{}': {}".format(symbol, err))
 
     async def provide_diagnostic(self, document: str) -> list:
         ''' Respond to the textDocument/publishDiagnostics request
 
         :document: Contents of YARA rule file
         '''
-        if HAS_YARA:
-            diagnostics = []
-            try:
-                yara.compile(source=document)
-            except yara.SyntaxError as error:
-                line_no, msg = helpers.parse_result(str(error))
-                # VSCode is zero-indexed
-                line_no -= 1
-                first_char = helpers.get_first_non_whitespace_index(document.split("\n")[line_no])
-                symbol_range = lsp.Range(
-                    start=lsp.Position(line_no, first_char),
-                    end=lsp.Position(line_no, 10000)
-                )
-                diagnostics.append(
-                    lsp.Diagnostic(
-                        locrange=symbol_range,
-                        severity=lsp.DiagnosticSeverity.ERROR,
-                        message=msg
+        try:
+            if HAS_YARA:
+                diagnostics = []
+                try:
+                    yara.compile(source=document)
+                except yara.SyntaxError as error:
+                    line_no, msg = helpers.parse_result(str(error))
+                    # VSCode is zero-indexed
+                    line_no -= 1
+                    first_char = helpers.get_first_non_whitespace_index(document.split("\n")[line_no])
+                    symbol_range = lsp.Range(
+                        start=lsp.Position(line_no, first_char),
+                        end=lsp.Position(line_no, 10000)
                     )
-                )
-            except yara.WarningError as warning:
-                line_no, msg = helpers.parse_result(str(warning))
-                # VSCode is zero-indexed
-                line_no -= 1
-                first_char = helpers.get_first_non_whitespace_index(document.split("\n")[line_no])
-                symbol_range = lsp.Range(
-                    start=lsp.Position(line_no, first_char),
-                    end=lsp.Position(line_no, 10000)
-                )
-                diagnostics.append(
-                    lsp.Diagnostic(
-                        locrange=symbol_range,
-                        severity=lsp.DiagnosticSeverity.WARNING,
-                        message=msg
+                    diagnostics.append(
+                        lsp.Diagnostic(
+                            locrange=symbol_range,
+                            severity=lsp.DiagnosticSeverity.ERROR,
+                            message=msg
+                        )
                     )
-                )
-            return diagnostics
-        else:
-            self._logger.error("yara-python is not installed. Diagnostics are disabled")
-            return []
+                except yara.WarningError as warning:
+                    line_no, msg = helpers.parse_result(str(warning))
+                    # VSCode is zero-indexed
+                    line_no -= 1
+                    first_char = helpers.get_first_non_whitespace_index(document.split("\n")[line_no])
+                    symbol_range = lsp.Range(
+                        start=lsp.Position(line_no, first_char),
+                        end=lsp.Position(line_no, 10000)
+                    )
+                    diagnostics.append(
+                        lsp.Diagnostic(
+                            locrange=symbol_range,
+                            severity=lsp.DiagnosticSeverity.WARNING,
+                            message=msg
+                        )
+                    )
+                return diagnostics
+            else:
+                if self.diagnostics_warned:
+                    pass
+                else:
+                    self.diagnostics_warned = True
+                    raise ce.NoYaraPython("yara-python is not installed. Diagnostics are disabled")
+        except Exception as err:
+            raise ce.DiagnosticError("Could not compile rule: {}".format(err))
 
     async def provide_highlight(self, params: dict, document: str) -> list:
         ''' Respond to the textDocument/documentHighlight request '''
-        self._logger.warning("provide_highlight() is not implemented")
-        return []
+        try:
+            self._logger.warning("provide_highlight() is not implemented")
+            results = []
+            return results
+        except Exception as err:
+            raise ce.HighlightError("Could not offer code highlighting: {}".format(err))
 
     async def provide_hover(self, params: dict, document: str) -> list:
         ''' Respond to the textDocument/hover request '''
-        definitions = await self.provide_definition(params, document)
-        if len(definitions) > 0:
-            # only care about the first definition; although there shouldn't be more
-            try:
-                definition = definitions[0]
-                line = document.split("\n")[definition.range.start.line]
-                value = line.split(" = ")[1]
-                contents = lsp.MarkupContent(lsp.MarkupKind.Plaintext, content=value)
-                return lsp.Hover(contents)
-            except IndexError as err:
-                self._logger.error(err)
-        return None
+        try:
+            definitions = await self.provide_definition(params, document)
+            if len(definitions) > 0:
+                # only care about the first definition; although there shouldn't be more
+                try:
+                    definition = definitions[0]
+                    line = document.split("\n")[definition.range.start.line]
+                    value = line.split(" = ")[1]
+                    contents = lsp.MarkupContent(lsp.MarkupKind.Plaintext, content=value)
+                    return lsp.Hover(contents)
+                except IndexError as err:
+                    self._logger.error(err)
+            return None
+        except Exception as err:
+            raise ce.HoverError("Could not offer definition hover: {}".format(err))
 
     async def provide_reference(self, params: dict, document: str) -> list:
         '''The references request is sent from the client to the server to resolve project-wide references for the symbol denoted by the given text document position
@@ -374,38 +409,41 @@ class YaraLanguageServer(object):
         symbol = helpers.resolve_symbol(document, pos)
         if not symbol:
             return []
-        # check to see if the symbol is a variable or a rule name (currently the only valid symbols)
-        if symbol[0] in self._varchar:
-            # gotta match the wildcard variables too
-            if symbol[-1] == "*":
-                symbol = symbol.replace("*", ".*?")
-            # any possible first character matching self._varchar must be treated as a reference
-            pattern = "[{}]{}\\b".format("".join(self._varchar), "".join(symbol[1:]))
-            rule_range = helpers.get_rule_range(document, pos)
-            rule_lines = document.split("\n")[rule_range.start.line:rule_range.end.line+1]
-            rel_offset = rule_range.start.line
-        else:
-            rel_offset = 0
-            pattern = "{}\\b".format(symbol)
-            rule_lines = document.split("\n")
+        try:
+            # check to see if the symbol is a variable or a rule name (currently the only valid symbols)
+            if symbol[0] in self._varchar:
+                # gotta match the wildcard variables too
+                if symbol[-1] == "*":
+                    symbol = symbol.replace("*", ".*?")
+                # any possible first character matching self._varchar must be treated as a reference
+                pattern = "[{}]{}\\b".format("".join(self._varchar), "".join(symbol[1:]))
+                rule_range = helpers.get_rule_range(document, pos)
+                rule_lines = document.split("\n")[rule_range.start.line:rule_range.end.line+1]
+                rel_offset = rule_range.start.line
+            else:
+                rel_offset = 0
+                pattern = "{}\\b".format(symbol)
+                rule_lines = document.split("\n")
 
-        for index, line in enumerate(rule_lines):
-            for match in re.finditer(pattern, line):
-                if match:
-                    # index corresponds to line no. within each rule, not within file
-                    offset = rel_offset + index
-                    locrange = lsp.Range(
-                        start=lsp.Position(line=offset, char=match.start()),
-                        end=lsp.Position(line=offset, char=match.end())
-                    )
-                    results.append(lsp.Location(locrange, file_uri))
-        return results
+            for index, line in enumerate(rule_lines):
+                for match in re.finditer(pattern, line):
+                    if match:
+                        # index corresponds to line no. within each rule, not within file
+                        offset = rel_offset + index
+                        locrange = lsp.Range(
+                            start=lsp.Position(line=offset, char=match.start()),
+                            end=lsp.Position(line=offset, char=match.end())
+                        )
+                        results.append(lsp.Location(locrange, file_uri))
+            return results
+        except Exception as err:
+            raise ce.SymbolReferenceError("Could not find references for '{}': {}".format(symbol, err))
 
     async def provide_rename(self, params: dict, document: str) -> list:
         ''' Respond to the textDocument/rename request '''
-        self._logger.warning("provide_rename() is not implemented")
-        return []
-        # results = []
+        try:
+            self._logger.warning("provide_rename() is not implemented")
+            results = []
         # file_uri = params.get("textDocument", {}).get("uri", None)
         # pos = lsp.Position(line=params["position"]["line"], char=params["position"]["character"])
         # old_text = helpers.resolve_symbol(document, pos)
@@ -428,7 +466,9 @@ class YaraLanguageServer(object):
         #     return results
         # else:
         #     self._logger.warning("No symbol references found to rename. Skipping")
-        #     return []
+            return results
+        except Exception as err:
+            raise ce.RenameError("Could not rename symbol: {}".format(err))
 
     async def read_request(self, reader: asyncio.StreamReader) -> dict:
         ''' Read data from the client '''
