@@ -41,4 +41,16 @@ The `runner.py` script is configured to print info, error, warning, and critical
 The Python [logging](https://docs.python.org/3/library/logging.html) module is used to control these logs, so feel free to play with it until it works for you.
 
 
+## Testing
+Unit tests are provided for some of the Python code in the `unittests.py` script. I've tried addding tests for every function - both positive and negative tests - in the `server.py` and `protocol.py` scripts. The other modules have little to no coverage.
+
+Flags are provided in the `unittests.py` for each test case.
+
+You can run the tests using the provided `unittests.py` file, which should look like so when complete:
+```sh
+(env) ~/vscode-yara$ python ./server/unittests.py --all | grep coverage
+```
+
+If you want to add to the test coverage, I'm more than happy to take pull requests!
+
 [logo]: ../images/logo.png "Source Image from blacktop/docker-yara"
