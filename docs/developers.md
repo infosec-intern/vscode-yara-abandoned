@@ -5,7 +5,7 @@ If you want to build this locally for development purposes (or testing out cutti
 
 ## Getting Started
 To get the files, clone the git repository to your local filesystem. All the commands below are done in a Bash prompt on Linux. PowerShell on Windows should be largely the same, with maybe some minor tweaks to the Python commands.
-```sh
+```text
 ~$ git clone https://github.com/infosec-intern/vscode-yara.git
 ~$ cd vscode-yara/
 ~/vscode-yara$ git checkout language-server
@@ -13,7 +13,7 @@ To get the files, clone the git repository to your local filesystem. All the com
 
 ## Installation
 Local installation consists of installing client and server dependencies for Node.js and Python, respectively.
-```sh
+```text
 ~$ cd vscode-yara/
 ~/vscode-yara$ npm install
 ~/vscode-yara$ cd server/
@@ -29,7 +29,7 @@ Once the server is up and running, open up VSCode and start a Debugging terminal
 
 Once it starts running, you'll see a message showing the server has started up, like below:
 
-```sh
+```text
 (env) ~/vscode-yara$ python3 ./server/runner.py
 yara.runner | Starting YARA IO language server
 yara.runner | Serving on tcp://127.0.0.1:8471
@@ -42,15 +42,35 @@ The Python [logging](https://docs.python.org/3/library/logging.html) module is u
 
 
 ## Testing
-Unit tests are provided for some of the Python code in the `unittests.py` script. I've tried addding tests for every function - both positive and negative tests - in the `server.py` and `protocol.py` scripts. The other modules have little to no coverage.
+Unit tests are provided for some of the Python code in the `unittests.py` script. I've tried addding tests for every function - both positive and negative tests - in the `server.py` and `protocol.py` scripts. The other modules have little to no coverage. If you want to add to the test coverage, I'm more than happy to take pull requests!
 
 Flags are provided in the `unittests.py` for each test case.
 
-You can run the tests using the provided `unittests.py` file, which should look like so when complete:
-```sh
-(env) ~/vscode-yara$ python ./server/unittests.py --all | grep coverage
+```text
+(env) ~/vscode-yara$ python ./server/unittests.py --help
+
+usage: unittests.py [-h] [-a] [-c] [-e] [-p] [-s] [-t]
+
+optional arguments:
+  -h, --help       show this help message and exit
+  -a, --all        Run all tests
+  -c, --config     Run config tests
+  -e, --helper     Run helper tests
+  -p, --protocol   Run protocol tests
+  -s, --server     Run server tests
+  -t, --transport  Run transport tests
 ```
 
-If you want to add to the test coverage, I'm more than happy to take pull requests!
+You can run the tests using the provided `unittests.py` file, which should look like so when complete:
+```text
+(env) ~/vscode-yara$ python ./server/unittests.py --all | grep coverage
+
+Config test coverage: 0.0%
+Helper test coverage: 100.0%
+Protocol test coverage: 100.0%
+Server test coverage: 76.9%
+Transport test coverage: 50.0%
+Total test coverage: 65.4%
+```
 
 [logo]: ../images/logo.png "Source Image from blacktop/docker-yara"
