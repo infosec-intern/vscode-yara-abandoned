@@ -35,6 +35,10 @@ On Windows 10, this would probably look like:
 > py -3 -m pip install yara-python
 ```
 
+## Developers
+If you want to build this locally for development purposes (or testing out cutting edge features)
+please follow the steps at [Developers](./developers.md)
+
 ## Problems?
 If you encounter an issue with the syntax, feel free to create an issue or pull request!
 Alternatively, check out some of the YARA syntaxes for Sublime and Atom, or the one bundled with YARA itself.
