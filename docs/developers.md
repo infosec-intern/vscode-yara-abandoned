@@ -6,20 +6,20 @@ If you want to build this locally for development purposes (or testing out cutti
 ## Getting Started
 To get the files, clone the git repository to your local filesystem. All the commands below are done in a Bash prompt on Linux. PowerShell on Windows should be largely the same, with maybe some minor tweaks to the Python commands.
 ```sh
-$ git clone https://github.com/infosec-intern/vscode-yara.git
-$ cd vscode-yara/
-vscode-yara$ git checkout language-server
+~$ git clone https://github.com/infosec-intern/vscode-yara.git
+~$ cd vscode-yara/
+~/vscode-yara$ git checkout language-server
 ```
 
 ## Installation
 Local installation consists of installing client and server dependencies for Node.js and Python, respectively.
 ```sh
-$ cd vscode-yara/
-vscode-yara$ npm install
-vscode-yara$ cd server/
-vscode-yara/server$ python3 -m venv ./env
-vscode-yara/server$ source ./env/bin/activate
-(env) vscode-yara/server$ python3 -m pip install yara-python
+~$ cd vscode-yara/
+~/vscode-yara$ npm install
+~/vscode-yara$ cd server/
+~/vscode-yara/server$ python3 -m venv ./env
+~/vscode-yara/server$ source ./env/bin/activate
+(env) ~/vscode-yara/server$ python3 -m pip install yara-python
 ```
 
 ## Execution
@@ -27,8 +27,12 @@ To begin testing, use the `runner.py` script, which will instantiate the event l
 
 Once the server is up and running, open up VSCode and start a Debugging terminal using the `Launch Extension` configuration. Typically, pressing F5 in VSCode will do this all for you.
 
+Once it starts running, you'll see a message showing the server has started up, like below:
+
 ```sh
-(env) vscode-yara$ python3 ./server/runner.py
+(env) ~/vscode-yara$ python3 ./server/runner.py
+yara.runner | Starting YARA IO language server
+yara.runner | Serving on tcp://127.0.0.1:8471
 ```
 
 ## Logging
