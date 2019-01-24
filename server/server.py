@@ -13,8 +13,9 @@ try:
     import yara
     HAS_YARA = True
 except ModuleNotFoundError:
-    logging.warning("yara-python not installed. Diagnostics will not be available")
     HAS_YARA = False
+    # cannot notify user at this point unfortunately - no clients have connected
+    logging.warning("yara-python is not installed. Diagnostics and Compile commands are disabled")
 
 
 class YaraLanguageServer(object):
@@ -222,11 +223,11 @@ class YaraLanguageServer(object):
             self.hover_langs = doc_options.get("hover", {}).get("contentFormat", self.hover_langs)
         if ws_options.get("executeCommand", {}).get("dynamicRegistration", False):
             server_options["executeCommandProvider"] = {
-                "commands": [
-                    "yara.CompileRule",
-                    "yara.CompileAllRules"
-                ]
+                "commands": []
             }
+            if HAS_YARA:
+                server_options["executeCommandProvider"]["commands"].append("yara.CompileRule")
+                server_options["executeCommandProvider"]["commands"].append("yara.CompileAllRules")
         # if doc_options.get("formatting", {}).get("dynamicRegistration", False):
         #     server_options["documentFormattingProvider"] = True
         if doc_options.get("references", {}).get("dynamicRegistration", False):
@@ -363,7 +364,7 @@ class YaraLanguageServer(object):
                     pass
                 else:
                     self.diagnostics_warned = True
-                    raise ce.NoYaraPython("yara-python is not installed. Diagnostics are disabled")
+                    raise ce.NoYaraPython("yara-python is not installed. Diagnostics and Compile commands are disabled")
         except Exception as err:
             raise ce.DiagnosticError("Could not compile rule: {}".format(err))
 
