@@ -42,35 +42,64 @@ The Python [logging](https://docs.python.org/3/library/logging.html) module is u
 
 
 ## Testing
-Unit tests are provided for some of the Python code in the `unittests.py` script. I've tried addding tests for every function - both positive and negative tests - in the `server.py` and `protocol.py` scripts. The other modules have little to no coverage. If you want to add to the test coverage, I'm more than happy to take pull requests!
+Unit tests are provided for the Python code in the various `test_*.py` files.
 
-Flags are provided in the `unittests.py` for each test case.
+I've tried addding tests for every function - both positive and negative tests - in the `test_server.py` and `test_protocol.py` scripts. The other modules have little to no coverage. If you want to add to the test coverage, I'm more than happy to take pull requests!
+
+To run tests for any given module, run the `test_<module>.py` file directly (just for now - I'm still learning good test practices). Output verbosity can be changed using the `-v` flag. Up to 2 flags can be provided to increase verbosity, such as `-vv`.
 
 ```text
-(env) ~/vscode-yara$ python ./server/unittests.py --help
+(env) ~/vscode-yara$ python .\server\test_protocol.py -h
 
-usage: unittests.py [-h] [-a] [-c] [-e] [-p] [-s] [-t]
+usage: Run protocol.py tests [-h] [-v]
 
 optional arguments:
-  -h, --help       show this help message and exit
-  -a, --all        Run all tests
-  -c, --config     Run config tests
-  -e, --helper     Run helper tests
-  -p, --protocol   Run protocol tests
-  -s, --server     Run server tests
-  -t, --transport  Run transport tests
+  -h, --help  show this help message and exit
+  -v          Change test verbosity
 ```
 
-You can run the tests using the provided `unittests.py` file, which should look like so when complete:
-```text
-(env) ~/vscode-yara$ python ./server/unittests.py --all | grep coverage
+Changing verbosity looks like the following:
 
-Config test coverage: 0.0%
-Helper test coverage: 100.0%
-Protocol test coverage: 100.0%
-Server test coverage: 76.9%
-Transport test coverage: 50.0%
-Total test coverage: 65.4%
+```text
+(env) ~/vscode-yara$ python .\server\test_protocol.py
+
+----------------------------------------------------------------------
+Ran 5 tests in 0.004s
+
+OK
+ProtocolTests coverage: 100.0%
+```
+
+```text
+(env) ~/vscode-yara$ python .\server\test_protocol.py -v
+
+.....
+----------------------------------------------------------------------
+Ran 5 tests in 0.000s
+
+OK
+ProtocolTests coverage: 100.0%
+```
+
+```text
+(env) ~/vscode-yara$ python .\server\test_protocol.py -vv
+
+test_completionitem (__main__.ProtocolTests)
+Ensure CompletionItem is properly encoded to JSON dictionaries ... ok
+test_diagnostic (__main__.ProtocolTests)
+Ensure Diagnostic is properly encoded to JSON dictionaries ... ok
+test_location (__main__.ProtocolTests)
+Ensure Location is properly encoded to JSON dictionaries ... ok
+test_position (__main__.ProtocolTests)
+Ensure Position is properly encoded to JSON dictionaries ... ok
+test_range (__main__.ProtocolTests)
+Ensure Range is properly encoded to JSON dictionaries ... ok
+
+----------------------------------------------------------------------
+Ran 5 tests in 0.004s
+
+OK
+ProtocolTests coverage: 100.0%
 ```
 
 [logo]: ../images/logo.png "Source Image from blacktop/docker-yara"
