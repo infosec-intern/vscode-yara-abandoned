@@ -36,18 +36,25 @@ class YaraLanguageServer(object):
         ''' Appropriately handle exceptions '''
         try:
             future = context["future"]
-            self._logger.debug("future result: %s", future.result())
+            future.result()
         except ce.ServerExit as err:
-            # incomplete. needs more work to ensure server is closed
+            self._logger.error(err)
             if not future.done():
                 future.cancel()
-            self._logger.error(context["exception"])
+            for task in asyncio.all_tasks(loop):
+                task.cancel()
         except KeyboardInterrupt:
             self._logger.error("Stopping at user's request")
-            future.cancel()
+            if not future.done():
+                future.cancel()
+            for task in asyncio.all_tasks(loop):
+                task.cancel()
         except ConnectionResetError:
             self._logger.error("Client disconnected unexpectedly. Removing client")
-            future.cancel()
+            if not future.done():
+                future.cancel()
+            for task in asyncio.all_tasks(loop):
+                task.cancel()
         except Exception as err:
             self._logger.critical("Unknown exception encountered. Continuing on")
             self._logger.exception(err)

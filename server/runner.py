@@ -31,11 +31,12 @@ async def main():
     srv_loop.set_exception_handler(yarals._exc_handler)
     servhost, servport = socket_server.sockets[0].getsockname()
     logger.info("Serving on tcp://%s:%d", servhost, servport)
-    async with socket_server:
-        await socket_server.serve_forever()
-        # await socket_server.start_serving()
-        print("serving")
-    print("done serving")
+    try:
+        async with socket_server:
+            await socket_server.serve_forever()
+    except asyncio.CancelledError:
+        logger.info("Server has successfully shutdown")
+
 
 if __name__ == "__main__":
     asyncio.run(main(), debug=True)
