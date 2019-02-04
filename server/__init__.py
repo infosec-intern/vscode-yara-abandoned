@@ -1,3 +1,3 @@
 NAME = "yara-languageserver"
 
-__all__ = ["helpers", "protocol", "server"]
+__all__ = ["custom_err", "helpers", "protocol", "yarals"]
