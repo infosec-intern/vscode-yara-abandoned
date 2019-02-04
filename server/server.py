@@ -32,6 +32,26 @@ class YaraLanguageServer(object):
         schema = Path(__file__).parent.joinpath("modules.json").resolve()
         self.modules = json.loads(schema.read_text())
 
+    def _exc_handler(self, loop, context: dict):
+        ''' Appropriately handle exceptions '''
+        try:
+            future = context["future"]
+            self._logger.debug("future result: %s", future.result())
+        except ce.ServerExit as err:
+            # incomplete. needs more work to ensure server is closed
+            if not future.done():
+                future.cancel()
+            self._logger.error(context["exception"])
+        except KeyboardInterrupt:
+            self._logger.error("Stopping at user's request")
+            future.cancel()
+        except ConnectionResetError:
+            self._logger.error("Client disconnected unexpectedly. Removing client")
+            future.cancel()
+        except Exception as err:
+            self._logger.critical("Unknown exception encountered. Continuing on")
+            self._logger.exception(err)
+
     def _get_document(self, file_uri: str, dirty_files: dict) -> str:
         ''' Return the document text for a given file URI either from disk or memory '''
         if file_uri in dirty_files:
@@ -62,7 +82,7 @@ class YaraLanguageServer(object):
                 # this matches some kind of JSON-RPC message
                 if "jsonrpc" in message:
                     method = message.get("method", "")
-                    self._logger.info("Client sent a '%s' message", method)
+                    self._logger.debug("Client sent a '%s' message", method)
                     # if an id is present, this is a JSON-RPC request
                     if "id" in message:
                         if not has_started and method == "initialize":
@@ -139,17 +159,9 @@ class YaraLanguageServer(object):
                             params = {"type": lsp.MessageType.INFO, "message": "Successfully connected"}
                             await self.send_notification("window/showMessageRequest", params, writer)
                         elif has_started and method == "exit":
-                            self._logger.info("Server exiting process per client request")
                             # first remove the client associated with this handler
                             await self.remove_client(writer)
                             raise ce.ServerExit("Server exiting process per client request")
-                            # # then clean up all the remaining tasks
-                            loop = asyncio.get_event_loop()
-                            for task in asyncio.Task.all_tasks(loop=loop):
-                                task.cancel()
-                            # # finally, stop the server
-                            loop.stop()
-                            loop.close()
                         elif has_started and method == "workspace/didChangeConfiguration":
                             config = message.get("params", {}).get("settings", {}).get("yara", {})
                             self._logger.debug("Changed workspace config to %s", json.dumps(config))

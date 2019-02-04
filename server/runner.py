@@ -3,7 +3,6 @@ import json
 import logging
 import logging.handlers
 
-from custom_err import ServerExit
 from server import YaraLanguageServer
 
 logger = logging.getLogger("yara")
@@ -18,40 +17,25 @@ logger.addHandler(file_hdlr)
 logger.setLevel(logging.DEBUG)
 
 
-def exc_handler(loop, context: dict):
-    ''' Appropriately handle exceptions '''
-    future = context["future"]
-    try:
-        future.result()
-    except ServerExit as err:
-        server_task = context["future"]
-        logger.info(err)
-        # incomplete. needs more work to ensure server is closed
-        if not server_task.done():
-            server_task.cancel()
-            loop.close()
-    except KeyboardInterrupt:
-        logger.error("Stopping at user's request")
-    except ConnectionResetError:
-        logger.error("Client disconnected unexpectedly")
-    except Exception as err:
-        logger.critical("Unknown exception encountered")
-        logger.exception(err)
-
 async def main():
     ''' Program entrypoint '''
-    yaralangserver = YaraLanguageServer()
+    yarals = YaraLanguageServer()
     logger.info("Starting YARA IO language server")
     socket_server = await asyncio.start_server(
-        client_connected_cb=yaralangserver.handle_client,
+        client_connected_cb=yarals.handle_client,
         host="127.0.0.1",
         port=8471,
         start_serving=False
     )
-    socket_server.get_loop().set_exception_handler(exc_handler)
+    srv_loop = socket_server.get_loop()
+    srv_loop.set_exception_handler(yarals._exc_handler)
     servhost, servport = socket_server.sockets[0].getsockname()
     logger.info("Serving on tcp://%s:%d", servhost, servport)
-    await socket_server.serve_forever()
+    async with socket_server:
+        await socket_server.serve_forever()
+        # await socket_server.start_serving()
+        print("serving")
+    print("done serving")
 
 if __name__ == "__main__":
     asyncio.run(main(), debug=True)
