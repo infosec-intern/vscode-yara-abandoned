@@ -2,7 +2,8 @@ import asyncio
 from pathlib import Path
 import unittest
 
-from .. import helpers, server
+import helpers
+from yarals import YaraLanguageServer
 
 
 class ConfigTests(unittest.TestCase):
@@ -10,7 +11,7 @@ class ConfigTests(unittest.TestCase):
     def setUpClass(self):
         ''' Initialize tests '''
         self.rules_path = Path(__file__).parent.joinpath("..", "test", "rules").resolve()
-        self.server = server.YaraLanguageServer()
+        self.server = YaraLanguageServer()
         self.server_address = "127.0.0.1"
         self.server_port = 8471
 
@@ -79,9 +80,15 @@ class ConfigTests(unittest.TestCase):
 
 
 if __name__ == "__main__":
+    import argparse
+    parser = argparse.ArgumentParser("Run protocol.py tests")
+    parser.add_argument("-v", dest="verbose", action="count", default=0, help="Change test verbosity")
+    args = parser.parse_args()
+    if args.verbose > 2:
+        args.verbose = 2
+    runner = unittest.TextTestRunner(verbosity=args.verbose)
     loader = unittest.TestLoader()
     suite = loader.loadTestsFromTestCase(ConfigTests)
-    runner = unittest.TextTestRunner(verbosity=2)
     results = runner.run(suite)
     pct_coverage = (results.testsRun - (len(results.failures) + len(results.errors))) / results.testsRun
     print("ConfigTests coverage: {:.1f}%".format(pct_coverage * 100))

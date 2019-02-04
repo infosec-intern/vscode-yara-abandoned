@@ -1,7 +1,7 @@
 import asyncio
 import unittest
 
-from .. import server
+from yarals import YaraLanguageServer
 
 
 class TransportTests(unittest.TestCase):
@@ -10,24 +10,12 @@ class TransportTests(unittest.TestCase):
         ''' Initialize tests '''
         self.server_address = "127.0.0.1"
         self.server_port = 8471
-        self.yarals = server.YaraLanguageServer()
+        self.yarals = YaraLanguageServer()
 
     def setUp(self):
         ''' Create a new loop and server for each test '''
         self.loop = asyncio.new_event_loop()
         asyncio.set_event_loop(self.loop)
-        socket_server = await asyncio.start_server(
-            client_connected_cb=self.yarals.handle_client,
-            host=self.server_address,
-            port=self.server_port,
-            start_serving=False
-        )
-        socket_server.get_loop().set_exception_handler(self.yarals._exc_handler)
-        try:
-            async with socket_server:
-                await socket_server.serve_forever()
-        except asyncio.CancelledError:
-            pass
 
 
     @classmethod
@@ -67,9 +55,15 @@ class TransportTests(unittest.TestCase):
 
 
 if __name__ == "__main__":
+    import argparse
+    parser = argparse.ArgumentParser("Run protocol.py tests")
+    parser.add_argument("-v", dest="verbose", action="count", default=0, help="Change test verbosity")
+    args = parser.parse_args()
+    if args.verbose > 2:
+        args.verbose = 2
+    runner = unittest.TextTestRunner(verbosity=args.verbose)
     loader = unittest.TestLoader()
     suite = loader.loadTestsFromTestCase(TransportTests)
-    runner = unittest.TextTestRunner(verbosity=2)
     results = runner.run(suite)
     pct_coverage = (results.testsRun - (len(results.failures) + len(results.errors))) / results.testsRun
     print("TransportTests coverage: {:.1f}%".format(pct_coverage * 100))

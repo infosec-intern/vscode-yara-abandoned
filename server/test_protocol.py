@@ -3,7 +3,7 @@ import json
 from pathlib import Path
 import unittest
 
-from .. import protocol
+import protocol
 
 
 class ProtocolTests(unittest.TestCase):
@@ -64,9 +64,15 @@ class ProtocolTests(unittest.TestCase):
 
 
 if __name__ == "__main__":
+    import argparse
+    parser = argparse.ArgumentParser("Run protocol.py tests")
+    parser.add_argument("-v", dest="verbose", action="count", default=0, help="Change test verbosity")
+    args = parser.parse_args()
+    if args.verbose > 2:
+        args.verbose = 2
+    runner = unittest.TextTestRunner(verbosity=args.verbose)
     loader = unittest.TestLoader()
     suite = loader.loadTestsFromTestCase(ProtocolTests)
-    runner = unittest.TextTestRunner(verbosity=2)
     results = runner.run(suite)
     pct_coverage = (results.testsRun - (len(results.failures) + len(results.errors))) / results.testsRun
     print("ProtocolTests coverage: {:.1f}%".format(pct_coverage * 100))

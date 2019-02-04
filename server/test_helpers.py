@@ -2,7 +2,8 @@ from pathlib import Path
 import unittest
 from urllib.parse import quote
 
-from .. import helpers, protocol
+import helpers
+import protocol
 
 
 class HelperTests(unittest.TestCase):
@@ -63,9 +64,15 @@ class HelperTests(unittest.TestCase):
 
 
 if __name__ == "__main__":
+    import argparse
+    parser = argparse.ArgumentParser("Run protocol.py tests")
+    parser.add_argument("-v", dest="verbose", action="count", default=0, help="Change test verbosity")
+    args = parser.parse_args()
+    if args.verbose > 2:
+        args.verbose = 2
+    runner = unittest.TextTestRunner(verbosity=args.verbose)
     loader = unittest.TestLoader()
     suite = loader.loadTestsFromTestCase(HelperTests)
-    runner = unittest.TextTestRunner(verbosity=2)
     results = runner.run(suite)
     pct_coverage = (results.testsRun - (len(results.failures) + len(results.errors))) / results.testsRun
     print("HelperTests coverage: {:.1f}%".format(pct_coverage * 100))
