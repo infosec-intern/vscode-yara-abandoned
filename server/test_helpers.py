@@ -65,7 +65,7 @@ class HelperTests(unittest.TestCase):
 
 if __name__ == "__main__":
     import argparse
-    parser = argparse.ArgumentParser("Run protocol.py tests")
+    parser = argparse.ArgumentParser("Run helpers.py tests")
     parser.add_argument("-v", dest="verbose", action="count", default=0, help="Change test verbosity")
     args = parser.parse_args()
     if args.verbose > 2:
