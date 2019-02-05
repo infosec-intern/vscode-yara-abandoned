@@ -27,8 +27,6 @@ async def main():
         port=8471,
         start_serving=False
     )
-    srv_loop = socket_server.get_loop()
-    srv_loop.set_exception_handler(yarals._exc_handler)
     servhost, servport = socket_server.sockets[0].getsockname()
     logger.info("Serving on tcp://%s:%d", servhost, servport)
     try:

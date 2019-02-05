@@ -21,6 +21,7 @@ except ModuleNotFoundError:
 class YaraLanguageServer(object):
     def __init__(self):
         ''' Handle the details of the VSCode language server protocol '''
+        asyncio.get_event_loop().set_exception_handler(self._exc_handler)
         self._encoding = "utf-8"
         self._eol=b"\r\n"
         self._logger = logging.getLogger("yara")
