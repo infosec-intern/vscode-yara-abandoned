@@ -1,7 +1,10 @@
 import asyncio
+import json
+import logging
 from pathlib import Path
 import unittest
 
+import custom_err as ce
 import helpers
 import protocol
 from yarals import YaraLanguageServer
@@ -245,12 +248,28 @@ class ServerTests(unittest.TestCase):
         self.assertTrue(False)
 
     def test_exit(self):
-        request = {
-            "jsonrpc": "2.0",
-            "method": "exit",
-            "params": {}
-        }
-        self.assertTrue(False)
+        async def run():
+            exit_req = json.dumps({"jsonrpc":"2.0","method":"exit","params":None})
+            yarals = YaraLanguageServer()
+            with self.assertRaises(ce.ServerExit) as err:
+                socket_server = await asyncio.start_server(
+                    client_connected_cb=yarals.handle_client,
+                    host=self.server_address,
+                    port=self.server_port,
+                    start_serving=True
+                )
+                _, writer = await asyncio.open_connection(
+                    host=self.server_address,
+                    port=self.server_port,
+                    loop=socket_server.get_loop()
+                )
+                await yarals.write_data(exit_req, writer)
+                socket_server.close()
+                writer.close()
+                await socket_server.wait_closed()
+                await writer.wait_closed()
+            self.assertEqual(str(err), "Server exiting process per client request")
+        self.loop.run_until_complete(run())
 
     @unittest.skip(reason="Still not sure if I want to provide highlights")
     def test_highlights(self):
@@ -410,8 +429,29 @@ class ServerTests(unittest.TestCase):
         self.loop.run_until_complete(run())
 
     def test_shutdown(self):
-        request = {"jsonrpc":"2.0","id":1,"method":"shutdown","params":None}
-        self.assertTrue(False)
+        async def run():
+            shutdown_req = json.dumps({"jsonrpc":"2.0","id":1,"method":"shutdown","params":None})
+            yarals = YaraLanguageServer()
+            with self.assertLogs(logger=yarals._logger, level=logging.DEBUG) as logs:
+                socket_server = await asyncio.start_server(
+                    client_connected_cb=yarals.handle_client,
+                    host=self.server_address,
+                    port=self.server_port,
+                    start_serving=True
+                )
+                _, writer = await asyncio.open_connection(
+                    host=self.server_address,
+                    port=self.server_port,
+                    loop=socket_server.get_loop()
+                )
+                await yarals.write_data(shutdown_req, writer)
+                socket_server.close()
+                writer.close()
+                await socket_server.wait_closed()
+                await writer.wait_closed()
+            expected = "INFO:{}:Client has closed".format(yarals._logger.name)
+            self.assertIn(expected, logs.output)
+        self.loop.run_until_complete(run())
 
     def test_single_instance(self):
         self.assertTrue(False)
