@@ -36,5 +36,4 @@ async def main():
         logger.info("Server has successfully shutdown")
 
 
-if __name__ == "__main__":
-    asyncio.run(main(), debug=True)
+asyncio.run(main(), debug=True)
