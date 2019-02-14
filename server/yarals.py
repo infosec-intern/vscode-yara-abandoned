@@ -207,6 +207,10 @@ class YaraLanguageServer(object):
                                     "diagnostics": diagnostics
                                 }
                                 await self.send_notification("textDocument/publishDiagnostics", params, writer)
+            except ce.DefinitionError as dbg:
+                # users may trigger this exception often
+                # typically it is only useful in debugging issues
+                self._logger.debug(dbg)
             except ce.NoYaraPython as warn:
                 self._logger.warning(warn)
                 params = {
@@ -214,8 +218,8 @@ class YaraLanguageServer(object):
                     "message": warn
                 }
                 await self.send_notification("window/showMessage", params, writer)
-            except (ce.CodeCompletionError, ce.DefinitionError, ce.DiagnosticError, \
-                    ce.HighlightError, ce.HoverError, ce.RenameError, ce.SymbolReferenceError) as err:
+            except (ce.CodeCompletionError, ce.DiagnosticError, ce.HighlightError, \
+                    ce.HoverError, ce.RenameError, ce.SymbolReferenceError) as err:
                 self._logger.error(err)
                 params = {
                     "type": lsp.MessageType.ERROR,
