@@ -40,12 +40,16 @@ class YaraLanguageServer(object):
             future.result()
         except ce.ServerExit as err:
             self._logger.error(err)
+            self.num_clients = 0
             if not future.done():
                 future.cancel()
             for task in asyncio.all_tasks(loop):
                 task.cancel()
         except KeyboardInterrupt:
             self._logger.error("Stopping at user's request")
+            # drop all clients
+            self.num_clients = 0
+            # ... and cancel all running tasks
             if not future.done():
                 future.cancel()
             for task in asyncio.all_tasks(loop):
@@ -54,8 +58,7 @@ class YaraLanguageServer(object):
             self._logger.error("Client disconnected unexpectedly. Removing client")
             if not future.done():
                 future.cancel()
-            for task in asyncio.all_tasks(loop):
-                task.cancel()
+            self.num_clients -= 1
         except Exception as err:
             self._logger.critical("Unknown exception encountered. Continuing on")
             self._logger.exception(err)
@@ -204,11 +207,11 @@ class YaraLanguageServer(object):
                                     "diagnostics": diagnostics
                                 }
                                 await self.send_notification("textDocument/publishDiagnostics", params, writer)
-            except ce.NoYaraPython as err:
-                self._logger.warning(err)
+            except ce.NoYaraPython as warn:
+                self._logger.warning(warn)
                 params = {
                     "type": lsp.MessageType.WARNING,
-                    "message": err
+                    "message": warn
                 }
                 await self.send_notification("window/showMessage", params, writer)
             except (ce.CodeCompletionError, ce.DefinitionError, ce.DiagnosticError, \
