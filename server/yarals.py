@@ -410,14 +410,16 @@ class YaraLanguageServer(object):
             definitions = await self.provide_definition(params, document)
             if len(definitions) > 0:
                 # only care about the first definition; although there shouldn't be more
+                definition = definitions[0]
+                line = document.split("\n")[definition.range.start.line]
                 try:
-                    definition = definitions[0]
-                    line = document.split("\n")[definition.range.start.line]
-                    value = line.split(" = ")[1]
-                    contents = lsp.MarkupContent(lsp.MarkupKind.Plaintext, content=value)
-                    return lsp.Hover(contents)
+                    words = line.split(" = ")
+                    if len(words) > 1:
+                        contents = lsp.MarkupContent(lsp.MarkupKind.Plaintext, content=words[1])
+                        return lsp.Hover(contents)
                 except IndexError as err:
-                    self._logger.error(err)
+                    self._logger.warning(words)
+                    self._logger.warning("IndexError at line %d: '%s'", definition.range.start.line, line)
             return None
         except Exception as err:
             raise ce.HoverError("Could not offer definition hover: {}".format(err))
