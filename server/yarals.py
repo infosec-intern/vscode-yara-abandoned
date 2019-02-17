@@ -36,8 +36,9 @@ class YaraLanguageServer(object):
     def _exc_handler(self, loop, context: dict):
         ''' Appropriately handle exceptions '''
         try:
-            future = context["future"]
-            future.result()
+            future = context.get("future")
+            if future:
+                future.result()
         except ce.ServerExit as err:
             self._logger.error(err)
             self.num_clients = 0
@@ -89,6 +90,11 @@ class YaraLanguageServer(object):
                     self._logger.warning("Client has closed")
                     self.num_clients -= 1
                     break
+                elif self.num_clients <= 0:
+                    # clear out memory
+                    dirty_files.clear()
+                    # remove connected clients
+                    await self.remove_client(writer)
                 message = await self.read_request(reader)
                 # this matches some kind of JSON-RPC message
                 if "jsonrpc" in message:
@@ -134,12 +140,12 @@ class YaraLanguageServer(object):
                                 document = self._get_document(file_uri, dirty_files)
                                 references = await self.provide_reference(message["params"], document)
                                 await self.send_response(message["id"], references, writer)
-                        elif has_started and method == "textDocument/rename":
-                            file_uri = message.get("params", {}).get("textDocument", {}).get("uri", None)
-                            if file_uri:
-                                document = self._get_document(file_uri, dirty_files)
-                                renames = await self.provide_rename(message["params"], document)
-                                await self.send_response(message["id"], renames, writer)
+                        # elif has_started and method == "textDocument/rename":
+                        #     file_uri = message.get("params", {}).get("textDocument", {}).get("uri", None)
+                        #     if file_uri:
+                        #         document = self._get_document(file_uri, dirty_files)
+                        #         renames = await self.provide_rename(message["params"], document)
+                        #         await self.send_response(message["id"], renames, writer)
                         elif has_started and method == "workspace/executeCommand":
                             cmd = message.get("params", {}).get("command", "")
                             args = message.get("params", {}).get("arguments", [])
