@@ -39,15 +39,8 @@ class YaraLanguageServer(object):
             future = context.get("future")
             if future:
                 future.result()
-        except ce.ServerExit as err:
+        except (ce.ServerExit, KeyboardInterrupt) as err:
             self._logger.error(err)
-            self.num_clients = 0
-            if not future.done():
-                future.cancel()
-            for task in asyncio.all_tasks(loop):
-                task.cancel()
-        except KeyboardInterrupt:
-            self._logger.error("Stopping at user's request")
             # drop all clients
             self.num_clients = 0
             # ... and cancel all running tasks
