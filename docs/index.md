@@ -52,4 +52,4 @@ They use the same syntax engine as VSCode and should work the same way.
 * [Language Server Protocol Specification](https://microsoft.github.io/language-server-protocol/specification)
 * [VSCode Example Language Server](https://code.visualstudio.com/docs/extensions/example-language-server)
 
-[logo]: ../images/logo.png "Source Image from blacktop/docker-yara"
+[logo]: https://raw.githubusercontent.com/infosec-intern/vscode-yara/master/images/logo.png "Source Image from blacktop/docker-yara"
