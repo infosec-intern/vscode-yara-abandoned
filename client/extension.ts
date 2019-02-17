@@ -1,20 +1,18 @@
 "use strict";
 
-import {execSync} from "child_process";
 import {Socket} from "net";
 import * as path from "path";
-import {ExtensionContext} from "vscode";
+import {ExtensionContext, OutputChannel, window} from "vscode";
 import * as lcp from "vscode-languageclient";
 
 
 export function activate(context: ExtensionContext) {
-    let serverPath: string = context.asAbsolutePath(path.join("server", "languageServer.py"));
+    let serverPath: string = context.asAbsolutePath(path.join("server", "runner.py"));
     let pythonPath: string = context.asAbsolutePath(path.join("server", "env", "Scripts", "python"));
+    let outputChannel: OutputChannel = window.createOutputChannel("YARA");
     const serverOptions: lcp.ServerOptions = function() {
-        // execSync(`${pythonPath} ${serverPath}`);
 		return new Promise((resolve, reject) => {
             var client = new Socket();
-            console.log("created socket");
 			client.connect(8471, "127.0.0.1", function() {
                 console.log(`client connected to ${client.localAddress}:${client.localPort}`);
 				resolve({
@@ -27,6 +25,7 @@ export function activate(context: ExtensionContext) {
     const clientOptions: lcp.LanguageClientOptions = {
         documentSelector: [{ scheme: "file", language: "yara" }],
         diagnosticCollectionName: "yara",
+        outputChannel: outputChannel,
         synchronize: { configurationSection: "yara" }
     };
     let client = new lcp.LanguageClient(
@@ -35,9 +34,7 @@ export function activate(context: ExtensionContext) {
         serverOptions,
         clientOptions
     );
-    client.info("test info log");
-    client.error("test error log");
-    client.warn("test warn log");
+    client.info("Connected to YARA Language Server");
     context.subscriptions.push(client.start());
 }
 
