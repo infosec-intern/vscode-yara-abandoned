@@ -11,7 +11,6 @@ This repository was formerly listed as [textmate-yara](https://github.com/infose
 * [Commands](./features/commands.md)
 * [Definitions](./features/definitions.md)
 * [Diagnostics](./features/diagnostics.md)
-* [Highlights](./features/highlights.md)
 * [Hovers](./features/hovers.md)
 * [References](./features/references.md)
 
@@ -21,8 +20,8 @@ Some common sequences are provided as snippets, to allow easy auto-completion fo
 * rule skeletons
 * for loops
 * `meta:`, `strings:`, and `condition:` blocks
-* standard module imports
-* any/all keywords
+* import statements for standard modules
+* "any" and "all" keywords
 
 ## Requirements
 With the new language server protocol, Python 3.5 or higher is required, due to the heavy use of the `asyncio` library.
@@ -31,9 +30,14 @@ In addition, `yara-python` must be installed. If it is not installed, this exten
 
 **Note:** If you are on Windows, you might have to set the `$INCLUDE` environment variable before buidling this environment, so that when `yara-python` is compiled for your local system, Python knows where to find the appropriate DLLs.
 On Windows 10, this would probably look like:
-```sh
-set INCLUDE="C:\Program Files (x86)\Windows Kits\10\Include" && python -m pip install yara-python
+```powershell
+> set INCLUDE="C:\Program Files (x86)\Windows Kits\10\Include"
+> py -3 -m pip install yara-python
 ```
+
+## Developers
+If you want to build this locally for development purposes (or testing out cutting edge features)
+please follow the steps at [Developers](./developers.md)
 
 ## Problems?
 If you encounter an issue with the syntax, feel free to create an issue or pull request!
@@ -48,4 +52,4 @@ They use the same syntax engine as VSCode and should work the same way.
 * [Language Server Protocol Specification](https://microsoft.github.io/language-server-protocol/specification)
 * [VSCode Example Language Server](https://code.visualstudio.com/docs/extensions/example-language-server)
 
-[logo]: ../images/logo.png "Source Image from blacktop/docker-yara"
+[logo]: https://raw.githubusercontent.com/infosec-intern/vscode-yara/master/images/logo.png "Source Image from blacktop/docker-yara"
