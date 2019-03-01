@@ -5,9 +5,9 @@ import logging
 from pathlib import Path
 import re
 
-import custom_err as ce
-import helpers
-import protocol as lsp
+from yarals import custom_err as ce
+from yarals import helpers
+from yarals import protocol as lsp
 
 try:
     import yara
@@ -30,7 +30,7 @@ class YaraLanguageServer(object):
         self.diagnostics_warned = False
         self.hover_langs = [lsp.MarkupKind.Markdown, lsp.MarkupKind.Plaintext]
         self.num_clients = 0
-        schema = Path(__file__).parent.joinpath("modules.json").resolve()
+        schema = Path(__file__).parent.joinpath("data", "modules.json").resolve()
         self.modules = json.loads(schema.read_text())
 
     def _exc_handler(self, loop, context: dict):

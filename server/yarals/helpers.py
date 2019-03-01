@@ -4,7 +4,7 @@ import re
 from typing import Tuple
 from urllib.parse import quote, unquote, urlsplit
 
-import protocol as lsp
+from yarals import protocol as lsp
 
 
 def create_file_uri(path: str):
