@@ -1,7 +1,7 @@
 import asyncio
 import unittest
 
-from yarals import YaraLanguageServer
+from yarals.yarals import YaraLanguageServer
 
 
 class TransportTests(unittest.TestCase):

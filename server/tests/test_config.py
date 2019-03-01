@@ -2,8 +2,8 @@ import asyncio
 from pathlib import Path
 import unittest
 
-import helpers
-from yarals import YaraLanguageServer
+from yarals import helpers
+from yarals.yarals import YaraLanguageServer
 
 
 class ConfigTests(unittest.TestCase):

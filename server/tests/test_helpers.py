@@ -10,7 +10,7 @@ class HelperTests(unittest.TestCase):
     @classmethod
     def setUpClass(self):
         ''' Initialize tests '''
-        self.rules_path = Path(__file__).parent.joinpath("..", "test", "rules").resolve()
+        self.rules_path = Path(__file__).parent.joinpath("..", "..", "test", "rules").resolve()
 
     def test_create_file_uri(self):
         ''' Ensure file URIs are generated from paths '''

@@ -3,7 +3,7 @@ import json
 from pathlib import Path
 import unittest
 
-import protocol
+from yarals import protocol
 
 
 class ProtocolTests(unittest.TestCase):

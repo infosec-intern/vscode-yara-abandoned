@@ -4,17 +4,17 @@ import logging
 from pathlib import Path
 import unittest
 
-import custom_err as ce
-import helpers
-import protocol
-from yarals import YaraLanguageServer
+from yarals import custom_err as ce
+from yarals import helpers
+from yarals import protocol
+from yarals.yarals import YaraLanguageServer
 
 
 class ServerTests(unittest.TestCase):
     @classmethod
     def setUpClass(self):
         ''' Initialize tests '''
-        self.rules_path = Path(__file__).parent.joinpath("..", "test", "rules").resolve()
+        self.rules_path = Path(__file__).parent.joinpath("..", "..", "test", "rules").resolve()
         self.server = YaraLanguageServer()
         self.server_address = "127.0.0.1"
         self.server_port = 8471
