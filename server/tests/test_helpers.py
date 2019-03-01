@@ -2,8 +2,8 @@ from pathlib import Path
 import unittest
 from urllib.parse import quote
 
-import helpers
-import protocol
+from yarals import helpers
+from yarals import protocol
 
 
 class HelperTests(unittest.TestCase):
