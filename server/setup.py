@@ -1,4 +1,4 @@
-from distutils.core import setup
+from setuptools import setup
 
 setup(
     name="yarals",
@@ -11,6 +11,7 @@ setup(
     packages=["yarals"],
     package_data={"yarals": ["data/*.json"]},
     provides=["yarals"],
-    requires=["yara-python"],
+    install_requires=["yara-python"],
+    tests_require=["pytest", "pytest-asyncio"],
     scripts=["vscode_yara.py"]
 )
