@@ -49,7 +49,7 @@ def test_parse_result_multicolon():
     assert message == "invalid hex string \"$hex_string\": syntax error"
 
 @pytest.mark.helpers
-@pytest.mark.unix
+@pytest.mark.skipif('sys.platform == "win32"')
 def test_parse_uri():
     ''' Ensure paths are properly parsed '''
     path = "c:/one/two/three/four.txt"
@@ -58,7 +58,7 @@ def test_parse_uri():
     assert helpers.parse_uri(file_uri) == "/{}".format(path)
 
 @pytest.mark.helpers
-@pytest.mark.windows
+@pytest.mark.skipif('sys.platform != "win32"')
 def test_parse_uri_windows():
     ''' Ensure paths are properly parsed for Windows '''
     path = "c:/one/two/three/four.txt"
