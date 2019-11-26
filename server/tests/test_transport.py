@@ -1,9 +1,11 @@
 import asyncio
 import logging
+
 import pytest
 
 
 @pytest.mark.asyncio
+@pytest.mark.transport
 async def test_closed(local_server):
     try:
         srv_addr, srv_port = local_server
@@ -15,6 +17,7 @@ async def test_closed(local_server):
         assert connection_closed is True, "Server connection remains open"
 
 @pytest.mark.asyncio
+@pytest.mark.transport
 async def test_opened(local_server):
     ''' Ensure the transport mechanism is properly opened '''
     try:

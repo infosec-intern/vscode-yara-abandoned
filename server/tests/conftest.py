@@ -5,6 +5,14 @@ import logging
 import pytest
 
 
+def pytest_configure(config):
+    """ Registering custom markers """
+    config.addinivalue_line("markers", "config: Run config unittests")
+    config.addinivalue_line("markers", "helpers: Run helper function unittests")
+    config.addinivalue_line("markers", "protocol: Run language server protocol unittests")
+    config.addinivalue_line("markers", "server: Run YARA-specific protocol unittests")
+    config.addinivalue_line("markers", "transport: Run network transport unittests")
+
 def noop(x):
     """ No-operation function
         Used as a default for network servers
