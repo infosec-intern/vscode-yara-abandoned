@@ -4,6 +4,7 @@ import pytest
 from yarals import helpers
 
 
+@pytest.mark.xfail
 @pytest.mark.config
 def test_compile_on_save_false(test_rules):
     change_config_request = {
@@ -28,6 +29,7 @@ def test_compile_on_save_false(test_rules):
     }
     assert "fake news" is True
 
+@pytest.mark.xfail
 @pytest.mark.config
 def test_compile_on_save_true(test_rules):
     change_config_request = {

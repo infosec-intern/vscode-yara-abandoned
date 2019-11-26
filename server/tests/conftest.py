@@ -1,5 +1,6 @@
 """ Reusable test fixtures """
 import asyncio
+import json
 import logging
 from pathlib import Path
 
@@ -17,28 +18,26 @@ def pytest_configure(config):
 
 
 @pytest.fixture(scope="function")
-async def local_server(unused_tcp_port):
+def yara_server():
+    """ Generate an instance of the YARA language server """
+    return yarals.YaraLanguageServer()
+
+@pytest.fixture(scope="function")
+async def local_server(unused_tcp_port, yara_server):
     """Set up a local asyncio network server
 
     :param unused_tcp_port: Random TCP port to bind server to. Provided by pytest-asyncio
     :return: Address and port that server is bound to
     """
-    def cb(reader, writer):
-        """ Non-functional callback """
-        pass
-
     addr = "localhost"
     port = unused_tcp_port
     server = await asyncio.start_server(
-        client_connected_cb=cb,
+        client_connected_cb=yara_server.handle_client,
         host=addr,
         port=port,
-        start_serving=False
+        start_serving=True
     )
-    logging.debug("Returning (%s, %d)", addr, port)
     yield addr, port
-    async with server:
-        await server.start_serving()
     server.close()
     await server.wait_closed()
 
@@ -48,7 +47,9 @@ def test_rules():
     rules_path = Path(__file__).parent.joinpath("..", "..", "test", "rules")
     return rules_path.resolve()
 
-@pytest.fixture(scope="function")
-def yara_server():
-    """ Generate an instance of the YARA language server """
-    return yarals.YaraLanguageServer()
+@pytest.fixture(scope="module")
+def initialize_msg():
+    """ Hardcoded 'initialize' message to start handshake with server """
+    json_path = Path(__file__).parent.joinpath("initialize_msg.json").resolve()
+    with json_path.open() as init:
+        return json.load(init)
