@@ -3,6 +3,7 @@ import platform
 import re
 from typing import Tuple
 from urllib.parse import quote, unquote, urlsplit
+from urllib.request import url2pathname
 
 from yarals import protocol as lsp
 
@@ -64,18 +65,13 @@ def parse_result(result: str) -> Tuple[int,str]:
     return int(line_no), message.strip()
 
 def parse_uri(uri: str, encoding="utf-8"):
-    '''
-    Parse a path out of a given uri
+    '''Parse a path out of a given uri
 
     :uri: URI string to be parsed
     :encoding: (Optional) string encoding to parse with
     '''
-    file_path = urlsplit(unquote(uri, encoding=encoding)).path
-    if platform.system() == "Windows":
-        # urlsplit adds an extra slash to the beginning on windows
-        return "".join(file_path[1:])
-    else:
-        return file_path
+    url = urlsplit(unquote(uri, encoding=encoding))
+    return url2pathname(url.path)
 
 def resolve_symbol(document: str, pos: lsp.Position) -> str:
     '''Resolve a symbol located at the given position
