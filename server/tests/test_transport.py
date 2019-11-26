@@ -8,7 +8,7 @@ import pytest
 @pytest.mark.transport
 async def test_closed(local_server):
     try:
-        srv_addr, srv_port = local_server
+        srv_addr, srv_port = local_server.sockets[0].getsockname()
         reader, _ = await asyncio.open_connection(srv_addr, srv_port)
         connection_closed = reader.at_eof()
     except ConnectionRefusedError:
@@ -21,7 +21,7 @@ async def test_closed(local_server):
 async def test_opened(local_server):
     ''' Ensure the transport mechanism is properly opened '''
     try:
-        srv_addr, srv_port = local_server
+        srv_addr, srv_port = local_server.sockets[0].getsockname()
         reader, _ = await asyncio.open_connection(srv_addr, srv_port)
         connection_closed = reader.at_eof()
     except ConnectionRefusedError:
