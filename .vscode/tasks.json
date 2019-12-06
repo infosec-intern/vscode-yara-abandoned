@@ -14,11 +14,14 @@
     "tasks": [
         {
             "label": "compile",
-            "command": "${workspaceRoot}/node_modules/.bin/tsc",
+            "command": "npm",
             "type": "shell",
-            "args": ["-p", "${workspaceRoot}"],
+            "args": ["run", "vscode:prepublish"],
             "problemMatcher": "$tsc",
-            "group": "build"
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            }
         },
         {
             "label": "install",

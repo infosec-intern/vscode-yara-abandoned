@@ -85,8 +85,8 @@
     ],
     "scripts": {
         "vscode:prepublish": "cd client && npm run update-vscode && cd .. && npm run compile",
-        "compile": "tsc -b",
-        "watch": "tsc -b -w",
+        "compile": "tsc --build",
+        "watch": "tsc --build --watch",
         "postinstall": "cd client && npm install && cd .."
     },
     "devDependencies": {
@@ -96,7 +96,7 @@
         "typescript": "^3.6.3"
     },
     "dependencies": {
-        "vscode": "^1.1.36",
+        "get-port": "^5.0.0",
         "vscode-languageclient": "^5.2.1"
     }
 }
