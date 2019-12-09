@@ -4,7 +4,7 @@ import {ChildProcess, spawn} from "child_process";
 import {Socket} from "net";
 import * as path from "path";
 import {platform} from "process";
-import {ExtensionContext, OutputChannel, window} from "vscode";
+import {Disposable, ExtensionContext, OutputChannel, window} from "vscode";
 import * as lcp from "vscode-languageclient";
 import * as getPort from "get-port";
 import * as tcpPortUsed from "tcp-port-used";
@@ -42,9 +42,6 @@ async function start_server(context: ExtensionContext, host: string, tcpPort: nu
     }
     // env/bin/python server.py <host> <lport>
     let langserver: ChildProcess = spawn(pythonPath, [serverPath, host, tcpPort.toString()], options);
-    langserver.on('exit', (code, signal) => {
-        console.log(`YARA Language Server successfully killed`);
-    });
     // wait for the language server to bind to the port
     await tcpPortUsed.waitUntilUsed(tcpPort, host);
     return langserver;
@@ -78,7 +75,6 @@ export async function activate(context: ExtensionContext) {
                     let msg: string = `YARA: ${error.message}`;
                     window.showErrorMessage(msg);
                 }
-                langserver.kill("SIGTERM");
             });
         });
     }
@@ -99,6 +95,8 @@ export async function activate(context: ExtensionContext) {
     );
     client.info("Started YARA extension");
     context.subscriptions.push(client.start());
+    // kill the server's process when disposing of it
+    context.subscriptions.push(new Disposable(langserver.kill));
 }
 
 export function deactivate(context: ExtensionContext) {
