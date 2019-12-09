@@ -9,16 +9,12 @@ import * as lcp from "vscode-languageclient";
 import * as getPort from "get-port";
 
 
-export async function activate(context: ExtensionContext) {
-    let outputChannel: OutputChannel = window.createOutputChannel("YARA");
+function start_server(context: ExtensionContext, lhost: string, tcpPort: number): lcp.ServerOptions {
     let serverPath: string = context.asAbsolutePath(path.join("server", "vscode_yara.py"));
     let pythonPath: string = context.asAbsolutePath(path.join("server", "env", "bin", "python"));
     if (platform === "win32") {
         pythonPath = context.asAbsolutePath(path.join("server", "env", "Scripts", "python"));
     }
-    let lhost: string = "127.0.0.1";
-    // grab a random open TCP port to listen to
-    let tcpPort: number = await getPort();
     // launch the language server
     const options = {
         cwd: context.asAbsolutePath(path.join("server")),
@@ -26,7 +22,7 @@ export async function activate(context: ExtensionContext) {
         shell: false,
         windowsHide: false
     }
-    // env/bin/python script.py <lhost> <lport>
+    // env/bin/python server.py <lhost> <lport>
     let langserver: lcp.Executable = {
         command: pythonPath,
         args: [serverPath, lhost, tcpPort.toString()],
@@ -36,17 +32,31 @@ export async function activate(context: ExtensionContext) {
         run: langserver,
         debug: langserver
     };
+    return serverOptions;
+}
+
+export async function activate(context: ExtensionContext) {
+    let outputChannel: OutputChannel = window.createOutputChannel("YARA");
+    let lhost: string = "127.0.0.1";
+    // grab a random open TCP port to listen to
+    let tcpPort: number = await getPort();
+    let serverOptions: lcp.ServerOptions = start_server(context, lhost, tcpPort);
     const clientOptions: lcp.LanguageClientOptions = {
         documentSelector: [{ scheme: "file", language: "yara" }],
         diagnosticCollectionName: "yara",
         outputChannel: outputChannel,
+        synchronize: {
+            configurationSection: "yara",
+        }
     };
+    // get the client to start the server
     let client = new lcp.LanguageClient(
         "yara-languageclient",
         "YARA",
         serverOptions,
         clientOptions
     );
+    client.info(`Attempting connection to tcp://${lhost}:${tcpPort}`);
     client.info("Connected to YARA Language Server");
     context.subscriptions.push(client.start());
 }
