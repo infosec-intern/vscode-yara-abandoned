@@ -4,6 +4,7 @@ import asyncio
 import json
 import logging
 import logging.handlers
+from pathlib import Path
 
 from yarals.yarals import YaraLanguageServer
 
@@ -15,6 +16,8 @@ def _build_cli():
     return parser.parse_args()
 
 def _build_logger():
+    ''' Configure the loggers appropriately '''
+    LOGFILE = Path(__file__).parent.joinpath(".yara.log")
     # rename all the levels to align with the language client's logging format
     for lvl in ("DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"):
         logging.addLevelName(getattr(logging, lvl), lvl.capitalize())
@@ -22,8 +25,8 @@ def _build_logger():
     screen_hdlr = logging.StreamHandler()
     screen_fmt = logging.Formatter("[%(levelname)-5s - %(asctime)s] %(name)s.%(module)s : %(message)s", datefmt="%-H:%M:%S %p")
     screen_hdlr.setFormatter(screen_fmt)
-    screen_hdlr.setLevel(logging.DEBUG)
-    file_hdlr = logging.handlers.RotatingFileHandler(filename=".yara.log", backupCount=1, maxBytes=100000)
+    screen_hdlr.setLevel(logging.INFO)
+    file_hdlr = logging.handlers.RotatingFileHandler(filename=LOGFILE, backupCount=1, maxBytes=100000)
     file_hdlr.setFormatter(logging.Formatter("%(asctime)s [%(levelname)s] %(name)s | %(message)s"))
     file_hdlr.setLevel(logging.DEBUG)
     logger.addHandler(screen_hdlr)
