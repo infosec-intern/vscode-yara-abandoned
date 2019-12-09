@@ -97,6 +97,7 @@
     },
     "dependencies": {
         "get-port": "^5.0.0",
+        "tcp-port-used": "^1.0.1",
         "vscode-languageclient": "^5.2.1"
     }
 }

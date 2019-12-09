@@ -7,6 +7,7 @@ import {platform} from "process";
 import {ExtensionContext, OutputChannel, window} from "vscode";
 import * as lcp from "vscode-languageclient";
 import * as getPort from "get-port";
+import * as tcpPortUsed from "tcp-port-used";
 
 
 function install_server(context: ExtensionContext): boolean {
@@ -22,7 +23,7 @@ function install_server(context: ExtensionContext): boolean {
     return false;
 }
 
-function start_server(context: ExtensionContext, lhost: string, tcpPort: number): ChildProcess {
+async function start_server(context: ExtensionContext, host: string, tcpPort: number): Promise<ChildProcess> {
     /*
         start up the language server with the pre-installed python runtime
         returns the language server's ChildProcess instance
@@ -39,8 +40,13 @@ function start_server(context: ExtensionContext, lhost: string, tcpPort: number)
         shell: false,
         windowsHide: false
     }
-    // env/bin/python server.py <lhost> <lport>
-    let langserver: ChildProcess = spawn(pythonPath, [serverPath, lhost, tcpPort.toString()], options);
+    // env/bin/python server.py <host> <lport>
+    let langserver: ChildProcess = spawn(pythonPath, [serverPath, host, tcpPort.toString()], options);
+    langserver.on('exit', (code, signal) => {
+        console.log(`YARA Language Server successfully killed`);
+    });
+    // wait for the language server to bind to the port
+    await tcpPortUsed.waitUntilUsed(tcpPort, host);
     return langserver;
 }
 
@@ -49,17 +55,30 @@ export async function activate(context: ExtensionContext) {
     let lhost: string = "127.0.0.1";
     // grab a random open TCP port to listen to
     let tcpPort: number = await getPort();
-    let langserver: ChildProcess = start_server(context, lhost, tcpPort);
+    let langserver: ChildProcess = await start_server(context, lhost, tcpPort);
+    console.log(`Language Server started with PID: ${langserver.pid}`);
     // when the client starts it should open a socket to the server
     const serverOptions: lcp.ServerOptions = function() {
         return new Promise((resolve, reject) => {
             console.log(`Attempting connection to tcp://${lhost}:${tcpPort}`);
-            var client = new Socket();
-            client.connect(tcpPort, lhost, function() {
+            let connection: Socket = new Socket({readable: true, writable: true});
+            connection.connect(tcpPort, lhost, function() {
                 resolve({
-                    reader: client,
-                    writer: client
+                    reader: connection,
+                    writer: connection
                 });
+            });
+            connection.on("error", (error) => {
+                if (error.message.includes("ECONNREFUSED")) {
+                    let msg: string = "Could not connect to YARA Language Server. Is it running?"
+                    window.showErrorMessage(msg);
+                    window.setStatusBarMessage(`Not connected to YARA Language Server`);
+                }
+                else {
+                    let msg: string = `YARA: ${error.message}`;
+                    window.showErrorMessage(msg);
+                }
+                langserver.kill("SIGTERM");
             });
         });
     }

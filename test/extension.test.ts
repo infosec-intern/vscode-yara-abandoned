@@ -11,6 +11,25 @@ import * as vscode from "vscode";
 
 let workspace = path.join(__dirname, "..", "..", "test/rules/");
 
+
+suite.skip("YARA: Language Server", function () {
+    test("client connect", function () {
+        // ensure the client can connect to the language server
+    });
+    test("client connection refused", function () {
+        // ensure the client throws an error message if the connection is refused and the server is shut down
+    });
+    test("install server", function () {
+        // ensure the server components are installed if none exist
+    });
+    test("start server", function () {
+        // ensure the language server is started as a child process
+    });
+    test("stop server", function () {
+        // ensure the language server is stopped if the client ends
+    });
+});
+
 suite.skip("YARA: Provider", function () {
     test("rule definition", function (done) {
         const filepath: string = path.join(workspace, "peek_rules.yara");
