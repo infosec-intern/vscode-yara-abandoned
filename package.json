@@ -94,13 +94,13 @@
         "@types/mocha": "^2.2.32",
         "@types/node": "^6.14.7",
         "mocha": "^5.2.0",
-        "typescript": "^3.6.3"
+        "typescript": "^3.6.3",
+        "vscode-test": "^1.2.3"
     },
     "dependencies": {
         "get-port": "^5.0.0",
         "glob": "^7.1.6",
         "tcp-port-used": "^1.0.1",
-        "vscode-languageclient": "^5.2.1",
-        "vscode-test": "^1.2.3"
+        "vscode-languageclient": "^5.2.1"
     }
 }

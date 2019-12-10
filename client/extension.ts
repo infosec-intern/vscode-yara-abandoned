@@ -10,6 +10,8 @@ import * as getPort from "get-port";
 import * as tcpPortUsed from "tcp-port-used";
 
 
+export let server_info: Object;
+
 function install_server(context: ExtensionContext): boolean {
     /*
         generate the python runtime & install necessary packages
@@ -53,11 +55,9 @@ export async function activate(context: ExtensionContext) {
     // grab a random open TCP port to listen to
     let tcpPort: number = await getPort();
     let langserver: ChildProcess = await start_server(context, lhost, tcpPort);
-    console.log(`Language Server started with PID: ${langserver.pid}`);
     // when the client starts it should open a socket to the server
     const serverOptions: lcp.ServerOptions = function() {
         return new Promise((resolve, reject) => {
-            console.log(`Attempting connection to tcp://${lhost}:${tcpPort}`);
             let connection: Socket = new Socket({readable: true, writable: true});
             connection.connect(tcpPort, lhost, function() {
                 resolve({
@@ -74,8 +74,7 @@ export async function activate(context: ExtensionContext) {
                     window.setStatusBarMessage(`Not connected to YARA Language Server`);
                 }
                 else {
-                    let msg: string = `YARA: ${error.message}`;
-                    window.showErrorMessage(msg);
+                    window.showErrorMessage(`YARA: ${error.message}`);
                 }
             });
         });
@@ -96,9 +95,23 @@ export async function activate(context: ExtensionContext) {
         clientOptions
     );
     client.info("Started YARA extension");
+    client.info(`Language Server started with PID: ${langserver.pid}`);
     context.subscriptions.push(client.start());
     // kill the server's process when disposing of it
     context.subscriptions.push(new Disposable(langserver.kill));
+    // save these for later accessibility
+    server_info = {
+        "process": langserver,
+        "host": lhost,
+        "port": tcpPort
+    }
+    // give access to the language server's process and port info
+    let api = {
+        get_server() {
+            return server_info;
+        }
+    }
+    return api;
 }
 
 export function deactivate(context: ExtensionContext) {
