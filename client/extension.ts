@@ -66,6 +66,8 @@ export async function activate(context: ExtensionContext) {
                 });
             });
             connection.on("error", (error) => {
+                // apparently net.Socket just rewraps errors as a generic Error object
+                // kind of annoying, but workable
                 if (error.message.includes("ECONNREFUSED")) {
                     let msg: string = "Could not connect to YARA Language Server. Is it running?"
                     window.showErrorMessage(msg);
