@@ -12,6 +12,7 @@ import * as vscode from "vscode";
 let workspace = path.join(__dirname, "..", "..", "test/rules/");
 
 
+// Integration tests to ensure the client is working independently of the server
 suite.skip("YARA: Language Server", function () {
     test("client connect", function () {
         // ensure the client can connect to the language server
@@ -30,30 +31,41 @@ suite.skip("YARA: Language Server", function () {
     });
 });
 
+// Integration tests to ensure the client and server are interacting as expected
 suite.skip("YARA: Provider", function () {
     test("rule definition", function (done) {
         const filepath: string = path.join(workspace, "peek_rules.yara");
-        vscode.workspace.openTextDocument(filepath).then(function (doc) {});
+        vscode.workspace.openTextDocument(filepath).then(function (doc) {
+
+        });
     });
 
     test("variable definition", function (done) {
         const filepath: string = path.join(workspace, "peek_rules.yara");
-        vscode.workspace.openTextDocument(filepath).then(function (doc) {});
+        vscode.workspace.openTextDocument(filepath).then(function (doc) {
+
+        });
     });
 
     test("symbol references", function (done) {
         const filepath: string = path.join(workspace, "peek_rules.yara");
-        vscode.workspace.openTextDocument(filepath).then(function (doc) {});
+        vscode.workspace.openTextDocument(filepath).then(function (doc) {
+
+        });
     });
 
     test("wildcard references", function (done) {
         const filepath: string = path.join(workspace, "peek_rules.yara");
-        vscode.workspace.openTextDocument(filepath).then(function (doc) {});
+        vscode.workspace.openTextDocument(filepath).then(function (doc) {
+
+        });
     });
 
     test("code completion", function (done) {
         const filepath: string = path.join(workspace, "code_completion.yara");
-        vscode.workspace.openTextDocument(filepath).then(function (doc) {});
+        vscode.workspace.openTextDocument(filepath).then(function (doc) {
+
+        });
     });
 
     /*
@@ -66,6 +78,8 @@ suite.skip("YARA: Provider", function () {
     */
     test("issue #17", function (done) {
         const filepath: string = path.join(workspace, "peek_rules.yara");
-        vscode.workspace.openTextDocument(filepath).then(function (doc) {});
+        vscode.workspace.openTextDocument(filepath).then(function (doc) {
+
+        });
     });
 });

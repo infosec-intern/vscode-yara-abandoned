@@ -82,7 +82,7 @@ export async function activate(context: ExtensionContext) {
     }
     // register the client for all the YARA things
     const clientOptions: lcp.LanguageClientOptions = {
-        documentSelector: [{ scheme: "file", language: "yara" }],
+        documentSelector: [{language: "yara"}],
         diagnosticCollectionName: "yara",
         outputChannel: outputChannel,
         synchronize: {
