@@ -37,6 +37,23 @@ def test_cmd_compile_all_rules():
     }
     assert request is False
 
+@pytest.mark.skip(reason="not implemented")
+@pytest.mark.server
+def test_cmd_compile_all_rules_no_workspace():
+    '''Similar to above test, but the 'initialize' message
+    indicates no workspace is specified
+    '''
+    request = {
+        "jsonrpc": "2.0",
+        "id": 1,
+        "method": "workspace/executeCommand",
+        "params": {
+            "command": "yara.CompileAllRules",
+            "arguments": []
+        }
+    }
+    assert request is False
+
 @pytest.mark.asyncio
 @pytest.mark.server
 async def test_code_completion_regular(test_rules, yara_server):

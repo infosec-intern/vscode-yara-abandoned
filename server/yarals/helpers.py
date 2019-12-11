@@ -70,8 +70,9 @@ def parse_uri(uri: str, encoding="utf-8"):
     :uri: URI string to be parsed
     :encoding: (Optional) string encoding to parse with
     '''
-    url = urlsplit(unquote(uri, encoding=encoding))
-    return url2pathname(url.path)
+    if uri:
+        url = urlsplit(unquote(uri, encoding=encoding))
+        return url2pathname(url.path)
 
 def resolve_symbol(document: str, pos: lsp.Position) -> str:
     '''Resolve a symbol located at the given position
