@@ -5,6 +5,7 @@ import { ChildProcess } from "child_process";
 import { createConnection, Socket } from "net";
 import * as path from "path";
 import * as vscode from "vscode";
+import { install_server, start_server } from "../client/server";
 
 let ext_id: string = "infosec-intern.yara";
 let workspace: string = path.join(__dirname, "..", "..", "test/rules/");
@@ -18,36 +19,38 @@ suite("YARA: Setup", function () {
     test("install on first exec", function (done) {
         // ensure the server is installed if conditions are met
     });
+    test("server binding", async function () {
+        // ensure the server binds to a port so the client can connect
+        const host: string = "127.0.0.1";
+        const port: number = 8471;
+        const extensionRoot: string = path.join(__dirname, "..", "..");
+        await start_server(extensionRoot, host, port);
+        // have to report this test as complete in a slightly different way
+        // due to the "async" requirement
+        // see: https://github.com/mochajs/mocha/issues/2407
+        return new Promise((resolve, reject) => {
+            let connection: Socket = createConnection(port, host, () => {});
+            connection.on("connect", () => {
+                connection.end();
+                resolve();
+            });
+        });
+    });
 });
 
 // Integration tests to ensure the client is working independently of the server
 suite("YARA: Client", function () {
-    teardown(function () {
-        let extension = vscode.extensions.getExtension(ext_id);
-        console.log(`${extension.id} => ${extension.isActive}`);
-    });
-    test("client activation", function (done) {
+    test.skip("client activation", function (done) {
         // ensure the client properly activates this extension when given a YARA file
         const filepath: string = path.join(workspace, "peek_rules.yara");
         vscode.workspace.openTextDocument(filepath).then(function (doc) {
             let extension = vscode.extensions.getExtension(ext_id);
             assert(extension.isActive);
+            done();
         });
     });
     test("client connection refused", function (done) {
         // ensure the client throws an error message if the connection is refused and the server is shut down
-    });
-    test("server binding", function (done) {
-        // ensure the server binds to a port so the client can connect
-        let extension = vscode.extensions.getExtension(ext_id);
-        extension.activate().then((api) => {
-            let server = api.get_server();
-            let connection: Socket = createConnection(server.port, server.host, () => {});
-            connection.on("connect", () => {
-                connection.end();
-                done();
-            });
-        });
     });
     test("start server", function (done) {
         // ensure the language server is started as the client's child process
@@ -56,6 +59,7 @@ suite("YARA: Client", function () {
         extension.activate().then((api) => {
             let server_proc: ChildProcess = api.get_server().process;
             assert(server_proc.pid > -1);
+            done();
         });
     });
     test("stop server", function (done) {
