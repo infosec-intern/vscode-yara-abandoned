@@ -15,7 +15,7 @@ export async function activate(context: ExtensionContext) {
     let lhost: string = "127.0.0.1";
     // grab a random open TCP port to listen to
     let tcpPort: number = await getPort();
-    let langserver: ChildProcess = await start_server(context, lhost, tcpPort);
+    let langserver: ChildProcess = await start_server(context.extensionPath, lhost, tcpPort);
     // when the client starts it should open a socket to the server
     const serverOptions: lcp.ServerOptions = function() {
         return new Promise((resolve, reject) => {
@@ -42,7 +42,11 @@ export async function activate(context: ExtensionContext) {
     }
     // register the client for all the YARA things
     const clientOptions: lcp.LanguageClientOptions = {
-        documentSelector: [{language: "yara"}],
+        // it shouldn't matter whether the file is on-disk or not
+        documentSelector: [
+            {language: "yara", scheme: "file"},
+            {language: "yara", scheme: "untitled"}
+        ],
         diagnosticCollectionName: "yara",
         outputChannel: outputChannel,
         synchronize: {
