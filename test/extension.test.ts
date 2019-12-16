@@ -36,7 +36,7 @@ const removeDir = function(dirPath: string) {
 // Unit tests to ensure the setup functions are working appropriately
 suite("YARA: Setup", function () {
     /*
-        give this test a generous timeout of 15 seconds to ensure the install
+        give this test a generous timeout of 10 seconds to ensure the install
         has enough time to finish before the test is killed
     */
     test("install server", function (done) {
@@ -54,7 +54,8 @@ suite("YARA: Setup", function () {
             console.log(`Couldn't remove temporary directory "${targetDir}". Manual removal required`);
         }
         assert(installResult && dirExists);
-    }).timeout(15000);
+        done();
+    }).timeout(10000);
     /*
         Have to report this test as complete in a slightly different way
         due to the "async" requirement
