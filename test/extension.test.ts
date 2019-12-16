@@ -13,11 +13,28 @@ let workspace: string = path.join(__dirname, "..", "..", "test/rules/");
 
 // Unit tests to ensure the setup functions are working appropriately
 suite("YARA: Setup", function () {
+    /*
+        Have to report these tests as complete in a slightly different way
+        due to the "async" requirement
+        see: https://github.com/mochajs/mocha/issues/2407
+    */
     test("install server", function (done) {
         // ensure the server components are installed if none exist
-    });
-    test("install on first exec", function (done) {
-        // ensure the server is installed if conditions are met
+        const fs = require("fs");
+        const os = require("os");
+        const { ENOENT } = require("constants");
+        const folder: string = fs.mkdtempSync(`${os.tmpdir()}${path.sep}`);
+        const installResult: boolean = install_server(folder);
+        // install_server creates the env/ directory when successful
+        let dirExists: boolean = false;
+        try {
+            dirExists = fs.existsSync(path.join(folder, "env"));
+            console.log(`dirExists: ${dirExists}`);
+        } catch (error) {
+            console.log(`error: ${error.message}`);
+        }
+        fs.rmdirSync(folder);
+        assert(installResult && dirExists);
     });
     test("server binding", async function () {
         // ensure the server binds to a port so the client can connect
@@ -25,9 +42,6 @@ suite("YARA: Setup", function () {
         const port: number = 8471;
         const extensionRoot: string = path.join(__dirname, "..", "..");
         await start_server(extensionRoot, host, port);
-        // have to report this test as complete in a slightly different way
-        // due to the "async" requirement
-        // see: https://github.com/mochajs/mocha/issues/2407
         return new Promise((resolve, reject) => {
             let connection: Socket = createConnection(port, host, () => {});
             connection.on("connect", () => {
@@ -52,6 +66,9 @@ suite("YARA: Client", function () {
     test("client connection refused", function (done) {
         // ensure the client throws an error message if the connection is refused and the server is shut down
     });
+    test("install on first exec", function (done) {
+        // ensure the server is installed if conditions are met
+    });
     test("start server", function (done) {
         // ensure the language server is started as the client's child process
         // by checking that the PID exists
@@ -70,7 +87,7 @@ suite("YARA: Client", function () {
 });
 
 // Integration tests to ensure the client and server are interacting as expected
-suite.skip("YARA: Language Server", function () {
+suite("YARA: Language Server", function () {
     test("rule definition", function (done) {
         const filepath: string = path.join(workspace, "peek_rules.yara");
         vscode.workspace.openTextDocument(filepath).then(function (doc) {

@@ -1,11 +1,10 @@
 // Functions specifically related to interaction with the language server
 "use strict";
 
-import {ChildProcess, spawn} from "child_process";
+import { ChildProcess, spawn } from "child_process";
 import * as path from "path";
-import {platform} from "process";
+import { platform } from "process";
 import * as tcpPortUsed from "tcp-port-used";
-import {ExtensionContext} from "vscode";
 
 
 export function install_server(extensionRoot: string): boolean {
@@ -14,11 +13,30 @@ export function install_server(extensionRoot: string): boolean {
         returns true or false if installation was successful
     */
     // get the local directory where the env will be installed
-    let envPath: string = path.join(extensionRoot, "server", "env");
-    // check if python3.6+ and the "virtualenv" package are installed
+    const envPath: string = path.join(extensionRoot, "env");
+    // check if python3.6+ is installed
 
     // if not, notify the user and error out
-    // else execute the appropriate command to create a Python3 environment
+
+    // else execute the appropriate command to create a Python3 virtual environment
+    // example: python3 -m venv $TEMP/ABC123/env
+    let cmd: string = path.join(extensionRoot, "client", "install.sh");
+    if (platform == "win32") {
+        cmd = path.join(extensionRoot, "client", "install.ps1");
+    }
+    console.log(`Running command: ${cmd} ${extensionRoot}`);
+    let venv_proc: ChildProcess = spawn(cmd, [extensionRoot]);
+    venv_proc.on("exit", (code, signal) => {
+        // if the process completed successfully
+        console.log("install process completed successfully");
+        if (code == 0) {
+            return true;
+        }
+    });
+    venv_proc.on("error", (error) => {
+        console.log(error.message);
+        console.log(error);
+    });
     return false;
 }
 
