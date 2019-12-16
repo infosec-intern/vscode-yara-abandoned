@@ -11,31 +11,55 @@ let ext_id: string = "infosec-intern.yara";
 let workspace: string = path.join(__dirname, "..", "..", "test/rules/");
 
 
+// lazily pulled from https://solvit.io/53b9763
+const removeDir = function(dirPath: string) {
+    const fs = require("fs");
+    const path = require("path");
+    if (fs.existsSync(dirPath)) {
+        return;
+    }
+    let list = fs.readdirSync(dirPath);
+    for (let i = 0; i < list.length; i++) {
+        let filename = path.join(dirPath, list[i]);
+        let stat = fs.statSync(filename);
+        if (filename == "." || filename == "..") {
+            // do nothing for current and parent dir
+        } else if (stat.isDirectory()) {
+            removeDir(filename);
+        } else {
+            fs.unlinkSync(filename);
+        }
+    }
+    fs.rmdirSync(dirPath);
+};
+
 // Unit tests to ensure the setup functions are working appropriately
 suite("YARA: Setup", function () {
     /*
-        Have to report these tests as complete in a slightly different way
-        due to the "async" requirement
-        see: https://github.com/mochajs/mocha/issues/2407
+        give this test a generous timeout of 15 seconds to ensure the install
+        has enough time to finish before the test is killed
     */
     test("install server", function (done) {
         // ensure the server components are installed if none exist
         const fs = require("fs");
         const os = require("os");
-        const { ENOENT } = require("constants");
-        const folder: string = fs.mkdtempSync(`${os.tmpdir()}${path.sep}`);
-        const installResult: boolean = install_server(folder);
+        const extensionRoot: string = path.join(__dirname, "..", "..");
+        const targetDir: string = fs.mkdtempSync(`${os.tmpdir()}${path.sep}`);
+        const installResult: boolean = install_server(extensionRoot, targetDir);
         // install_server creates the env/ directory when successful
-        let dirExists: boolean = false;
+        let dirExists: boolean = fs.existsSync(path.join(targetDir, "env"));
         try {
-            dirExists = fs.existsSync(path.join(folder, "env"));
-            console.log(`dirExists: ${dirExists}`);
-        } catch (error) {
-            console.log(`error: ${error.message}`);
+            removeDir(targetDir);
+        } catch {
+            console.log(`Couldn't remove temporary directory "${targetDir}". Manual removal required`);
         }
-        fs.rmdirSync(folder);
         assert(installResult && dirExists);
-    });
+    }).timeout(15000);
+    /*
+        Have to report this test as complete in a slightly different way
+        due to the "async" requirement
+        see: https://github.com/mochajs/mocha/issues/2407
+    */
     test("server binding", async function () {
         // ensure the server binds to a port so the client can connect
         const host: string = "127.0.0.1";
@@ -87,7 +111,7 @@ suite("YARA: Client", function () {
 });
 
 // Integration tests to ensure the client and server are interacting as expected
-suite("YARA: Language Server", function () {
+suite.skip("YARA: Language Server", function () {
     test("rule definition", function (done) {
         const filepath: string = path.join(workspace, "peek_rules.yara");
         vscode.workspace.openTextDocument(filepath).then(function (doc) {
