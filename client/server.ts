@@ -14,10 +14,19 @@ export function install_server(extensionRoot: string, targetDir: string): boolea
     */
     // get the local directory where the env will be installed
     let cmd: string = path.join(extensionRoot, "client", "install.sh");
+    let args: string[] = [targetDir];
     if (platform == "win32") {
-        cmd = path.join(extensionRoot, "client", "install.ps1");
+        // suspicious AF
+        cmd = "powershell.exe";
+        args = [
+            path.join(extensionRoot, "client", "install.ps1"),
+            targetDir
+        ];
     }
-    let venv_proc = spawnSync(cmd, [targetDir], {shell: true});
+    // we should be generating all command and arguments ourself
+    // so shell: true *should* be safe
+    // TODO: verify that assumption
+    let venv_proc = spawnSync(cmd, args, {shell: true});
     return venv_proc.status == 0;
 }
 
