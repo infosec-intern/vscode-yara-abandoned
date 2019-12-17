@@ -1,6 +1,6 @@
 #!/usr/bin/env sh
 # Check Python version and create a virtual environment
-# ./install.sh <EXTENSION_ROOT>
+# ./install.sh <TARGET_DIR>
 
 TARGET_DIR="${1}"
 BUILD_ENV=false
