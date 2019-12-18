@@ -5,10 +5,10 @@ import { ChildProcess } from "child_process";
 import { createConnection, Socket } from "net";
 import * as path from "path";
 import * as vscode from "vscode";
-import { install_server, start_server } from "../client/server";
+import { install_server, start_server, server_installed } from "../client/server";
 
-let ext_id: string = "infosec-intern.yara";
-let workspace: string = path.join(__dirname, "..", "..", "test/rules/");
+const ext_id: string = "infosec-intern.yara";
+const workspace: string = path.join(__dirname, "..", "..", "test/rules/");
 
 
 // lazily pulled from https://solvit.io/53b9763
@@ -75,18 +75,38 @@ suite("YARA: Setup", function () {
             });
         });
     });
+    test("server installed", function (done) {
+        const fs = require("fs");
+        const os = require("os");
+        const extensionRoot: string = path.join(__dirname, "..", "..");
+        const targetDir: string = fs.mkdtempSync(`${os.tmpdir()}${path.sep}`);
+        install_server(extensionRoot, targetDir);
+        assert(server_installed(targetDir));
+        done();
+    }).timeout(10000);
 });
 
 // Integration tests to ensure the client is working independently of the server
 suite("YARA: Client", function () {
-    test.skip("client activation", function (done) {
-        // ensure the client properly activates this extension when given a YARA file
-        const filepath: string = path.join(workspace, "peek_rules.yara");
-        vscode.workspace.openTextDocument(filepath).then(function (doc) {
-            let extension = vscode.extensions.getExtension(ext_id);
-            assert(extension.isActive);
-            done();
+    suiteSetup(function () {
+        vscode.workspace.onDidChangeWorkspaceFolders((event: vscode.WorkspaceFoldersChangeEvent) => {
+            event.added.forEach((folder: vscode.WorkspaceFolder) => {
+                console.log(`workspace folder added: ${folder}`);
+            });
+            event.removed.forEach((folder: vscode.WorkspaceFolder) => {
+                console.log(`workspace folder removed: ${folder}`);
+            });
         });
+        vscode.workspace.onDidOpenTextDocument((doc: vscode.TextDocument) => {
+            console.log(`document "${doc.fileName}" opened`);
+        });
+        vscode.workspace.onDidCloseTextDocument((doc: vscode.TextDocument) => {
+            console.log(`document "${doc.fileName}" closed`);
+        });
+    });
+    teardown(function () {
+        let extension = vscode.extensions.getExtension(ext_id);
+        console.log(`${this.currentTest.title}: ${ext_id} extension is active: ${extension.isActive}`);
     });
     test("client connection refused", function (done) {
         // ensure the client throws an error message if the connection is refused and the server is shut down
@@ -112,7 +132,27 @@ suite("YARA: Client", function () {
 });
 
 // Integration tests to ensure the client and server are interacting as expected
-suite.skip("YARA: Language Server", function () {
+suite("YARA: Language Server", function () {
+    suiteSetup(function () {
+        vscode.workspace.onDidChangeWorkspaceFolders((event: vscode.WorkspaceFoldersChangeEvent) => {
+            event.added.forEach((folder: vscode.WorkspaceFolder) => {
+                console.log(`workspace folder added: ${folder}`);
+            });
+            event.removed.forEach((folder: vscode.WorkspaceFolder) => {
+                console.log(`workspace folder removed: ${folder}`);
+            });
+        });
+        vscode.workspace.onDidOpenTextDocument((doc: vscode.TextDocument) => {
+            console.log(`document "${doc.fileName}" opened`);
+        });
+        vscode.workspace.onDidCloseTextDocument((doc: vscode.TextDocument) => {
+            console.log(`document "${doc.fileName}" closed`);
+        });
+    });
+    teardown(function () {
+        let extension = vscode.extensions.getExtension(ext_id);
+        console.log(`${this.currentTest.title}: ${ext_id} extension is active: ${extension.isActive}`);
+    });
     test("rule definition", function (done) {
         const filepath: string = path.join(workspace, "peek_rules.yara");
         vscode.workspace.openTextDocument(filepath).then(function (doc) {
