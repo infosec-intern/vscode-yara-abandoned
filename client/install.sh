@@ -37,14 +37,15 @@ function build_venv {
     echo "Building virtual environment in ${ENV_PATH}"
     last_error=`${PYTHON_PATH} -m venv ${ENV_PATH} 2>&1`
     ENV_PYTHON="${ENV_PATH}/bin/python"
+    ENV_PIP="${ENV_PATH}/bin/pip"
     if [ -x ${ENV_PYTHON} ]
     then
         echo "Virtual environment creation successful"
-        echo "Using ${ENV_PYTHON} to install yarals package and dependencies"
-        ${ENV_PYTHON} -m pip install wheel --disable-pip-version-check
-        ${ENV_PYTHON} -m pip wheel "${SCRIPT_PATH}/../server" --disable-pip-version-check --no-deps --wheel-dir "${ENV_PATH}"
-        WHEEL="${ENV_PATH}/yarals-*.whl"
-        ${ENV_PYTHON} -m pip install ${WHEEL} --disable-pip-version-check
+        echo "Using ${ENV_PIP} to install yarals package and dependencies"
+        ${ENV_PIP} install wheel --disable-pip-version-check
+        ${ENV_PIP} wheel "${SCRIPT_PATH}/../server" --disable-pip-version-check --no-deps --wheel-dir "${ENV_PATH}"
+        WHEEL=`find ${ENV_PATH}/yarals-*.whl`
+        ${ENV_PIP} install ${WHEEL} --disable-pip-version-check
     else
         echo "Virtual environment creation failed. ${last_error}"
     fi
