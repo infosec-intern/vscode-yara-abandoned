@@ -2,6 +2,7 @@
 "use strict";
 
 import { ChildProcess, spawn, spawnSync } from "child_process";
+import { existsSync } from "fs";
 import * as path from "path";
 import { platform } from "process";
 import * as tcpPortUsed from "tcp-port-used";
@@ -54,4 +55,24 @@ export async function start_server(extensionRoot: string, host: string, tcpPort:
     // wait for the language server to bind to the port
     await tcpPortUsed.waitUntilUsed(tcpPort, host);
     return langserver;
+}
+
+export function server_installed(installDir: string): boolean {
+    let envPath: string = path.join(installDir, "env");
+    if (!existsSync(envPath)) {
+        return false;
+    }
+    // let pipPath: string = path.join()
+    let cmd: string = path.join(envPath, "bin", "pip");
+    let args: string[] = ["freeze"];
+    if (platform == "win32") {
+        // suspicious AF
+        cmd = "powershell.exe";
+        args = [
+            path.join(envPath, "Scripts", "pip.exe"),
+            "freeze"
+        ];
+    }
+    const pip_proc = spawnSync(cmd, args, {shell: true});
+    return pip_proc.stdout.toString().includes("yarals");
 }

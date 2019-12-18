@@ -3,14 +3,33 @@
 import {ChildProcess, spawn} from "child_process";
 import * as getPort from "get-port";
 import {Socket} from "net";
+import * as path from "path";
 import {Disposable, ExtensionContext, OutputChannel, window} from "vscode";
 import * as lcp from "vscode-languageclient";
-import {start_server} from "./server";
+import {install_server, start_server, server_installed} from "./server";
 
 
 let server_info: Object;
 
 export async function activate(context: ExtensionContext) {
+    // check if the server components are installed - if not, install them
+    let installDir: string = path.join(context.extensionPath, "server");
+    if (!server_installed(installDir)) {
+        let msg: string = `Installing YARA Language Server components into ${installDir}`;
+        console.log(msg);
+        window.showInformationMessage(msg);
+        if (install_server(context.extensionPath, installDir)) {
+            let msg: string = "Successfully installed server components";
+            console.log(msg);
+            window.showInformationMessage(msg);
+        }
+        else {
+            let msg: string = "Failed to install server components";
+            console.log(msg);
+            window.showErrorMessage(msg);
+        }
+    }
+    // open up output channel and start the server
     let outputChannel: OutputChannel = window.createOutputChannel("YARA");
     let lhost: string = "127.0.0.1";
     // grab a random open TCP port to listen to
