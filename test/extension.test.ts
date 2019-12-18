@@ -88,20 +88,21 @@ suite("YARA: Setup", function () {
 
 // Integration tests to ensure the client is working independently of the server
 suite("YARA: Client", function () {
-    suiteSetup(function () {
+    setup(function () {
+        let testname: string = this.currentTest.title;
         vscode.workspace.onDidChangeWorkspaceFolders((event: vscode.WorkspaceFoldersChangeEvent) => {
             event.added.forEach((folder: vscode.WorkspaceFolder) => {
-                console.log(`workspace folder added: ${folder}`);
+                console.log(`${testname}: workspace folder added: ${folder}`);
             });
             event.removed.forEach((folder: vscode.WorkspaceFolder) => {
-                console.log(`workspace folder removed: ${folder}`);
+                console.log(`${testname}: workspace folder removed: ${folder}`);
             });
         });
         vscode.workspace.onDidOpenTextDocument((doc: vscode.TextDocument) => {
-            console.log(`document "${doc.fileName}" opened`);
+            console.log(`${testname}: document "${doc.fileName}" opened`);
         });
         vscode.workspace.onDidCloseTextDocument((doc: vscode.TextDocument) => {
-            console.log(`document "${doc.fileName}" closed`);
+            console.log(`${testname}: document "${doc.fileName}" closed`);
         });
     });
     teardown(function () {
@@ -133,20 +134,21 @@ suite("YARA: Client", function () {
 
 // Integration tests to ensure the client and server are interacting as expected
 suite("YARA: Language Server", function () {
-    suiteSetup(function () {
+    setup(function () {
+        let testname: string = this.currentTest.title;
         vscode.workspace.onDidChangeWorkspaceFolders((event: vscode.WorkspaceFoldersChangeEvent) => {
             event.added.forEach((folder: vscode.WorkspaceFolder) => {
-                console.log(`workspace folder added: ${folder}`);
+                console.log(`${testname}: workspace folder added: ${folder}`);
             });
             event.removed.forEach((folder: vscode.WorkspaceFolder) => {
-                console.log(`workspace folder removed: ${folder}`);
+                console.log(`${testname}: workspace folder removed: ${folder}`);
             });
         });
         vscode.workspace.onDidOpenTextDocument((doc: vscode.TextDocument) => {
-            console.log(`document "${doc.fileName}" opened`);
+            console.log(`${testname}: document "${doc.fileName}" opened`);
         });
         vscode.workspace.onDidCloseTextDocument((doc: vscode.TextDocument) => {
-            console.log(`document "${doc.fileName}" closed`);
+            console.log(`${testname}: document "${doc.fileName}" closed`);
         });
     });
     teardown(function () {
