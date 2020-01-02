@@ -1,4 +1,3 @@
-#!/usr/bin/env sh
 # Check Python version and create a virtual environment
 # ./install.sh <TARGET_DIR>
 
@@ -7,12 +6,12 @@ BUILD_ENV=false
 # https://stackoverflow.com/questions/4774054/reliable-way-for-a-bash-script-to-get-the-full-path-to-itself
 SCRIPT_PATH="$( cd "$(dirname $0)" ; pwd -P )"
 
-function exit_with_error {
+exit_with_error () {
     echo "${1}"
     exit 1
 }
 
-function check_version {
+check_version () {
     # Validate the provided Python path's version
     # Requires path to python executable to validate
     # version follows format: "Python 3.6.0"
@@ -30,7 +29,7 @@ function check_version {
     fi
 }
 
-function build_venv {
+build_venv () {
     # Build a virtual environment with the necessary packages with the provided Python path
     # Requires path to python executable to validate
     ENV_PATH="${TARGET_DIR}/env"
