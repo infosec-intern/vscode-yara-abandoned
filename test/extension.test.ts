@@ -2,6 +2,7 @@
 
 import * as assert from "assert";
 import { ChildProcess } from "child_process";
+import * as fs from "fs";
 import { createConnection, Socket } from "net";
 import * as path from "path";
 import * as vscode from "vscode";
@@ -88,32 +89,17 @@ suite("YARA: Setup", function () {
 
 // Integration tests to ensure the client is working independently of the server
 suite("YARA: Client", function () {
-    setup(function () {
-        let testname: string = this.currentTest.title;
-        vscode.workspace.onDidChangeWorkspaceFolders((event: vscode.WorkspaceFoldersChangeEvent) => {
-            event.added.forEach((folder: vscode.WorkspaceFolder) => {
-                console.log(`${testname}: workspace folder added: ${folder}`);
-            });
-            event.removed.forEach((folder: vscode.WorkspaceFolder) => {
-                console.log(`${testname}: workspace folder removed: ${folder}`);
-            });
-        });
-        vscode.workspace.onDidOpenTextDocument((doc: vscode.TextDocument) => {
-            console.log(`${testname}: document "${doc.fileName}" opened`);
-        });
-        vscode.workspace.onDidCloseTextDocument((doc: vscode.TextDocument) => {
-            console.log(`${testname}: document "${doc.fileName}" closed`);
-        });
-    });
-    teardown(function () {
-        let extension = vscode.extensions.getExtension(ext_id);
-        console.log(`${this.currentTest.title}: ${ext_id} extension is active: ${extension.isActive}`);
-    });
     test("client connection refused", function (done) {
         // ensure the client throws an error message if the connection is refused and the server is shut down
-    });
-    test("install on first exec", function (done) {
-        // ensure the server is installed if conditions are met
+        const filepath: string = path.join(workspace, "peek_rules.yara");
+        let extension = vscode.extensions.getExtension(ext_id);
+        extension.activate().then((api) => {
+            // kill the server process, then try to open the client against it
+            api.get_server().process.kill();
+            vscode.workspace.openTextDocument(filepath).then(function (doc) {
+                console.log(`${extension.id} is active? ${extension.isActive}`);
+            });
+        });
     });
     test("start server", function (done) {
         // ensure the language server is started as the client's child process
@@ -125,7 +111,7 @@ suite("YARA: Client", function () {
             done();
         });
     });
-    test("stop server", function (done) {
+    test.skip("stop server", function (done) {
         // ensure the language server is stopped if the client ends
         const filepath: string = path.join(workspace, "peek_rules.yara");
         vscode.workspace.openTextDocument(filepath).then(function (doc) {});
@@ -134,62 +120,44 @@ suite("YARA: Client", function () {
 
 // Integration tests to ensure the client and server are interacting as expected
 suite("YARA: Language Server", function () {
-    setup(function () {
-        let testname: string = this.currentTest.title;
-        vscode.workspace.onDidChangeWorkspaceFolders((event: vscode.WorkspaceFoldersChangeEvent) => {
-            event.added.forEach((folder: vscode.WorkspaceFolder) => {
-                console.log(`${testname}: workspace folder added: ${folder}`);
-            });
-            event.removed.forEach((folder: vscode.WorkspaceFolder) => {
-                console.log(`${testname}: workspace folder removed: ${folder}`);
-            });
-        });
-        vscode.workspace.onDidOpenTextDocument((doc: vscode.TextDocument) => {
-            console.log(`${testname}: document "${doc.fileName}" opened`);
-        });
-        vscode.workspace.onDidCloseTextDocument((doc: vscode.TextDocument) => {
-            console.log(`${testname}: document "${doc.fileName}" closed`);
-        });
-    });
-    teardown(function () {
-        let extension = vscode.extensions.getExtension(ext_id);
-        console.log(`${this.currentTest.title}: ${ext_id} extension is active: ${extension.isActive}`);
-    });
-    test("rule definition", function (done) {
+    test.skip("rule definition", function (done) {
         const filepath: string = path.join(workspace, "peek_rules.yara");
         vscode.workspace.openTextDocument(filepath).then(function (doc) {
 
         });
     });
-    test("variable definition", function (done) {
+    test.skip("variable definition", function (done) {
         const filepath: string = path.join(workspace, "peek_rules.yara");
         vscode.workspace.openTextDocument(filepath).then(function (doc) {
 
         });
     });
-    test("symbol references", function (done) {
+    test.skip("symbol references", function (done) {
         const filepath: string = path.join(workspace, "peek_rules.yara");
         vscode.workspace.openTextDocument(filepath).then(function (doc) {
 
         });
     });
-    test("wildcard references", function (done) {
+    test.skip("wildcard references", function (done) {
         const filepath: string = path.join(workspace, "peek_rules.yara");
         vscode.workspace.openTextDocument(filepath).then(function (doc) {
 
         });
     });
-    test("code completion", function (done) {
+    test.skip("code completion", function (done) {
         const filepath: string = path.join(workspace, "code_completion.yara");
         vscode.workspace.openTextDocument(filepath).then(function (doc) {
 
         });
     });
     test("command CompileRule", function(done) {
-
+        // should compile the active document in the current texteditor
     });
-    test("command CompileAllRules", function(done) {
-
+    test("command CompileAllRules with workspace", function(done) {
+        // should compile all .yar and .yara rules in the current workspace
+    });
+    test("command CompileAllRules without workspace", function(done) {
+        // should compile all dirty files in the current texteditor
     });
     /*
         Trying to capture $hex_string but not $hex_string2
@@ -199,7 +167,7 @@ suite("YARA: Language Server", function () {
         But not:
             $hex_string2 = { F4 23 ( 62 B4 | 56 ) 45 }
     */
-    test("issue #17", function (done) {
+    test.skip("issue #17", function (done) {
         const filepath: string = path.join(workspace, "peek_rules.yara");
         vscode.workspace.openTextDocument(filepath).then(function (doc) {
 
