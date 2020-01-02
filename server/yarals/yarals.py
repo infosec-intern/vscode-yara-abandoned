@@ -1,6 +1,7 @@
 ''' Implements a VSCode language server for YARA '''
 import asyncio
 from copy import deepcopy
+from itertools import chain
 import json
 import logging
 from pathlib import Path
@@ -155,8 +156,7 @@ class YaraLanguageServer(object):
                                 documents = deepcopy(dirty_files)
                                 if self.workspace:
                                     self._logger.info("Compiling all rules in %s per user's request", self.workspace)
-                                    files = self.workspace.glob("**/*.yara") + self.workspace.glob("**/*.yar")
-                                    for file in files:
+                                    for file in chain(self.workspace.glob("**/*.yara"), self.workspace.glob("**/*.yar")):
                                         file_uri = file.as_uri()
                                         documents[file_uri] = self._get_document(file_uri, dirty_files)
                                 else:
