@@ -37,6 +37,19 @@
             "label": "test",
             "command": "npm",
             "args": ["run", "test"],
+            "group": {
+                "kind": "test",
+                "isDefault": true
+            }
+        },
+        {
+            "label": "pytest",
+            "type": "shell",
+            "command": "${workspaceFolder}/server/env/bin/py.test",
+            "windows": {
+                "command": "${workspaceFolder}\\server\\env\\Scripts\\py.test"
+            },
+            "detail": "Run local Python tests",
             "group": "test"
         }
     ]
