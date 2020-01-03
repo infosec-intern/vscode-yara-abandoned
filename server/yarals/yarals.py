@@ -445,7 +445,8 @@ class YaraLanguageServer(object):
             raise ce.HoverError("Could not offer definition hover: {}".format(err))
 
     async def provide_reference(self, params: dict, document: str) -> list:
-        '''The references request is sent from the client to the server to resolve project-wide references for the symbol denoted by the given text document position
+        '''The references request is sent from the client to the server to resolve
+        project-wide references for the symbol denoted by the given text document position
 
         Returns a (possibly empty) list of symbol Locations
         '''
@@ -458,8 +459,9 @@ class YaraLanguageServer(object):
         try:
             # check to see if the symbol is a variable or a rule name (currently the only valid symbols)
             if symbol[0] in self._varchar:
+                WILDCARD = (symbol[-1] == "*")
                 # gotta match the wildcard variables too
-                if symbol[-1] == "*":
+                if WILDCARD:
                     symbol = symbol.replace("*", ".*?")
                 # any possible first character matching self._varchar must be treated as a reference
                 pattern = "[{}]{}\\b".format("".join(self._varchar), "".join(symbol[1:]))
@@ -467,6 +469,13 @@ class YaraLanguageServer(object):
                 rule_lines = document.split("\n")[rule_range.start.line:rule_range.end.line+1]
                 rel_offset = rule_range.start.line
                 char_start_offset = 1
+                if WILDCARD:
+                    # only search strings section if this is a wildcard variable
+                    # figure out the bounds of the strings section
+                    strings_start = [idx for idx, line in enumerate(rule_lines) if "strings:" in line][0]
+                    strings_end = [idx for idx, line in enumerate(rule_lines) if "condition:" in line][0]
+                    rule_lines = rule_lines[strings_start:strings_end]
+                    rel_offset += strings_start
             else:
                 rel_offset = 0
                 pattern = "{}\\b".format(symbol)
