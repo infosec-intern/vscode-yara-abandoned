@@ -134,6 +134,7 @@ suite("YARA: Language Server", function () {
     test("rule definition", async function () {
         const filepath: string = path.join(workspace, "peek_rules.yara");
         const uri: vscode.Uri = vscode.Uri.file(filepath);
+        // SyntaxExample: Line 43, Col 14
         const pos: vscode.Position = new vscode.Position(42, 14);
         let doc: vscode.TextDocument = await vscode.workspace.openTextDocument(filepath);
         let results: Array<vscode.Location> = await vscode.commands.executeCommand("vscode.executeDefinitionProvider", uri, pos);
@@ -143,11 +144,11 @@ suite("YARA: Language Server", function () {
         let resultWordRange: vscode.Range|undefined = doc.getWordRangeAtPosition(result.range.start);
         let resultWord: string = doc.getText(resultWordRange);
         assert(resultWord == "SyntaxExample");
-        return new Promise((resolve) => { resolve(); })
     });
     test("variable definition", async function () {
         const filepath: string = path.join(workspace, "peek_rules.yara");
         const uri: vscode.Uri = vscode.Uri.file(filepath);
+        // $hex_string: Line 25, Col 14
         const pos: vscode.Position = new vscode.Position(24, 14);
         let doc: vscode.TextDocument = await vscode.workspace.openTextDocument(filepath);
         let results: Array<vscode.Location> = await vscode.commands.executeCommand("vscode.executeDefinitionProvider", uri, pos);
@@ -157,11 +158,11 @@ suite("YARA: Language Server", function () {
         let resultWordRange: vscode.Range|undefined = doc.getWordRangeAtPosition(result.range.start);
         let resultWord: string = doc.getText(resultWordRange);
         assert(resultWord == "hex_string");
-        return new Promise((resolve) => { resolve(); })
     });
     test("symbol references", async function () {
         const filepath: string = path.join(workspace, "peek_rules.yara");
         const uri: vscode.Uri = vscode.Uri.file(filepath);
+        // $dstring: Line 22, Col 11
         const pos: vscode.Position = new vscode.Position(21, 11);
         const acceptableLines: Set<number> = new Set([21, 28, 29]);
         let doc: vscode.TextDocument = await vscode.workspace.openTextDocument(filepath);
@@ -173,12 +174,45 @@ suite("YARA: Language Server", function () {
             assert(refWord == "dstring");
             assert(acceptableLines.has(reference.range.start.line));
         });
-        return new Promise((resolve) => { resolve(); });
     });
-    test.skip("wildcard references", function (done) {
+    test("wildcard references", async function () {
         const filepath: string = path.join(workspace, "peek_rules.yara");
-        vscode.workspace.openTextDocument(filepath).then(async function (doc) {
-
+        const uri: vscode.Uri = vscode.Uri.file(filepath);
+        // $hex_*: Line 31, Col 11
+        const pos: vscode.Position = new vscode.Position(30, 11);
+        const acceptableLines: Set<number> = new Set([19, 20]);
+        let doc: vscode.TextDocument = await vscode.workspace.openTextDocument(filepath);
+        let results: Array<vscode.Location> = await vscode.commands.executeCommand("vscode.executeReferenceProvider", uri, pos);
+        assert(results.length == 2);
+        results.forEach(reference => {
+            let refWordRange: vscode.Range = doc.getWordRangeAtPosition(reference.range.start);
+            let refWord: string = doc.getText(refWordRange);
+            assert(refWord.startsWith("hex_"));
+            assert(acceptableLines.has(reference.range.start.line));
+        });
+    });
+    /*
+        Trying to capture $hex_string but not $hex_string2
+        Should collect references for:
+            $hex_string = { E2 34 ?? C8 A? FB [2-4] }
+            $hex_string
+        But not:
+            $hex_string2 = { F4 23 ( 62 B4 | 56 ) 45 }
+    */
+    test("similar symbol references", async function () {
+        const filepath: string = path.join(workspace, "peek_rules.yara");
+        // $hex_string: Line 20, Col 11
+        const uri: vscode.Uri = vscode.Uri.file(filepath);
+        const pos: vscode.Position = new vscode.Position(19, 11);
+        const acceptableLines: Set<number> = new Set([19, 24]);
+        let doc: vscode.TextDocument = await vscode.workspace.openTextDocument(filepath);
+        let results: Array<vscode.Location> = await vscode.commands.executeCommand("vscode.executeReferenceProvider", uri, pos);
+        assert(results.length == 2);
+        results.forEach(reference => {
+            let refWordRange: vscode.Range = doc.getWordRangeAtPosition(reference.range.start);
+            let refWord: string = doc.getText(refWordRange);
+            assert(refWord.startsWith("hex_"));
+            assert(acceptableLines.has(reference.range.start.line));
         });
     });
     test.skip("code completion", async function () {
@@ -217,20 +251,6 @@ suite("YARA: Language Server", function () {
         vscode.commands.executeCommand(cmd).then((items) => {
             console.log(`Executed command: ${cmd}`);
             console.log(items);
-        });
-    });
-    /*
-        Trying to capture $hex_string but not $hex_string2
-        Should collect references for:
-            $hex_string = { E2 34 ?? C8 A? FB [2-4] }
-            $hex_string
-        But not:
-            $hex_string2 = { F4 23 ( 62 B4 | 56 ) 45 }
-    */
-    test.skip("issue #17", function (done) {
-        const filepath: string = path.join(workspace, "peek_rules.yara");
-        vscode.workspace.openTextDocument(filepath).then(function (doc) {
-
         });
     });
 });
