@@ -90,7 +90,7 @@
 		},
 		{
 			"name": "storage.modifier.yara",
-			"match": "\\b(fullword|global|nocase|private|wide|xor)\\b"
+			"match": "\\b(base64|fullword|global|nocase|private|wide|widebase64|xor)\\b"
 		},
 		{
 			"name": "storage.type.int.yara",
