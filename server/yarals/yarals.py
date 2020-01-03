@@ -466,10 +466,12 @@ class YaraLanguageServer(object):
                 rule_range = helpers.get_rule_range(document, pos)
                 rule_lines = document.split("\n")[rule_range.start.line:rule_range.end.line+1]
                 rel_offset = rule_range.start.line
+                char_start_offset = 1
             else:
                 rel_offset = 0
                 pattern = "{}\\b".format(symbol)
                 rule_lines = document.split("\n")
+                char_start_offset = 5
 
             for index, line in enumerate(rule_lines):
                 for match in re.finditer(pattern, line):
@@ -477,7 +479,7 @@ class YaraLanguageServer(object):
                         # index corresponds to line no. within each rule, not within file
                         offset = rel_offset + index
                         locrange = lsp.Range(
-                            start=lsp.Position(line=offset, char=match.start()),
+                            start=lsp.Position(line=offset, char=match.start() + char_start_offset),
                             end=lsp.Position(line=offset, char=match.end())
                         )
                         results.append(lsp.Location(locrange, file_uri))
