@@ -104,6 +104,7 @@ class YaraLanguageServer(object):
                                 self._logger.info("Client workspace folder: %s", self.workspace)
                             else:
                                 self._logger.info("No client workspace specified")
+                                self.workspace = False
                             client_options = message.get("params", {}).get("capabilities", {})
                             announcement = self.initialize(client_options)
                             await self.send_response(message["id"], announcement, writer)
@@ -146,34 +147,7 @@ class YaraLanguageServer(object):
                         #         renames = await self.provide_rename(message["params"], document)
                         #         await self.send_response(message["id"], renames, writer)
                         elif has_started and method == "workspace/executeCommand":
-                            cmd = message.get("params", {}).get("command", "")
-                            args = message.get("params", {}).get("arguments", [])
-                            if cmd == "yara.CompileRule":
-                                self._logger.info("Compiling rule per user's request")
-                            elif cmd == "yara.CompileAllRules":
-                                # temp copy of filenames => contents
-                                # do a deep copy in order to not mess with dirty file contents
-                                documents = deepcopy(dirty_files)
-                                if self.workspace:
-                                    self._logger.info("Compiling all rules in %s per user's request", self.workspace)
-                                    for file in chain(self.workspace.glob("**/*.yara"), self.workspace.glob("**/*.yar")):
-                                        file_uri = file.as_uri()
-                                        documents[file_uri] = self._get_document(file_uri, dirty_files)
-                                else:
-                                    self._logger.warning("No workspace specified in initialization. CompileAllRules will only work on open docs")
-                                    self._logger.info("Compiling all unsaved files per user's request")
-                                    documents = dirty_files.values()
-                                # documents should be a list of file contents
-                                for file_uri, document in enumerate(documents):
-                                    diagnostics = await self.provide_diagnostic(document)
-                                    if diagnostics:
-                                        params = {
-                                            "uri": file_uri,
-                                            "diagnostics": diagnostics
-                                        }
-                                        await self.send_notification("textDocument/publishDiagnostics", params, writer)
-                            else:
-                                self._logger.warning("Unknown command: %s [%s]", cmd, ",".join(args))
+                            await self.execute_command(message["params"], dirty_files, writer)
                     # if no id is present, this is a JSON-RPC notification
                     else:
                         if method == "initialized":
@@ -277,6 +251,36 @@ class YaraLanguageServer(object):
             # Documents are synced by always sending the full content of the document
             server_options["textDocumentSync"] = lsp.TextSyncKind.FULL
         return {"capabilities": server_options}
+
+    async def execute_command(self, params: dict, dirty_files: dict, writer: asyncio.StreamWriter):
+        cmd = params.get("command", "")
+        args = params.get("arguments", [])
+        if cmd == "yara.CompileRule":
+            self._logger.info("Compiling rule per user's request")
+        elif cmd == "yara.CompileAllRules":
+            # temp copy of filenames => contents
+            # do a deep copy in order to not mess with dirty file contents
+            documents = deepcopy(dirty_files)
+            if self.workspace:
+                self._logger.info("Compiling all rules in %s per user's request", self.workspace)
+                for file in chain(self.workspace.glob("**/*.yara"), self.workspace.glob("**/*.yar")):
+                    file_uri = file.as_uri()
+                    documents[file_uri] = self._get_document(file_uri, dirty_files)
+            else:
+                self._logger.warning("No workspace specified in initialization. CompileAllRules will only work on open docs")
+                self._logger.info("Compiling all unsaved files per user's request")
+                documents = dirty_files
+            # documents should be a list of file contents
+            for file_uri, document in documents.items():
+                diagnostics = await self.provide_diagnostic(document)
+                if diagnostics:
+                    result = {
+                        "uri": file_uri,
+                        "diagnostics": diagnostics
+                    }
+                    await self.send_notification("textDocument/publishDiagnostics", result, writer)
+        else:
+            self._logger.warning("Unknown command: %s [%s]", cmd, ",".join(args))
 
     async def provide_code_completion(self, params: dict, document: str) -> list:
         '''Respond to the completionItem/resolve request
