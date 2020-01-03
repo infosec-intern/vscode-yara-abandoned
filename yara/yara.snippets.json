@@ -63,5 +63,25 @@
         "prefix": "all",
         "body": "all of ${them}",
         "description": "String set keyword: all"
+    },
+    "Ad Hoc Rule - String": {
+        "prefix": "#s#",
+        "body": "rule ${2:adhoc_string} {strings: \\$a = \"${1:string}\" ascii wide nocase condition: \\$a}",
+        "description": "Generate a strings-based Ad Hoc YARA rule per Didier Stevens' guide at https://blog.didierstevens.com/2019/12/31/yara-ad-hoc-rules/"
+    },
+    "Ad Hoc Rule - Hex": {
+        "prefix": "#x#",
+        "body": "rule ${2:adhoc_hexadecimal} {strings: \\$a = { ${1:hexadecimal} } condition: \\$a}",
+        "description": "Generate a hexadecimal Ad Hoc YARA rule per Didier Stevens' guide at https://blog.didierstevens.com/2019/12/31/yara-ad-hoc-rules/"
+    },
+    "Ad Hoc Rule - Regex": {
+        "prefix": "#r#",
+        "body": "rule ${2:adhoc_regex} {strings: \\$a = / ${1:regex} / ascii wide nocase condition: \\$a}",
+        "description": "Generate a regex Ad Hoc YARA rule per Didier Stevens' guide at https://blog.didierstevens.com/2019/12/31/yara-ad-hoc-rules/"
+    },
+    "Ad Hoc Rule - Base64": {
+        "prefix": "#b#",
+        "body": "rule ${2:adhoc_base64} {strings: \\$a = \"${1:string}\" base64 condition: \\$a}",
+        "description": "Generate a base64 Ad Hoc YARA rule per Didier Stevens' guide at https://blog.didierstevens.com/2019/12/31/yara-ad-hoc-rules/"
     }
 }
