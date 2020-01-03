@@ -457,12 +457,15 @@ class YaraLanguageServer(object):
         if not symbol:
             return []
         try:
+            # gotta match the wildcard variables first to build the correct regex pattern
+            # I don't think wildcards are technially supposed to work for rules, but a diagnostic
+            # will appear to the user if YARA can't compile it, so I won't worry too much
+            WILDCARD = ("*" in symbol)
+            if WILDCARD:
+                # remove parentheses and replace the YARA wildcard with a Python re equivalent
+                symbol = symbol.replace("*", ".*?").strip("()")
             # check to see if the symbol is a variable or a rule name (currently the only valid symbols)
             if symbol[0] in self._varchar:
-                WILDCARD = (symbol[-1] == "*")
-                # gotta match the wildcard variables too
-                if WILDCARD:
-                    symbol = symbol.replace("*", ".*?")
                 # any possible first character matching self._varchar must be treated as a reference
                 pattern = "[{}]{}\\b".format("".join(self._varchar), "".join(symbol[1:]))
                 rule_range = helpers.get_rule_range(document, pos)
