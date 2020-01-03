@@ -85,7 +85,7 @@ def resolve_symbol(document: str, pos: lsp.Position) -> str:
         symbol_line = document.split("\n")[pos.line]
         line_end = len(symbol_line)
         # find the left-bound of the symbol by looking backwards until a whitespace
-        index = pos.char
+        index = pos.char - 1
         while True:
             if index == 0 \
             or not symbol_line[index].strip():
@@ -93,7 +93,7 @@ def resolve_symbol(document: str, pos: lsp.Position) -> str:
                 break
             index -= 1
         # find the right-bound of the symbol by looking forwards until a whitespace or a non-alphanum/special char
-        index = pos.char
+        index = pos.char - 1
         while True:
             if index == line_end \
             or not symbol_line[index].strip() \

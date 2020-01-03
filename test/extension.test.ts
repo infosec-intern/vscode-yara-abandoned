@@ -215,13 +215,18 @@ suite("YARA: Language Server", function () {
             assert(acceptableLines.has(reference.range.start.line));
         });
     });
-    test.skip("code completion", async function () {
+    test("code completion", async function () {
         const filepath: string = path.join(workspace, "code_completion.yara");
         const uri: vscode.Uri = vscode.Uri.file(filepath);
         const pos: vscode.Position = new vscode.Position(9, 16);
-        let doc: vscode.TextDocument = await vscode.workspace.openTextDocument(filepath);
+        const acceptableTerms: Set<string> = new Set(["filesystem", "network", "registry", "sync"]);
         let results: vscode.CompletionList = await vscode.commands.executeCommand("vscode.executeCompletionItemProvider", uri, pos);
-        console.log(results);
+        assert(results.items.length == 4, "Wrong number of completion items");
+        assert(results.isIncomplete == false, "Completion list reported as incomplete");
+        results.items.forEach((item: vscode.CompletionItem) => {
+            assert(item.kind == vscode.CompletionItemKind.Class, `"${item.kind.toString()}" is not a valid completion item type for this set`);
+            assert(acceptableTerms.has(item.label), `"${item.label}" is not a valid completion label for this set`);
+        });
     });
     test.skip("command CompileRule", async function() {
         // should compile the active document in the current texteditor
