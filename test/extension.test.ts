@@ -101,17 +101,24 @@ suite("YARA: Client", function () {
             });
         });
     });
-    test("start server", function (done) {
+    test("start server", async function (done) {
         // ensure the language server is started as the client's child process
         // by checking that the PID exists
+        /*
         let extension = vscode.extensions.getExtension(ext_id);
         extension.activate().then((api) => {
             let server_proc: ChildProcess = api.get_server().process;
             assert(server_proc.pid > -1);
             done();
         });
+        */
+       /*
+        let ws: vscode.Uri = vscode.Uri.file(workspace);
+        let thing = await vscode.commands.executeCommand("vscode.openFolder", ws, {newWindow: true});
+        console.log(thing);
+        */
     });
-    test.skip("stop server", function (done) {
+    test("stop server", function (done) {
         // ensure the language server is stopped if the client ends
         const filepath: string = path.join(workspace, "peek_rules.yara");
         vscode.workspace.openTextDocument(filepath).then(function (doc) {});
@@ -144,20 +151,49 @@ suite("YARA: Language Server", function () {
 
         });
     });
-    test.skip("code completion", function (done) {
+    test("code completion", function (done) {
         const filepath: string = path.join(workspace, "code_completion.yara");
-        vscode.workspace.openTextDocument(filepath).then(function (doc) {
-
+        vscode.workspace.openTextDocument(filepath).then(async function (doc) {
+            let uri: vscode.Uri = vscode.Uri.file(filepath);
+            let pos: vscode.Position = new vscode.Position(9, 16);
+            vscode.commands.executeCommand("vscode.executeCompletionItemProvider", uri, pos, "\.").then((items) => {
+                console.log("completion provider complete");
+                console.log(items);
+            });
         });
     });
-    test("command CompileRule", function(done) {
+    test.skip("command CompileRule", function(done) {
         // should compile the active document in the current texteditor
+        const cmd: string = "yara.CompileRule";
+        vscode.commands.getCommands(true).then((cmds) => {
+            assert(cmds.indexOf(cmd) != -1);
+        });
+        vscode.commands.executeCommand(cmd).then((items) => {
+            console.log(`Executed command: ${cmd}`);
+            console.log(items);
+        });
     });
-    test("command CompileAllRules with workspace", function(done) {
+    test.skip("command CompileAllRules with workspace", function(done) {
         // should compile all .yar and .yara rules in the current workspace
+        const cmd: string = "yara.CompileAllRules";
+        vscode.commands.getCommands(true).then((cmds) => {
+            assert(cmds.indexOf(cmd) != -1);
+        });
+        vscode.commands.executeCommand(cmd).then((items) => {
+            console.log(`Executed command: ${cmd}`);
+            console.log(items);
+        });
     });
-    test("command CompileAllRules without workspace", function(done) {
+    test.skip("command CompileAllRules without workspace", function(done) {
         // should compile all dirty files in the current texteditor
+        const cmd: string = "yara.CompileAllRules";
+        vscode.commands.getCommands(true).then((cmds) => {
+            assert(cmds.indexOf(cmd) != -1);
+        });
+        vscode.commands.executeCommand(cmd).then((items) => {
+            console.log(`Executed command: ${cmd}`);
+            console.log(items);
+        });
     });
     /*
         Trying to capture $hex_string but not $hex_string2
