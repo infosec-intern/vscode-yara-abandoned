@@ -35,7 +35,7 @@ const removeDir = function(dirPath: string) {
 };
 
 // Unit tests to ensure the setup functions are working appropriately
-suite.skip("YARA: Setup", function () {
+suite("YARA: Setup", function () {
     /*
         give this test a generous timeout of 10 seconds to ensure the install
         has enough time to finish before the test is killed
@@ -88,40 +88,33 @@ suite.skip("YARA: Setup", function () {
 });
 
 // Integration tests to ensure the client is working independently of the server
-suite.skip("YARA: Client", function () {
-    test("client connection refused", function (done) {
+suite("YARA: Client", function () {
+    test.skip("client connection refused", async function () {
         // ensure the client throws an error message if the connection is refused and the server is shut down
         const filepath: string = path.join(workspace, "peek_rules.yara");
+        const uri: vscode.Uri = vscode.Uri.file(filepath);
+        const pos: vscode.Position = new vscode.Position(42, 14);
         let extension = vscode.extensions.getExtension(ext_id);
-        extension.activate().then((api) => {
-            // kill the server process, then try to open the client against it
-            api.get_server().process.kill();
-            vscode.workspace.openTextDocument(filepath).then(function (doc) {
-                console.log(`${extension.id} is active? ${extension.isActive}`);
-            });
-        });
+        let api = await extension.activate();
+        // kill the server process, then try to open the client against it
+        api.get_server().process.kill();
+        let results: Array<vscode.Location> = await vscode.commands.executeCommand("vscode.executeDefinitionProvider", uri, pos);
+        assert(results.length == 0);
+        // TODO: assert(messagethrown)
+        // TODO: assert(statusbarchanged)
     });
-    test("start server", async function (done) {
+    test("start server", async function () {
         // ensure the language server is started as the client's child process
         // by checking that the PID exists
-        /*
         let extension = vscode.extensions.getExtension(ext_id);
-        extension.activate().then((api) => {
-            let server_proc: ChildProcess = api.get_server().process;
-            assert(server_proc.pid > -1);
-            done();
-        });
-        */
-       /*
-        let ws: vscode.Uri = vscode.Uri.file(workspace);
-        let thing = await vscode.commands.executeCommand("vscode.openFolder", ws, {newWindow: true});
-        console.log(thing);
-        */
+        let api = await extension.activate();
+        let server_proc: ChildProcess = api.get_server().process;
+        assert(server_proc.pid > -1);
     });
-    test("stop server", function (done) {
+    test.skip("stop server", async function () {
         // ensure the language server is stopped if the client ends
         const filepath: string = path.join(workspace, "peek_rules.yara");
-        vscode.workspace.openTextDocument(filepath).then(function (doc) {});
+        let doc: vscode.TextDocument = await vscode.workspace.openTextDocument(filepath);
     });
 });
 
