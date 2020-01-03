@@ -135,60 +135,64 @@ suite("YARA: Language Server", function () {
         const filepath: string = path.join(workspace, "peek_rules.yara");
         const uri: vscode.Uri = vscode.Uri.file(filepath);
         // SyntaxExample: Line 43, Col 14
+        const expectedSymbol: string = "SyntaxExample";
         const pos: vscode.Position = new vscode.Position(42, 14);
         let doc: vscode.TextDocument = await vscode.workspace.openTextDocument(filepath);
         let results: Array<vscode.Location> = await vscode.commands.executeCommand("vscode.executeDefinitionProvider", uri, pos);
-        assert(results.length == 1);
+        assert(results.length == 1, `Wrong number of definitions. ${results.length} instead of 1`);
         let result: vscode.Location = results[0];
-        assert(result.uri.path == filepath);
-        let resultWordRange: vscode.Range|undefined = doc.getWordRangeAtPosition(result.range.start);
-        let resultWord: string = doc.getText(resultWordRange);
-        assert(resultWord == "SyntaxExample");
+        assert(result.uri.path == filepath, `Incorrect document searched: ${result.uri.path} searched instead of ${filepath}`);
+        let refWordRange: vscode.Range|undefined = doc.getWordRangeAtPosition(result.range.start);
+        let refWord: string = doc.getText(refWordRange);
+        assert(refWord == expectedSymbol, `${refWord} does not match ${expectedSymbol}`);
     });
     test("variable definition", async function () {
         const filepath: string = path.join(workspace, "peek_rules.yara");
         const uri: vscode.Uri = vscode.Uri.file(filepath);
         // $hex_string: Line 25, Col 14
+        const expectedSymbol: string = "hex_string";
         const pos: vscode.Position = new vscode.Position(24, 14);
         let doc: vscode.TextDocument = await vscode.workspace.openTextDocument(filepath);
         let results: Array<vscode.Location> = await vscode.commands.executeCommand("vscode.executeDefinitionProvider", uri, pos);
-        assert(results.length == 1);
+        assert(results.length == 1, `Wrong number of definitions. ${results.length} instead of 1`);
         let result: vscode.Location = results[0];
         assert(result.uri.path == filepath);
-        let resultWordRange: vscode.Range|undefined = doc.getWordRangeAtPosition(result.range.start);
-        let resultWord: string = doc.getText(resultWordRange);
-        assert(resultWord == "hex_string");
+        let refWordRange: vscode.Range|undefined = doc.getWordRangeAtPosition(result.range.start);
+        let refWord: string = doc.getText(refWordRange);
+        assert(refWord == expectedSymbol, `"${refWord}" does not match ${expectedSymbol}`);
     });
     test("symbol references", async function () {
         const filepath: string = path.join(workspace, "peek_rules.yara");
         const uri: vscode.Uri = vscode.Uri.file(filepath);
         // $dstring: Line 22, Col 11
+        const expectedSymbol: string = "dstring";
         const pos: vscode.Position = new vscode.Position(21, 11);
         const acceptableLines: Set<number> = new Set([21, 28, 29]);
         let doc: vscode.TextDocument = await vscode.workspace.openTextDocument(filepath);
         let results: Array<vscode.Location> = await vscode.commands.executeCommand("vscode.executeReferenceProvider", uri, pos);
-        assert(results.length == 3);
+        assert(results.length == 3, `Wrong number of reference items. ${results.length} instead of 3`);
         results.forEach(reference => {
             let refWordRange: vscode.Range = doc.getWordRangeAtPosition(reference.range.start);
             let refWord: string = doc.getText(refWordRange);
-            assert(refWord == "dstring");
-            assert(acceptableLines.has(reference.range.start.line));
+            assert(refWord == expectedSymbol, `"${refWord}" does not match ${expectedSymbol}`);
+            assert(acceptableLines.has(reference.range.start.line), `${reference.range.start.line} is not in the list of acceptable lines`);
         });
     });
     test("wildcard references", async function () {
         const filepath: string = path.join(workspace, "peek_rules.yara");
         const uri: vscode.Uri = vscode.Uri.file(filepath);
-        // $hex_*: Line 31, Col 11
+        // ($hex_*): Line 31, Col 11
+        const expectedSymbol: string = "hex_";
         const pos: vscode.Position = new vscode.Position(30, 11);
         const acceptableLines: Set<number> = new Set([19, 20]);
         let doc: vscode.TextDocument = await vscode.workspace.openTextDocument(filepath);
         let results: Array<vscode.Location> = await vscode.commands.executeCommand("vscode.executeReferenceProvider", uri, pos);
-        assert(results.length == 2);
+        assert(results.length == 2, `Wrong number of reference items. ${results.length} instead of 2`);
         results.forEach(reference => {
             let refWordRange: vscode.Range = doc.getWordRangeAtPosition(reference.range.start);
             let refWord: string = doc.getText(refWordRange);
-            assert(refWord.startsWith("hex_"));
-            assert(acceptableLines.has(reference.range.start.line));
+            assert(refWord.startsWith(expectedSymbol), `"${refWord}" does not match the wildcard expression "${expectedSymbol}*"`);
+            assert(acceptableLines.has(reference.range.start.line), `${reference.range.start.line} is not in the list of acceptable lines`);
         });
     });
     /*
@@ -202,17 +206,18 @@ suite("YARA: Language Server", function () {
     test("similar symbol references", async function () {
         const filepath: string = path.join(workspace, "peek_rules.yara");
         // $hex_string: Line 20, Col 11
+        const expectedSymbol: string = "hex_";
         const uri: vscode.Uri = vscode.Uri.file(filepath);
         const pos: vscode.Position = new vscode.Position(19, 11);
         const acceptableLines: Set<number> = new Set([19, 24]);
         let doc: vscode.TextDocument = await vscode.workspace.openTextDocument(filepath);
         let results: Array<vscode.Location> = await vscode.commands.executeCommand("vscode.executeReferenceProvider", uri, pos);
-        assert(results.length == 2);
+        assert(results.length == 2, `Wrong number of reference items. ${results.length} instead of 2`);
         results.forEach(reference => {
             let refWordRange: vscode.Range = doc.getWordRangeAtPosition(reference.range.start);
             let refWord: string = doc.getText(refWordRange);
-            assert(refWord.startsWith("hex_"));
-            assert(acceptableLines.has(reference.range.start.line));
+            assert(refWord.startsWith(expectedSymbol), `"${refWord}" does not match the wildcard expression "${expectedSymbol}*"`);
+            assert(acceptableLines.has(reference.range.start.line), `${reference.range.start.line} is not in the list of acceptable lines`);
         });
     });
     test("code completion", async function () {
@@ -221,7 +226,7 @@ suite("YARA: Language Server", function () {
         const pos: vscode.Position = new vscode.Position(9, 16);
         const acceptableTerms: Set<string> = new Set(["filesystem", "network", "registry", "sync"]);
         let results: vscode.CompletionList = await vscode.commands.executeCommand("vscode.executeCompletionItemProvider", uri, pos);
-        assert(results.items.length == 4, "Wrong number of completion items");
+        assert(results.items.length == 4, `Wrong number of completion items. ${results.items.length} instead of 4`);
         assert(results.isIncomplete == false, "Completion list reported as incomplete");
         results.items.forEach((item: vscode.CompletionItem) => {
             assert(item.kind == vscode.CompletionItemKind.Class, `"${item.kind.toString()}" is not a valid completion item type for this set`);
