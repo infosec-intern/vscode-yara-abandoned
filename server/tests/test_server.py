@@ -133,7 +133,7 @@ async def test_definitions_variables_count(test_rules, yara_server):
     assert isinstance(result[0], protocol.Location) is True
     assert result[0].uri == file_uri
     assert result[0].range.start.line == 21
-    assert result[0].range.start.char == 8
+    assert result[0].range.start.char == 9
     assert result[0].range.end.line == 21
     assert result[0].range.end.char == 19
 
@@ -152,7 +152,7 @@ async def test_definitions_variables_length(test_rules, yara_server):
     assert isinstance(result[0], protocol.Location) is True
     assert result[0].uri == file_uri
     assert result[0].range.start.line == 40
-    assert result[0].range.start.char == 8
+    assert result[0].range.start.char == 9
     assert result[0].range.end.line == 40
     assert result[0].range.end.char == 22
 
@@ -171,7 +171,7 @@ async def test_definitions_variables_location(test_rules, yara_server):
     assert isinstance(result[0], protocol.Location) is True
     assert result[0].uri == file_uri
     assert result[0].range.start.line == 21
-    assert result[0].range.start.char == 8
+    assert result[0].range.start.char == 9
     assert result[0].range.end.line == 21
     assert result[0].range.end.char == 19
 
@@ -190,7 +190,7 @@ async def test_definitions_variables_regular(test_rules, yara_server):
     assert isinstance(result[0], protocol.Location) is True
     assert result[0].uri == file_uri
     assert result[0].range.start.line == 19
-    assert result[0].range.start.char == 8
+    assert result[0].range.start.char == 9
     assert result[0].range.end.line == 19
     assert result[0].range.end.char == 22
 
@@ -369,17 +369,17 @@ async def test_references_variable(test_rules, yara_server):
         assert location.uri == file_uri
         if index == 0:
             assert location.range.start.line == 21
-            assert location.range.start.char == 8
+            assert location.range.start.char == 9
             assert location.range.end.line == 21
             assert location.range.end.char == 16
         elif index == 1:
             assert location.range.start.line == 28
-            assert location.range.start.char == 8
+            assert location.range.start.char == 9
             assert location.range.end.line == 28
             assert location.range.end.char == 16
         elif index == 2:
             assert location.range.start.line == 29
-            assert location.range.start.char == 8
+            assert location.range.start.char == 9
             assert location.range.end.line == 29
             assert location.range.end.char == 16
 
@@ -390,35 +390,25 @@ async def test_references_wildcard(test_rules, yara_server):
     file_uri = helpers.create_file_uri(peek_rules)
     params = {
         "textDocument": {"uri": file_uri},
-        "position": {"line": 30, "character": 12},
+        "position": {"line": 30, "character": 11},
         "context": {"includeDeclaration": True}
     }
     document = yara_server._get_document(file_uri, dirty_files={})
     result = await yara_server.provide_reference(params, document)
-    assert len(result) == 4
+    assert len(result) == 2
     for index, location in enumerate(result):
         assert isinstance(location, protocol.Location) is True
         assert location.uri == file_uri
         if index == 0:
             assert location.range.start.line == 19
-            assert location.range.start.char == 8
+            assert location.range.start.char == 9
             assert location.range.end.line == 19
             assert location.range.end.char == 19
         elif index == 1:
             assert location.range.start.line == 20
-            assert location.range.start.char == 8
+            assert location.range.start.char == 9
             assert location.range.end.line == 20
             assert location.range.end.char == 20
-        elif index == 2:
-            assert location.range.start.line == 24
-            assert location.range.start.char == 8
-            assert location.range.end.line == 24
-            assert location.range.end.char == 19
-        elif index == 3:
-            assert location.range.start.line == 30
-            assert location.range.start.char == 8
-            assert location.range.end.line == 30
-            assert location.range.end.char == 13
 
 @pytest.mark.skip(reason="not implemented")
 @pytest.mark.asyncio
