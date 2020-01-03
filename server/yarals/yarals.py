@@ -337,18 +337,22 @@ class YaraLanguageServer(object):
                 rule_range = helpers.get_rule_range(document, pos)
                 match_lines = document.split("\n")[rule_range.start.line:rule_range.end.line+1]
                 rel_offset = rule_range.start.line
+                # ignore the "$" variable identifier at the beginning of the match
+                char_start_offset = 1
             # else assume this is a rule symbol
             else:
                 pattern = "\\brule {}\\b".format(symbol)
                 match_lines = document.split("\n")
                 rel_offset = 0
+                # ignore the "rule " string at the beginning of the match
+                char_start_offset = 5
 
             for index, line in enumerate(match_lines):
                 for match in re.finditer(pattern, line):
                     if match:
                         offset = rel_offset + index
                         locrange = lsp.Range(
-                            start=lsp.Position(line=offset, char=match.start()),
+                            start=lsp.Position(line=offset, char=match.start() + char_start_offset),
                             end=lsp.Position(line=offset, char=match.end())
                         )
                         results.append(lsp.Location(locrange, file_uri))

@@ -35,7 +35,7 @@ const removeDir = function(dirPath: string) {
 };
 
 // Unit tests to ensure the setup functions are working appropriately
-suite("YARA: Setup", function () {
+suite.skip("YARA: Setup", function () {
     /*
         give this test a generous timeout of 10 seconds to ensure the install
         has enough time to finish before the test is killed
@@ -88,7 +88,7 @@ suite("YARA: Setup", function () {
 });
 
 // Integration tests to ensure the client is working independently of the server
-suite("YARA: Client", function () {
+suite.skip("YARA: Client", function () {
     test("client connection refused", function (done) {
         // ensure the client throws an error message if the connection is refused and the server is shut down
         const filepath: string = path.join(workspace, "peek_rules.yara");
@@ -127,39 +127,59 @@ suite("YARA: Client", function () {
 
 // Integration tests to ensure the client and server are interacting as expected
 suite("YARA: Language Server", function () {
-    test.skip("rule definition", function (done) {
+    setup(async function () {
+        let extension = vscode.extensions.getExtension(ext_id);
+        await extension.activate();
+    });
+    test("rule definition", function () {
         const filepath: string = path.join(workspace, "peek_rules.yara");
-        vscode.workspace.openTextDocument(filepath).then(function (doc) {
-
+        const uri: vscode.Uri = vscode.Uri.file(filepath);
+        const pos: vscode.Position = new vscode.Position(42, 14);
+        vscode.workspace.openTextDocument(filepath).then(async function (doc: vscode.TextDocument) {
+            let results: Array<vscode.Location> = await vscode.commands.executeCommand("vscode.executeDefinitionProvider", uri, pos);
+            assert(results.length == 1);
+            let result: vscode.Location = results[0];
+            assert(result.uri.path == filepath);
+            let resultWordRange: vscode.Range|undefined = doc.getWordRangeAtPosition(result.range.start);
+            let resultWord: string = doc.getText(resultWordRange);
+            assert(resultWord == "SyntaxExample");
+            return new Promise((resolve) => { resolve(); })
         });
     });
-    test.skip("variable definition", function (done) {
+    test("variable definition", function () {
         const filepath: string = path.join(workspace, "peek_rules.yara");
-        vscode.workspace.openTextDocument(filepath).then(function (doc) {
-
+        const uri: vscode.Uri = vscode.Uri.file(filepath);
+        const pos: vscode.Position = new vscode.Position(24, 14);
+        vscode.workspace.openTextDocument(filepath).then(async function (doc: vscode.TextDocument) {
+            let results: Array<vscode.Location> = await vscode.commands.executeCommand("vscode.executeDefinitionProvider", uri, pos);
+            assert(results.length == 1);
+            let result: vscode.Location = results[0];
+            assert(result.uri.path == filepath);
+            let resultWordRange: vscode.Range|undefined = doc.getWordRangeAtPosition(result.range.start);
+            let resultWord: string = doc.getText(resultWordRange);
+            assert(resultWord == "hex_string");
+            return new Promise((resolve) => { resolve(); })
         });
     });
     test.skip("symbol references", function (done) {
         const filepath: string = path.join(workspace, "peek_rules.yara");
-        vscode.workspace.openTextDocument(filepath).then(function (doc) {
+        vscode.workspace.openTextDocument(filepath).then(async function (doc) {
 
         });
     });
     test.skip("wildcard references", function (done) {
         const filepath: string = path.join(workspace, "peek_rules.yara");
-        vscode.workspace.openTextDocument(filepath).then(function (doc) {
+        vscode.workspace.openTextDocument(filepath).then(async function (doc) {
 
         });
     });
     test("code completion", function (done) {
         const filepath: string = path.join(workspace, "code_completion.yara");
-        vscode.workspace.openTextDocument(filepath).then(async function (doc) {
+        vscode.workspace.openTextDocument(filepath).then(async function (doc: vscode.TextDocument) {
             let uri: vscode.Uri = vscode.Uri.file(filepath);
             let pos: vscode.Position = new vscode.Position(9, 16);
-            vscode.commands.executeCommand("vscode.executeCompletionItemProvider", uri, pos, "\.").then((items) => {
-                console.log("completion provider complete");
-                console.log(items);
-            });
+            let results: vscode.CompletionList = await vscode.commands.executeCommand("vscode.executeCompletionItemProvider", uri, pos);
+            console.log(results);
         });
     });
     test.skip("command CompileRule", function(done) {
