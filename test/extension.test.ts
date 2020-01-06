@@ -2,10 +2,10 @@
 
 import * as assert from "assert";
 import { ChildProcess } from "child_process";
-import * as fs from "fs";
 import { createConnection, Socket } from "net";
 import * as path from "path";
 import * as vscode from "vscode";
+import * as lcp from "vscode-languageclient";
 import { install_server, start_server, server_installed } from "../client/server";
 
 const ext_id: string = "infosec-intern.yara";
@@ -35,7 +35,7 @@ const removeDir = function(dirPath: string) {
 };
 
 // Unit tests to ensure the setup functions are working appropriately
-suite("YARA: Setup", function () {
+suite.skip("YARA: Setup", function () {
     /*
         give this test a generous timeout of 10 seconds to ensure the install
         has enough time to finish before the test is killed
@@ -88,7 +88,7 @@ suite("YARA: Setup", function () {
 });
 
 // Integration tests to ensure the client is working independently of the server
-suite("YARA: Client", function () {
+suite.skip("YARA: Client", function () {
     test.skip("client connection refused", async function () {
         // ensure the client throws an error message if the connection is refused and the server is shut down
         const filepath: string = path.join(workspace, "peek_rules.yara");
@@ -198,9 +198,9 @@ suite("YARA: Language Server", function () {
     */
     test("similar symbol references", async function () {
         const filepath: string = path.join(workspace, "peek_rules.yara");
+        const uri: vscode.Uri = vscode.Uri.file(filepath);
         // $hex_string: Line 20, Col 11
         const expectedSymbol: string = "hex_";
-        const uri: vscode.Uri = vscode.Uri.file(filepath);
         const pos: vscode.Position = new vscode.Position(19, 11);
         const acceptableLines: Set<number> = new Set([19, 24]);
         let doc: vscode.TextDocument = await vscode.workspace.openTextDocument(filepath);
@@ -213,9 +213,22 @@ suite("YARA: Language Server", function () {
             assert(acceptableLines.has(reference.range.start.line), `${reference.range.start.line} is not in the list of acceptable lines`);
         });
     });
+    test("hover", async function () {
+        const filepath: string = path.join(workspace, "peek_rules.yara");
+        const uri: vscode.Uri = vscode.Uri.file(filepath);
+        // @dstring[1]: Line 30, Col 12
+        // $dstring = "double string" wide nocase fullword
+        const expectedValue: string = "\"double string\" wide nocase fullword";
+        const pos: vscode.Position = new vscode.Position(29, 12);
+        let results: Array<lcp.Hover> = await vscode.commands.executeCommand("vscode.executeHoverProvider", uri, pos);
+        assert(results.length == 1);
+        let markup: lcp.MarkupContent = results[0].contents[0];
+        assert(markup.value == expectedValue);
+    });
     test("code completion", async function () {
         const filepath: string = path.join(workspace, "code_completion.yara");
         const uri: vscode.Uri = vscode.Uri.file(filepath);
+        // cuckoo.: Line 10, Col 16
         const pos: vscode.Position = new vscode.Position(9, 16);
         const acceptableTerms: Set<string> = new Set(["filesystem", "network", "registry", "sync"]);
         let results: vscode.CompletionList = await vscode.commands.executeCommand("vscode.executeCompletionItemProvider", uri, pos);

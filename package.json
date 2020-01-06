@@ -18,7 +18,7 @@
         "url": "https://github.com/infosec-intern/vscode-yara/issues"
     },
     "engines": {
-        "vscode": "^1.29.0"
+        "vscode": "^1.30.0"
     },
     "categories": [
         "Programming Languages",
@@ -98,7 +98,7 @@
         "vscode-test": "^1.2.3"
     },
     "dependencies": {
-        "@types/vscode": "^1.29.0",
+        "@types/vscode": "^1.30.0",
         "get-port": "^5.0.0",
         "glob": "^7.1.6",
         "tcp-port-used": "^1.0.1",
