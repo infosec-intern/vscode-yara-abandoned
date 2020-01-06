@@ -84,7 +84,7 @@
         "onLanguage:yara"
     ],
     "scripts": {
-        "vscode:prepublish": "cd client && npm run update-vscode && cd .. && npm run compile",
+        "vscode:prepublish": "npm run compile",
         "compile": "tsc --build",
         "watch": "tsc --build --watch",
         "postinstall": "cd client && npm install && cd ..",
@@ -98,6 +98,7 @@
         "vscode-test": "^1.2.3"
     },
     "dependencies": {
+        "@types/vscode": "^1.29.0",
         "get-port": "^5.0.0",
         "glob": "^7.1.6",
         "tcp-port-used": "^1.0.1",
