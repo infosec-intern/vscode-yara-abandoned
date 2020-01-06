@@ -7,5 +7,5 @@ rule ModuleCompletionExample
         author = "Test"
         reference = "https://infosec-intern.github.io"
     condition:
-        cuckoo.
+        cuckoo
 }

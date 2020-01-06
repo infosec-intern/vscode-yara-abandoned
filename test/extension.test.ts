@@ -228,8 +228,8 @@ suite("YARA: Language Server", function () {
     test("code completion", async function () {
         const filepath: string = path.join(workspace, "code_completion.yara");
         const uri: vscode.Uri = vscode.Uri.file(filepath);
-        // cuckoo.: Line 10, Col 16
-        const pos: vscode.Position = new vscode.Position(9, 16);
+        // cuckoo: Line 10, Col 15
+        const pos: vscode.Position = new vscode.Position(9, 15);
         const acceptableTerms: Set<string> = new Set(["filesystem", "network", "registry", "sync"]);
         let results: vscode.CompletionList = await vscode.commands.executeCommand("vscode.executeCompletionItemProvider", uri, pos);
         assert(results.items.length == 4, `Wrong number of completion items. ${results.items.length} instead of 4`);
