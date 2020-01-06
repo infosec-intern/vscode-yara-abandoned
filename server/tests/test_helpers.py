@@ -69,6 +69,6 @@ def test_parse_uri_windows():
 def test_resolve_symbol():
     ''' Ensure symbols are properly resolved '''
     document = "rule ResolveSymbol {\n strings:\n  $a = \"test\"\n condition:\n  #a > 3\n}\n"
-    pos = protocol.Position(line=4, char=3)
+    pos = protocol.Position(line=4, char=4)
     symbol = helpers.resolve_symbol(document, pos)
     assert symbol == "#a"

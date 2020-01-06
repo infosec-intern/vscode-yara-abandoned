@@ -114,7 +114,7 @@ async def test_definitions_rules(test_rules, yara_server):
     assert isinstance(result[0], protocol.Location) is True
     assert result[0].uri == file_uri
     assert result[0].range.start.line == 5
-    assert result[0].range.start.char == 0
+    assert result[0].range.start.char == 5
     assert result[0].range.end.line == 5
     assert result[0].range.end.char == 18
 

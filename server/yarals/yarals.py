@@ -483,7 +483,7 @@ class YaraLanguageServer(object):
                 rel_offset = 0
                 pattern = "{}\\b".format(symbol)
                 rule_lines = document.split("\n")
-                char_start_offset = 5
+                char_start_offset = 0
 
             for index, line in enumerate(rule_lines):
                 for match in re.finditer(pattern, line):
