@@ -4,7 +4,7 @@ For more info: https://microsoft.github.io/language-server-protocol/specificatio
 '''
 from enum import Enum, IntEnum
 import json
-from typing import Union
+from typing import Union, List
 
 EOL: list = ["\n", "\r\n", "\r"]
 
@@ -143,6 +143,9 @@ class MarkupContent(object):
         self.kind = kind
         self.value = str(content)
 
+    def __repr__(self):
+        return "<MarkupContent(value={}, kind={:d})>".format(self.value, self.kind)
+
 class Hover(object):
     def __init__(self, contents: MarkupContent, locrange: Range=None):
         ''' Represents hover information at
@@ -155,6 +158,41 @@ class Hover(object):
         if not isinstance(contents, MarkupContent):
             raise TypeError("Contents cannot be {}. Must be MarkupContent".format(type(contents)))
         self.contents = contents
+
+class TextEdit(object):
+    ''' A textual edit applicable to a text document. '''
+    def __init__(self, locrange: Range, newText: str):
+        if not isinstance(locrange, Range):
+            raise TypeError("Location range cannot be {}. Must be Range".format(type(locrange)))
+        self.range = locrange
+        if not isinstance(newText, str):
+            raise TypeError("NewText cannot be {}. Must be a plaintext string".format(type(newText)))
+        self.newText = newText
+
+    def __repr__(self):
+        return "<TextEdit(newText={})>".format(self.newText)
+
+
+class WorkspaceEdit(list):
+    def __init__(self, changes: List=[]):
+        '''Represents changes to many resources
+        managed in the workspace
+
+        This object can be treated like a list, so
+        use the .append() and .remove() methods to
+        modify the workspace changes
+        '''
+        if not isinstance(changes, list):
+            raise TypeError("Changes cannot be {}. Must be a list of TextEdits".format(type(changes)))
+        self.changes = changes
+
+    def append(self, change: TextEdit):
+        if not isinstance(change, TextEdit):
+            raise TypeError("Change cannot be {}. Must be TextEdit".format(type(change)))
+        return super().append(change)
+
+    def __repr__(self):
+        return "<WorkspaceEdit(changes={:d})>".format(len(self.changes))
 
 class JSONEncoder(json.JSONEncoder):
     def default(self, obj):

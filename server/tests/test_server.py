@@ -410,21 +410,28 @@ async def test_references_wildcard(test_rules, yara_server):
             assert location.range.end.line == 20
             assert location.range.end.char == 20
 
-@pytest.mark.skip(reason="not implemented")
 @pytest.mark.asyncio
 @pytest.mark.server
 async def test_renames(test_rules, yara_server):
     peek_rules = str(test_rules.joinpath("peek_rules.yara").resolve())
     file_uri = helpers.create_file_uri(peek_rules)
+    # @dstring[1]: Line 30, Col 12
+    new_text = "test_rename"
     params = {
         "textDocument": {"uri": file_uri},
         "position": {"line": 29, "character": 12},
-        "newName": "test_rename"
+        "newName": new_text
     }
     document = yara_server._get_document(file_uri, dirty_files={})
     result = await yara_server.provide_rename(params, document)
     assert len(result) == 1
     assert isinstance(result[0], protocol.WorkspaceEdit) is True
+    wsedit = result[0]
+    assert len(wsedit.changes) == 3
+    acceptableLines = [21, 28, 29]
+    for edit in wsedit.changes:
+        assert edit.newText == new_text
+        assert edit.range.start.line in acceptableLines
 
 @pytest.mark.xfail
 @pytest.mark.asyncio

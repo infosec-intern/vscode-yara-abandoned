@@ -245,8 +245,8 @@ class YaraLanguageServer(object):
         #     server_options["documentFormattingProvider"] = True
         if doc_options.get("references", {}).get("dynamicRegistration", False):
             server_options["referencesProvider"] = True
-        # if doc_options.get("rename", {}).get("dynamicRegistration", False):
-        #     server_options["renameProvider"] = True
+        if doc_options.get("rename", {}).get("dynamicRegistration", False):
+            server_options["renameProvider"] = True
         if doc_options.get("synchronization", {}).get("dynamicRegistration", False):
             # Documents are synced by always sending the full content of the document
             server_options["textDocumentSync"] = lsp.TextSyncKind.FULL
@@ -504,34 +504,36 @@ class YaraLanguageServer(object):
 
     async def provide_rename(self, params: dict, document: str) -> list:
         ''' Respond to the textDocument/rename request '''
+        results = []
         try:
-            self._logger.warning("provide_rename() is not implemented")
-            results = []
-        # file_uri = params.get("textDocument", {}).get("uri", None)
-        # pos = lsp.Position(line=params["position"]["line"], char=params["position"]["character"])
-        # old_text = helpers.resolve_symbol(document, pos)
-        # new_text = params.get("newName", None)
-        # if new_text is None:
-        #     self._logger.warning("No text to rename symbol to. Skipping")
-        #     return []
-        # elif new_text == old_text:
-        #     self._logger.warning("New rename symbol is the same as the old. Skipping")
-        #     return []
-        # elif old_text.endswith("*"):
-        #     self._logger.warning("Cannot rename wildcard symbols. Skipping")
-        #     return []
-        # # let provide_reference() determine symbol or rule
-        # # and therefore what scope to look into
-        # refs = await self.provide_reference(params, document)
-        # edits = [lsp.TextEdit(ref.range, new_text) for ref in refs]
-        # results.append(lsp.WorkspaceEdit(changes=edits))
-        # if len(results) > 0:
-        #     return results
-        # else:
-        #     self._logger.warning("No symbol references found to rename. Skipping")
-            return results
+            pos = lsp.Position(line=params["position"]["line"], char=params["position"]["character"])
+            old_text = helpers.resolve_symbol(document, pos)
+            new_text = params.get("newName", None)
+            if new_text is None:
+                self._logger.warning("No text to rename symbol to. Skipping")
+            elif new_text == old_text:
+                self._logger.warning("New rename symbol is the same as the old. Skipping")
+            elif old_text.endswith("*"):
+                self._logger.warning("Cannot rename wildcard symbols. Skipping")
+            # let provide_reference() determine symbol or rule
+            # and therefore what scope to look into
+            refs = await self.provide_reference(params, document)
+            edits = []
+            for ref in refs:
+                # need to add one character to the position so the variable
+                # type is not overwritten
+                new_range = lsp.Range(
+                    lsp.Position(ref.range.start.line, ref.range.start.pos+1),
+                    lsp.Position(ref.range.end.line, ref.range.end.pos)
+                )
+                edits.append(lsp.TextEdit(new_range, new_text))
+            results.append(lsp.WorkspaceEdit(changes=edits))
+            if len(results) <= 0:
+                self._logger.warning("No symbol references found to rename. Skipping")
         except Exception as err:
             raise ce.RenameError("Could not rename symbol: {}".format(err))
+        finally:
+            return results
 
     async def read_request(self, reader: asyncio.StreamReader) -> dict:
         ''' Read data from the client '''
