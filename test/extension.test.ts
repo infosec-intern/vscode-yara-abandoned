@@ -35,7 +35,7 @@ const removeDir = function(dirPath: string) {
 };
 
 // Unit tests to ensure the setup functions are working appropriately
-suite.skip("YARA: Setup", function () {
+suite("YARA: Setup", function () {
     /*
         give this test a generous timeout of 10 seconds to ensure the install
         has enough time to finish before the test is killed
@@ -88,7 +88,7 @@ suite.skip("YARA: Setup", function () {
 });
 
 // Integration tests to ensure the client is working independently of the server
-suite.skip("YARA: Client", function () {
+suite("YARA: Client", function () {
     test.skip("client connection refused", async function () {
         // ensure the client throws an error message if the connection is refused and the server is shut down
         const filepath: string = path.join(workspace, "peek_rules.yara");
@@ -134,7 +134,7 @@ suite("YARA: Language Server", function () {
         let results: Array<vscode.Location> = await vscode.commands.executeCommand("vscode.executeDefinitionProvider", uri, pos);
         assert(results.length == 1, `Wrong number of definitions. ${results.length} instead of 1`);
         let result: vscode.Location = results[0];
-        assert(result.uri.path == filepath, `Incorrect document searched: ${result.uri.path} searched instead of ${filepath}`);
+        assert(result.uri.path == uri.path, `Incorrect document searched: ${result.uri.path} searched instead of ${filepath}`);
         let refWordRange: vscode.Range|undefined = doc.getWordRangeAtPosition(result.range.start);
         let refWord: string = doc.getText(refWordRange);
         assert(refWord == expectedSymbol, `${refWord} does not match ${expectedSymbol}`);
@@ -149,7 +149,7 @@ suite("YARA: Language Server", function () {
         let results: Array<vscode.Location> = await vscode.commands.executeCommand("vscode.executeDefinitionProvider", uri, pos);
         assert(results.length == 1, `Wrong number of definitions. ${results.length} instead of 1`);
         let result: vscode.Location = results[0];
-        assert(result.uri.path == filepath);
+        assert(result.uri.path == uri.path, `Incorrect document searched: ${result.uri.path} searched instead of ${filepath}`);
         let refWordRange: vscode.Range|undefined = doc.getWordRangeAtPosition(result.range.start);
         let refWord: string = doc.getText(refWordRange);
         assert(refWord == expectedSymbol, `"${refWord}" does not match ${expectedSymbol}`);
@@ -165,6 +165,7 @@ suite("YARA: Language Server", function () {
         let results: Array<vscode.Location> = await vscode.commands.executeCommand("vscode.executeReferenceProvider", uri, pos);
         assert(results.length == 3, `Wrong number of reference items. ${results.length} instead of 3`);
         results.forEach(reference => {
+            assert(reference.uri.path == uri.path, `Incorrect document searched: ${reference.uri.path} searched instead of ${filepath}`);
             let refWordRange: vscode.Range = doc.getWordRangeAtPosition(reference.range.start);
             let refWord: string = doc.getText(refWordRange);
             assert(refWord == expectedSymbol, `"${refWord}" does not match ${expectedSymbol}`);
@@ -182,6 +183,7 @@ suite("YARA: Language Server", function () {
         let results: Array<vscode.Location> = await vscode.commands.executeCommand("vscode.executeReferenceProvider", uri, pos);
         assert(results.length == 2, `Wrong number of reference items. ${results.length} instead of 2`);
         results.forEach(reference => {
+            assert(reference.uri.path == uri.path, `Incorrect document searched: ${reference.uri.path} searched instead of ${filepath}`);
             let refWordRange: vscode.Range = doc.getWordRangeAtPosition(reference.range.start);
             let refWord: string = doc.getText(refWordRange);
             assert(refWord.startsWith(expectedSymbol), `"${refWord}" does not match the wildcard expression "${expectedSymbol}*"`);
@@ -207,6 +209,7 @@ suite("YARA: Language Server", function () {
         let results: Array<vscode.Location> = await vscode.commands.executeCommand("vscode.executeReferenceProvider", uri, pos);
         assert(results.length == 2, `Wrong number of reference items. ${results.length} instead of 2`);
         results.forEach(reference => {
+            assert(reference.uri.path == uri.path, `Incorrect document searched: ${reference.uri.path} searched instead of ${filepath}`);
             let refWordRange: vscode.Range = doc.getWordRangeAtPosition(reference.range.start);
             let refWord: string = doc.getText(refWordRange);
             assert(refWord.startsWith(expectedSymbol), `"${refWord}" does not match the wildcard expression "${expectedSymbol}*"`);
