@@ -216,8 +216,7 @@ class YaraLanguageServer(LanguageServer):
                             file_uri = message.get("params", {}).get("textDocument", {}).get("uri", None)
                             if file_uri:
                                 document = self._get_document(file_uri, dirty_files)
-                                renames = await self.provide_rename(message["params"], document)
-                                self._logger.debug("renames: %s", renames)
+                                renames = await self.provide_rename(message["params"], document, file_uri)
                                 await self.send_response(message["id"], renames, writer)
                         elif has_started and method == "workspace/executeCommand":
                             await self.execute_command(message["params"], dirty_files, writer)
@@ -581,9 +580,9 @@ class YaraLanguageServer(LanguageServer):
             self._logger.error(err)
             raise ce.SymbolReferenceError("Could not find references for '{}': {}".format(symbol, err))
 
-    async def provide_rename(self, params: dict, document: str) -> list:
+    async def provide_rename(self, params: dict, document: str, file_uri: str) -> list:
         ''' Respond to the textDocument/rename request '''
-        results = None
+        results = lsp.WorkspaceEdit(file_uri=file_uri, changes=[])
         try:
             pos = lsp.Position(line=params["position"]["line"], char=params["position"]["character"])
             old_text = helpers.resolve_symbol(document, pos)
@@ -597,7 +596,6 @@ class YaraLanguageServer(LanguageServer):
             # let provide_reference() determine symbol or rule
             # and therefore what scope to look into
             refs = await self.provide_reference(params, document)
-            edits = []
             for ref in refs:
                 # need to add one character to the position so the variable
                 # type is not overwritten
@@ -605,10 +603,7 @@ class YaraLanguageServer(LanguageServer):
                     lsp.Position(ref.range.start.line, ref.range.start.char+1),
                     lsp.Position(ref.range.end.line, ref.range.end.char)
                 )
-                new_edit = lsp.TextEdit(new_range, new_text)
-                edits.append(new_edit)
-            # results.append(lsp.WorkspaceEdit(changes=edits))
-            results = lsp.WorkspaceEdit(changes=edits)
+                results.append(lsp.TextEdit(new_range, new_text))
             if len(results) <= 0:
                 self._logger.warning("No symbol references found to rename. Skipping")
         except Exception as err:
@@ -616,4 +611,3 @@ class YaraLanguageServer(LanguageServer):
             raise ce.RenameError("Could not rename symbol: {}".format(err))
         finally:
             return results
-

@@ -172,9 +172,8 @@ class TextEdit(object):
     def __repr__(self):
         return "<TextEdit(newText={})>".format(self.newText)
 
-
 class WorkspaceEdit(list):
-    def __init__(self, changes: List=[]):
+    def __init__(self, file_uri, changes: List=[]):
         '''Represents changes to many resources
         managed in the workspace
 
@@ -185,6 +184,7 @@ class WorkspaceEdit(list):
         if not isinstance(changes, list):
             raise TypeError("Changes cannot be {}. Must be a list of TextEdits".format(type(changes)))
         self.changes = changes
+        self.uri = file_uri
 
     def append(self, change: TextEdit):
         if not isinstance(change, TextEdit):
@@ -240,6 +240,17 @@ class JSONEncoder(json.JSONEncoder):
             return {
                 "start": obj.start,
                 "end": obj.end
+            }
+        elif isinstance(obj, TextEdit):
+            return {
+                "range": obj.range,
+                "newText": obj.newText
+            }
+        elif isinstance(obj, WorkspaceEdit):
+            return {
+                "changes": {
+                    obj.uri: obj.changes
+                }
             }
         else:
             super().default(obj)
