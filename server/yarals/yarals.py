@@ -20,20 +20,18 @@ except ModuleNotFoundError:
     logging.warning("yara-python is not installed. Diagnostics and Compile commands are disabled")
 
 
-class YaraLanguageServer(object):
+class LanguageServer(object):
+    '''
+    Abstracts some of the functions needed to build a JSON-RPC language server
+        that is compatible with VSCode
+    '''
     def __init__(self):
         ''' Handle the details of the VSCode language server protocol '''
         asyncio.get_event_loop().set_exception_handler(self._exc_handler)
         self._encoding = "utf-8"
         self._eol=b"\r\n"
-        self._logger = logging.getLogger("yara")
-        # variable symbols have a few possible first characters
-        self._varchar = ["$", "#", "@", "!"]
-        self.diagnostics_warned = False
-        self.hover_langs = [lsp.MarkupKind.Markdown, lsp.MarkupKind.Plaintext]
+        self._logger = logging.getLogger(__name__)
         self.num_clients = 0
-        schema = Path(__file__).parent.joinpath("data", "modules.json").resolve()
-        self.modules = json.loads(schema.read_text())
 
     def _exc_handler(self, loop, context: dict):
         ''' Appropriately handle exceptions '''
@@ -58,6 +56,80 @@ class YaraLanguageServer(object):
         except Exception as err:
             self._logger.critical("Unknown exception encountered. Continuing on")
             self._logger.exception(err)
+
+    async def read_request(self, reader: asyncio.StreamReader) -> dict:
+        ''' Read data from the client '''
+        # we don't want handle_client() to deal with anything other than dicts
+        request = {}
+        data = await reader.readline()
+        if data:
+            # self._logger.debug("header <= %r", data)
+            key, value = tuple(data.decode(self._encoding).strip().split(" "))
+            # read the extra separator after the initial header
+            await reader.readuntil(separator=self._eol)
+            if key == "Content-Length:":
+                data = await reader.readexactly(int(value))
+            else:
+                data = await reader.readline()
+            self._logger.debug("input <= %r", data)
+            request = json.loads(data.decode(self._encoding))
+        return request
+
+    async def remove_client(self, writer: asyncio.StreamWriter):
+        ''' Close the cient input & output streams '''
+        if writer.can_write_eof():
+            writer.write_eof()
+        writer.close()
+        await writer.wait_closed()
+        self._logger.info("Disconnected client")
+
+    async def send_error(self, code: int, curr_id: int, msg: str, writer: asyncio.StreamWriter):
+        ''' Write back a JSON-RPC error message to the client '''
+        message = json.dumps({
+            "jsonrpc": "2.0",
+            "id": curr_id,
+            "error": {
+                "code": code,
+                "message": msg
+            }
+        }, cls=lsp.JSONEncoder)
+        await self.write_data(message, writer)
+
+    async def send_notification(self, method: str, params: dict, writer: asyncio.StreamWriter):
+        ''' Write back a JSON-RPC notification to the client '''
+        message = json.dumps({
+            "jsonrpc": "2.0",
+            "method": method,
+            "params": params
+        }, cls=lsp.JSONEncoder)
+        await self.write_data(message, writer)
+
+    async def send_response(self, curr_id: int, response: dict, writer: asyncio.StreamWriter):
+        ''' Write back a JSON-RPC response to the client '''
+        message = json.dumps({
+            "jsonrpc": "2.0",
+            "id": curr_id,
+            "result": response,
+        }, cls=lsp.JSONEncoder)
+        await self.write_data(message, writer)
+
+    async def write_data(self, message: str, writer: asyncio.StreamWriter):
+        ''' Write a JSON-RPC message to the given stream with the proper encoding and formatting '''
+        self._logger.debug("output => %r", message.encode(self._encoding))
+        writer.write("Content-Length: {:d}\r\n\r\n{:s}".format(len(message), message).encode(self._encoding))
+        await writer.drain()
+
+class YaraLanguageServer(LanguageServer):
+    def __init__(self):
+        ''' Handle the details of the VSCode language server protocol '''
+        super().__init__()
+        self._logger = logging.getLogger("yara")
+        # variable symbols have a few possible first characters
+        self._varchar = ["$", "#", "@", "!"]
+        self.diagnostics_warned = False
+        self.hover_langs = [lsp.MarkupKind.Markdown, lsp.MarkupKind.Plaintext]
+        schema = Path(__file__).parent.joinpath("data", "modules.json").resolve()
+        self.modules = json.loads(schema.read_text())
 
     def _get_document(self, file_uri: str, dirty_files: dict) -> str:
         ''' Return the document text for a given file URI either from disk or memory '''
@@ -140,12 +212,13 @@ class YaraLanguageServer(object):
                                 document = self._get_document(file_uri, dirty_files)
                                 references = await self.provide_reference(message["params"], document)
                                 await self.send_response(message["id"], references, writer)
-                        # elif has_started and method == "textDocument/rename":
-                        #     file_uri = message.get("params", {}).get("textDocument", {}).get("uri", None)
-                        #     if file_uri:
-                        #         document = self._get_document(file_uri, dirty_files)
-                        #         renames = await self.provide_rename(message["params"], document)
-                        #         await self.send_response(message["id"], renames, writer)
+                        elif has_started and method == "textDocument/rename":
+                            file_uri = message.get("params", {}).get("textDocument", {}).get("uri", None)
+                            if file_uri:
+                                document = self._get_document(file_uri, dirty_files)
+                                renames = await self.provide_rename(message["params"], document)
+                                self._logger.debug("renames: %s", renames)
+                                await self.send_response(message["id"], renames, writer)
                         elif has_started and method == "workspace/executeCommand":
                             await self.execute_command(message["params"], dirty_files, writer)
                     # if no id is present, this is a JSON-RPC notification
@@ -317,6 +390,7 @@ class YaraLanguageServer(object):
                         schema = schema[symbol]
             return results
         except Exception as err:
+            self._logger.error(err)
             raise ce.CodeCompletionError("Could not offer completion items: {}".format(err))
 
     async def provide_definition(self, params: dict, document: str) -> list:
@@ -361,6 +435,7 @@ class YaraLanguageServer(object):
             self._logger.debug("Error building regex pattern: %s", pattern)
             return []
         except Exception as err:
+            self._logger.error(err)
             raise ce.DefinitionError("Could not offer definition for symbol '{}': {}".format(symbol, err))
 
     async def provide_diagnostic(self, document: str) -> list:
@@ -413,6 +488,7 @@ class YaraLanguageServer(object):
                     self.diagnostics_warned = True
                     raise ce.NoYaraPython("yara-python is not installed. Diagnostics and Compile commands are disabled")
         except Exception as err:
+            self._logger.error(err)
             raise ce.DiagnosticError("Could not compile rule: {}".format(err))
 
     async def provide_highlight(self, params: dict, document: str) -> list:
@@ -422,6 +498,7 @@ class YaraLanguageServer(object):
             results = []
             return results
         except Exception as err:
+            self._logger.error(err)
             raise ce.HighlightError("Could not offer code highlighting: {}".format(err))
 
     async def provide_hover(self, params: dict, document: str) -> list:
@@ -442,6 +519,7 @@ class YaraLanguageServer(object):
                     self._logger.warning("IndexError at line %d: '%s'", definition.range.start.line, line)
             return None
         except Exception as err:
+            self._logger.error(err)
             raise ce.HoverError("Could not offer definition hover: {}".format(err))
 
     async def provide_reference(self, params: dict, document: str) -> list:
@@ -500,11 +578,12 @@ class YaraLanguageServer(object):
             self._logger.debug("Error building regex pattern: %s", pattern)
             return []
         except Exception as err:
+            self._logger.error(err)
             raise ce.SymbolReferenceError("Could not find references for '{}': {}".format(symbol, err))
 
     async def provide_rename(self, params: dict, document: str) -> list:
         ''' Respond to the textDocument/rename request '''
-        results = []
+        results = None
         try:
             pos = lsp.Position(line=params["position"]["line"], char=params["position"]["character"])
             old_text = helpers.resolve_symbol(document, pos)
@@ -523,76 +602,18 @@ class YaraLanguageServer(object):
                 # need to add one character to the position so the variable
                 # type is not overwritten
                 new_range = lsp.Range(
-                    lsp.Position(ref.range.start.line, ref.range.start.pos+1),
-                    lsp.Position(ref.range.end.line, ref.range.end.pos)
+                    lsp.Position(ref.range.start.line, ref.range.start.char+1),
+                    lsp.Position(ref.range.end.line, ref.range.end.char)
                 )
-                edits.append(lsp.TextEdit(new_range, new_text))
-            results.append(lsp.WorkspaceEdit(changes=edits))
+                new_edit = lsp.TextEdit(new_range, new_text)
+                edits.append(new_edit)
+            # results.append(lsp.WorkspaceEdit(changes=edits))
+            results = lsp.WorkspaceEdit(changes=edits)
             if len(results) <= 0:
                 self._logger.warning("No symbol references found to rename. Skipping")
         except Exception as err:
+            self._logger.error(err)
             raise ce.RenameError("Could not rename symbol: {}".format(err))
         finally:
             return results
 
-    async def read_request(self, reader: asyncio.StreamReader) -> dict:
-        ''' Read data from the client '''
-        # we don't want handle_client() to deal with anything other than dicts
-        request = {}
-        data = await reader.readline()
-        if data:
-            # self._logger.debug("header <= %r", data)
-            key, value = tuple(data.decode(self._encoding).strip().split(" "))
-            # read the extra separator after the initial header
-            await reader.readuntil(separator=self._eol)
-            if key == "Content-Length:":
-                data = await reader.readexactly(int(value))
-            else:
-                data = await reader.readline()
-            self._logger.debug("input <= %r", data)
-            request = json.loads(data.decode(self._encoding))
-        return request
-
-    async def remove_client(self, writer: asyncio.StreamWriter):
-        ''' Close the cient input & output streams '''
-        if writer.can_write_eof():
-            writer.write_eof()
-        writer.close()
-        await writer.wait_closed()
-        self._logger.info("Disconnected client")
-
-    async def send_error(self, code: int, curr_id: int, msg: str, writer: asyncio.StreamWriter):
-        ''' Write back a JSON-RPC error message to the client '''
-        message = json.dumps({
-            "jsonrpc": "2.0",
-            "id": curr_id,
-            "error": {
-                "code": code,
-                "message": msg
-            }
-        }, cls=lsp.JSONEncoder)
-        await self.write_data(message, writer)
-
-    async def send_notification(self, method: str, params: dict, writer: asyncio.StreamWriter):
-        ''' Write back a JSON-RPC notification to the client '''
-        message = json.dumps({
-            "jsonrpc": "2.0",
-            "method": method,
-            "params": params
-        }, cls=lsp.JSONEncoder)
-        await self.write_data(message, writer)
-
-    async def send_response(self, curr_id: int, response: dict, writer: asyncio.StreamWriter):
-        ''' Write back a JSON-RPC response to the client '''
-        message = json.dumps({
-            "jsonrpc": "2.0",
-            "id": curr_id,
-            "result": response,
-        }, cls=lsp.JSONEncoder)
-        await self.write_data(message, writer)
-
-    async def write_data(self, message: str, writer: asyncio.StreamWriter):
-        ''' Write a JSON-RPC message to the given stream with the proper encoding and formatting '''
-        self._logger.debug("output => %r", message.encode(self._encoding))
-        writer.write("Content-Length: {:d}\r\n\r\n{:s}".format(len(message), message).encode(self._encoding))
-        await writer.drain()
