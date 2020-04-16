@@ -423,13 +423,12 @@ async def test_renames(test_rules, yara_server):
         "newName": new_text
     }
     document = yara_server._get_document(file_uri, dirty_files={})
-    result = await yara_server.provide_rename(params, document)
-    assert len(result) == 1
-    assert isinstance(result[0], protocol.WorkspaceEdit) is True
-    wsedit = result[0]
-    assert len(wsedit.changes) == 3
+    result = await yara_server.provide_rename(params, document, file_uri)
+    assert isinstance(result, protocol.WorkspaceEdit) is True
+    assert len(result.changes) == 3
     acceptableLines = [21, 28, 29]
-    for edit in wsedit.changes:
+    for edit in result.changes:
+        assert isinstance(edit, protocol.TextEdit) is True
         assert edit.newText == new_text
         assert edit.range.start.line in acceptableLines
 

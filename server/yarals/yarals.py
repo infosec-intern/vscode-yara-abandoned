@@ -604,7 +604,7 @@ class YaraLanguageServer(LanguageServer):
                     lsp.Position(ref.range.end.line, ref.range.end.char)
                 )
                 results.append(lsp.TextEdit(new_range, new_text))
-            if len(results) <= 0:
+            if len(results.changes) <= 0:
                 self._logger.warning("No symbol references found to rename. Skipping")
         except Exception as err:
             self._logger.error(err)

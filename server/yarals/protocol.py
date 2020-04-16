@@ -172,7 +172,7 @@ class TextEdit(object):
     def __repr__(self):
         return "<TextEdit(newText={})>".format(self.newText)
 
-class WorkspaceEdit(list):
+class WorkspaceEdit(object):
     def __init__(self, file_uri, changes: List=[]):
         '''Represents changes to many resources
         managed in the workspace
@@ -189,7 +189,7 @@ class WorkspaceEdit(list):
     def append(self, change: TextEdit):
         if not isinstance(change, TextEdit):
             raise TypeError("Change cannot be {}. Must be TextEdit".format(type(change)))
-        return super().append(change)
+        return self.changes.append(change)
 
     def __repr__(self):
         return "<WorkspaceEdit(changes={:d})>".format(len(self.changes))
