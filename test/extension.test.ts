@@ -40,7 +40,7 @@ suite("YARA: Setup", function () {
         give this test a generous timeout of 10 seconds to ensure the install
         has enough time to finish before the test is killed
     */
-    test("install server", function (done) {
+    test("install server", function () {
         // ensure the server components are installed if none exist
         const fs = require("fs");
         const os = require("os");
@@ -55,7 +55,6 @@ suite("YARA: Setup", function () {
             console.log(`Couldn't remove temporary directory "${targetDir}". Manual removal required`);
         }
         assert(installResult && dirExists);
-        done();
     }).timeout(10000);
     /*
         Have to report this test as complete in a slightly different way
@@ -76,14 +75,13 @@ suite("YARA: Setup", function () {
             });
         });
     });
-    test("server installed", function (done) {
+    test("server installed", function () {
         const fs = require("fs");
         const os = require("os");
         const extensionRoot: string = path.join(__dirname, "..", "..");
         const targetDir: string = fs.mkdtempSync(`${os.tmpdir()}${path.sep}`);
         install_server(extensionRoot, targetDir);
         assert(server_installed(targetDir));
-        done();
     }).timeout(10000);
 });
 
@@ -242,34 +240,45 @@ suite("YARA: Language Server", function () {
             assert(acceptableTerms.has(item.label), `"${item.label}" is not a valid completion label for this set`);
         });
     });
-    test.skip("command CompileRule", async function() {
+    test("renames", async function () {
+        const filepath: string = path.join(workspace, "peek_rules.yara");
+        const uri: vscode.Uri = vscode.Uri.file(filepath);
+        // $dstring: Line 22, Col 13
+        const pos: vscode.Position = new vscode.Position(21, 13);
+        const newName: string = "renamed";
+        const acceptableLines: Set<number> = new Set([21, 28, 29]);
+        let results: vscode.WorkspaceEdit = await vscode.commands.executeCommand("vscode.executeDocumentRenameProvider", uri, pos, newName);
+        assert(results.get(uri).length == 3);
+        results.get(uri).forEach(edit => {
+            assert(edit.newText == newName, `'${edit.newText}' != expected '${newName}'`);
+            assert(acceptableLines.has(edit.range.start.line), `${edit.range.start.line} is not in the list of acceptable lines`);
+        })
+    });
+    test("command CompileRule", async function() {
         // should compile the active document in the current texteditor
         const cmd: string = "yara.CompileRule";
         let cmds: Array<string> = await vscode.commands.getCommands(true);
         assert(cmds.indexOf(cmd) != -1);
-        vscode.commands.executeCommand(cmd).then((items) => {
-            console.log(`Executed command: ${cmd}`);
-            console.log(items);
-        });
+        let items = await vscode.commands.executeCommand(cmd);
+        console.log(`Executed command: ${cmd}`);
+        console.log(items);
     });
-    test.skip("command CompileAllRules with workspace", async function() {
+    test("command CompileAllRules with workspace", async function() {
         // should compile all .yar and .yara rules in the current workspace
         const cmd: string = "yara.CompileAllRules";
         let cmds: Array<string> = await vscode.commands.getCommands(true);
         assert(cmds.indexOf(cmd) != -1);
-        vscode.commands.executeCommand(cmd).then((items) => {
+        let items = await vscode.commands.executeCommand(cmd);
             console.log(`Executed command: ${cmd}`);
             console.log(items);
-        });
     });
-    test.skip("command CompileAllRules without workspace", async function() {
+    test("command CompileAllRules without workspace", async function() {
         // should compile all dirty files in the current texteditor
         const cmd: string = "yara.CompileAllRules";
         let cmds: Array<string> = await vscode.commands.getCommands(true);
         assert(cmds.indexOf(cmd) != -1);
-        vscode.commands.executeCommand(cmd).then((items) => {
-            console.log(`Executed command: ${cmd}`);
-            console.log(items);
-        });
+        let items = await vscode.commands.executeCommand(cmd);
+        console.log(`Executed command: ${cmd}`);
+        console.log(items);
     });
 });
