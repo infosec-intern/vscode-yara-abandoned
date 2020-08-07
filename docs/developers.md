@@ -101,4 +101,4 @@ OK
 ProtocolTests coverage: 100.0%
 ```
 
-[logo]: ../images/logo.png "Source Image from blacktop/docker-yara"
+[logo]: https://raw.githubusercontent.com/infosec-intern/vscode-yara/main/images/logo.png "Source Image from blacktop/docker-yara"
