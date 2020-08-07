@@ -18,6 +18,6 @@ Rule definitions are parsed from any lines in the file starting with `rule`.
 
 ![Rule definitions][defrule]
 
-[logo]: https://raw.githubusercontent.com/infosec-intern/vscode-yara/master/images/logo.png "Source Image from blacktop/docker-yara"
-[def]: https://raw.githubusercontent.com/infosec-intern/vscode-yara/master/images/definitions.gif "Variable definitions"
-[defrule]: https://raw.githubusercontent.com/infosec-intern/vscode-yara/master/images/definition_rules.gif "Rule definitions"
+[logo]: https://raw.githubusercontent.com/infosec-intern/vscode-yara/main/images/logo.png "Source Image from blacktop/docker-yara"
+[def]: https://raw.githubusercontent.com/infosec-intern/vscode-yara/main/images/definitions.gif "Variable definitions"
+[defrule]: https://raw.githubusercontent.com/infosec-intern/vscode-yara/main/images/definition_rules.gif "Rule definitions"

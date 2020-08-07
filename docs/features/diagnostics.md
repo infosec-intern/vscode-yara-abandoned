@@ -7,5 +7,5 @@ For more information on what errors and warnings can be thrown, see [the YARA do
 
 ![Diagnostics data][diag]
 
-[logo]: https://raw.githubusercontent.com/infosec-intern/vscode-yara/master/images/logo.png "Source Image from blacktop/docker-yara"
-[diag]: https://raw.githubusercontent.com/infosec-intern/vscode-yara/master/images/diagnostics.gif "Diagnostics data"
+[logo]: https://raw.githubusercontent.com/infosec-intern/vscode-yara/main/images/logo.png "Source Image from blacktop/docker-yara"
+[diag]: https://raw.githubusercontent.com/infosec-intern/vscode-yara/main/images/diagnostics.gif "Diagnostics data"

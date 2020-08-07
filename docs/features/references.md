@@ -18,7 +18,7 @@ Variable wildcards are a special case; attempting to resolve their references sh
 
 ![][refwild]
 
-[logo]: https://raw.githubusercontent.com/infosec-intern/vscode-yara/master/images/logo.png "Source Image from blacktop/docker-yara"
-[ref]: https://raw.githubusercontent.com/infosec-intern/vscode-yara/master/images/references_normal.gif "All Variable Reference"
-[refrule]: https://raw.githubusercontent.com/infosec-intern/vscode-yara/master/images/references_rules.gif "All Rule Reference"
-[refwild]: https://raw.githubusercontent.com/infosec-intern/vscode-yara/master/images/references_wildcard.gif "All Wildcard References"
+[logo]: https://raw.githubusercontent.com/infosec-intern/vscode-yara/main/images/logo.png "Source Image from blacktop/docker-yara"
+[ref]: https://raw.githubusercontent.com/infosec-intern/vscode-yara/main/images/references_normal.gif "All Variable Reference"
+[refrule]: https://raw.githubusercontent.com/infosec-intern/vscode-yara/main/images/references_rules.gif "All Rule Reference"
+[refwild]: https://raw.githubusercontent.com/infosec-intern/vscode-yara/main/images/references_wildcard.gif "All Wildcard References"

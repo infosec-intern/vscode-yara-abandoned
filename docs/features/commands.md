@@ -14,5 +14,5 @@ Compile all rule files in the current workspace
 
 !["Compile All Command"][compall]
 
-[logo]: https://raw.githubusercontent.com/infosec-intern/vscode-yara/master/images/logo.png "Source Image from blacktop/docker-yara"
-[compall]: https://raw.githubusercontent.com/infosec-intern/vscode-yara/master/images/cmdcompileall.gif "Compile All Command"
+[logo]: https://raw.githubusercontent.com/infosec-intern/vscode-yara/main/images/logo.png "Source Image from blacktop/docker-yara"
+[compall]: https://raw.githubusercontent.com/infosec-intern/vscode-yara/main/images/cmdcompileall.gif "Compile All Command"
