@@ -58,3 +58,9 @@ def initialize_msg():
 def initialized_msg():
     """ Hardcoded 'initialized' message to complete client setup with server """
     return json.dumps({"jsonrpc": "2.0", "method": "initialized", "params": {}})
+
+@pytest.fixture(scope="module")
+def shutdown_msg():
+    """ Hardcoded 'initialized' message to complete client setup with server """
+    return json.dumps({"jsonrpc":"2.0","id":1,"method":"shutdown","params":None})
+

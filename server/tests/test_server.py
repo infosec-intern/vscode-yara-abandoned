@@ -289,12 +289,26 @@ async def test_exceptions_handled(initialize_msg, initialized_msg, test_rules, l
     writer.close()
     await writer.wait_closed()
 
-# @pytest.mark.xfail
 @pytest.mark.asyncio
 @pytest.mark.server
-async def test_exit(local_server, yara_server):
-    exit_req = json.dumps({"jsonrpc":"2.0","method":"exit","params":None})
-    assert exit_req is False
+async def test_exit(caplog, initialize_msg, initialized_msg, shutdown_msg, local_server, yara_server):
+    exit_msg = json.dumps({"jsonrpc":"2.0","method":"exit","params":None})
+    srv_addr, srv_port = local_server
+    reader, writer = await asyncio.open_connection(srv_addr, srv_port)
+    with pytest.raises(asyncio.exceptions.CancelledError):
+        with caplog.at_level(logging.DEBUG, "yara"):
+            await yara_server.write_data(initialize_msg, writer)
+            await yara_server.read_request(reader)
+            await yara_server.write_data(initialized_msg, writer)
+            await yara_server.read_request(reader)
+            await yara_server.write_data(shutdown_msg, writer)
+            await yara_server.read_request(reader)
+            await yara_server.write_data(exit_msg, writer)
+            await yara_server.read_request(reader)
+            assert ("yara", logging.INFO, "Disconnected client") in caplog.record_tuples
+            assert ("yara", logging.ERROR, "Server exiting process per client request") in caplog.record_tuples
+    writer.close()
+    await writer.wait_closed()
 
 @pytest.mark.skip(reason="not implemented")
 @pytest.mark.server
@@ -481,9 +495,18 @@ async def test_renames(test_rules, yara_server):
         assert edit.newText == new_text
         assert edit.range.start.line in acceptableLines
 
-# @pytest.mark.xfail
 @pytest.mark.asyncio
 @pytest.mark.server
-async def test_shutdown(caplog, setup_server):
-    shutdown_req = json.dumps({"jsonrpc":"2.0","id":1,"method":"shutdown","params":None})
-    assert shutdown_req is False
+async def test_shutdown(caplog, initialize_msg, initialized_msg, shutdown_msg, local_server, yara_server):
+    srv_addr, srv_port = local_server
+    reader, writer = await asyncio.open_connection(srv_addr, srv_port)
+    with caplog.at_level(logging.DEBUG, "yara"):
+        await yara_server.write_data(initialize_msg, writer)
+        await yara_server.read_request(reader)
+        await yara_server.write_data(initialized_msg, writer)
+        await yara_server.read_request(reader)
+        await yara_server.write_data(shutdown_msg, writer)
+        await yara_server.read_request(reader)
+        assert ("yara", logging.INFO, "Client requested shutdown") in caplog.record_tuples
+    writer.close()
+    await writer.wait_closed()
