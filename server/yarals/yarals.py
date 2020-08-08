@@ -121,7 +121,7 @@ class LanguageServer(object):
 
 class YaraLanguageServer(LanguageServer):
     def __init__(self):
-        ''' Handle the details of the VSCode language server protocol '''
+        ''' Handle the particulars of the server's YARA implementation '''
         super().__init__()
         self._logger = logging.getLogger("yara")
         # variable symbols have a few possible first characters
@@ -398,11 +398,20 @@ class YaraLanguageServer(LanguageServer):
         Returns a (possibly empty) list of symbol Locations
         '''
         results = []
-        file_uri = params.get("textDocument", {}).get("uri", None)
-        pos = lsp.Position(line=params["position"]["line"], char=params["position"]["character"])
-        symbol = helpers.resolve_symbol(document, pos)
-        if not symbol:
-            return []
+        try:
+            # the try/except statement after this uses the 'symbol' variable in the exception block
+            # so we need to separate the code before 'symbol' is instantiated from the code after
+            # there's probably a better way to do this
+            file_uri = params.get("textDocument", {}).get("uri", None)
+            line = params.get("position", {}).get("line", None)
+            char = params.get("position", {}).get("character", None)
+            pos = lsp.Position(line=line, char=char)
+            symbol = helpers.resolve_symbol(document, pos)
+            if not symbol:
+                return []
+        except Exception as err:
+            self._logger.error(err)
+            raise ce.DefinitionError("Could not find symbol for definition request")
         try:
             # check to see if the symbol is a variable or a rule name (currently the only valid symbols)
             if symbol[0] in self._varchar:
