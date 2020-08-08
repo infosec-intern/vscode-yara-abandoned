@@ -11,6 +11,7 @@ import pytest
 @pytest.mark.asyncio
 @pytest.mark.transport
 async def test_tcp_closed(local_server):
+    ''' Ensure the transport mechanism is properly closed '''
     srv_addr, srv_port = local_server
     reader, writer = await asyncio.open_connection(srv_addr, srv_port)
     writer.close()

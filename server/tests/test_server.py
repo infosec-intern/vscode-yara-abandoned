@@ -12,6 +12,7 @@ from yarals import protocol
 @pytest.mark.skip(reason="not implemented")
 @pytest.mark.server
 def test_cmd_compile_rule():
+    ''' Ensure CompileRule compiles the currently-active YARA rule file '''
     request = {
         "jsonrpc": "2.0",
         "id": 1,
@@ -26,6 +27,7 @@ def test_cmd_compile_rule():
 @pytest.mark.skip(reason="not implemented")
 @pytest.mark.server
 def test_cmd_compile_all_rules():
+    ''' Ensure CompileAllRules compiles all YARA rule files in the given workspace '''
     request = {
         "jsonrpc": "2.0",
         "id": 1,
@@ -40,9 +42,7 @@ def test_cmd_compile_all_rules():
 @pytest.mark.skip(reason="not implemented")
 @pytest.mark.server
 def test_cmd_compile_all_rules_no_workspace():
-    '''Similar to above test, but the 'initialize' message
-    indicates no workspace is specified
-    '''
+    ''' Ensure CompileAllRules only compiles opened files when no workspace is specified '''
     request = {
         "jsonrpc": "2.0",
         "id": 1,
@@ -57,6 +57,7 @@ def test_cmd_compile_all_rules_no_workspace():
 @pytest.mark.asyncio
 @pytest.mark.server
 async def test_code_completion_regular(test_rules, yara_server):
+    ''' Ensure code completion works with functions defined in modules schema '''
     actual = []
     code_completion = str(test_rules.joinpath("code_completion.yara").resolve())
     expected = ["network", "registry", "filesystem", "sync"]
@@ -76,6 +77,7 @@ async def test_code_completion_regular(test_rules, yara_server):
 @pytest.mark.asyncio
 @pytest.mark.server
 async def test_code_completion_overflow(test_rules, yara_server):
+    ''' Ensure code completion doesn't return items or error out when a position doesn't exist in the file '''
     code_completion = str(test_rules.joinpath("code_completion.yara").resolve())
     file_uri = helpers.create_file_uri(code_completion)
     params = {
@@ -89,6 +91,7 @@ async def test_code_completion_overflow(test_rules, yara_server):
 @pytest.mark.asyncio
 @pytest.mark.server
 async def test_code_completion_unexpected(test_rules, yara_server):
+    ''' Ensure code completion doesn't return items or error out when a symbol does not have any items to be completed '''
     code_completion = str(test_rules.joinpath("code_completion.yara").resolve())
     file_uri = helpers.create_file_uri(code_completion)
     params = {
@@ -102,6 +105,7 @@ async def test_code_completion_unexpected(test_rules, yara_server):
 @pytest.mark.asyncio
 @pytest.mark.server
 async def test_definitions_rules(test_rules, yara_server):
+    ''' Ensure definition is provided for a rule name '''
     peek_rules = str(test_rules.joinpath("peek_rules.yara").resolve())
     file_uri = helpers.create_file_uri(peek_rules)
     params = {
@@ -121,6 +125,7 @@ async def test_definitions_rules(test_rules, yara_server):
 @pytest.mark.asyncio
 @pytest.mark.server
 async def test_definitions_private_rules(test_rules, yara_server):
+    ''' Ensure definition is provided for a private rule name '''
     private_goto_rules = str(test_rules.joinpath("private_rule_goto.yara").resolve())
     file_uri = helpers.create_file_uri(private_goto_rules)
     params = {
@@ -141,6 +146,7 @@ async def test_definitions_private_rules(test_rules, yara_server):
 @pytest.mark.asyncio
 @pytest.mark.server
 async def test_definitions_variables_count(test_rules, yara_server):
+    ''' Ensure definition is provided for a variable with count modifier (#) '''
     peek_rules = str(test_rules.joinpath("peek_rules.yara").resolve())
     file_uri = helpers.create_file_uri(peek_rules)
     params = {
@@ -160,6 +166,7 @@ async def test_definitions_variables_count(test_rules, yara_server):
 @pytest.mark.asyncio
 @pytest.mark.server
 async def test_definitions_variables_length(test_rules, yara_server):
+    ''' Ensure definition is provided for a variable with length modifier (!) '''
     peek_rules = str(test_rules.joinpath("peek_rules.yara").resolve())
     file_uri = helpers.create_file_uri(peek_rules)
     params = {
@@ -179,6 +186,7 @@ async def test_definitions_variables_length(test_rules, yara_server):
 @pytest.mark.asyncio
 @pytest.mark.server
 async def test_definitions_variables_location(test_rules, yara_server):
+    ''' Ensure definition is provided for a variable with location modifier (@) '''
     peek_rules = str(test_rules.joinpath("peek_rules.yara").resolve())
     file_uri = helpers.create_file_uri(peek_rules)
     params = {
@@ -198,6 +206,7 @@ async def test_definitions_variables_location(test_rules, yara_server):
 @pytest.mark.asyncio
 @pytest.mark.server
 async def test_definitions_variables_regular(test_rules, yara_server):
+    ''' Ensure definition is provided for a normal variable '''
     peek_rules = str(test_rules.joinpath("peek_rules.yara").resolve())
     file_uri = helpers.create_file_uri(peek_rules)
     params = {
@@ -217,6 +226,7 @@ async def test_definitions_variables_regular(test_rules, yara_server):
 @pytest.mark.asyncio
 @pytest.mark.server
 async def test_no_definitions(test_rules, yara_server):
+    ''' Ensure no definition is provided for symbols that are not variables or rules '''
     peek_rules = str(test_rules.joinpath("peek_rules.yara").resolve())
     file_uri = helpers.create_file_uri(peek_rules)
     params = {
@@ -231,6 +241,7 @@ async def test_no_definitions(test_rules, yara_server):
 @pytest.mark.asyncio
 @pytest.mark.server
 async def test_diagnostics(yara_server):
+    ''' Ensure a diagnostic error message is provided when appropriate '''
     document = "rule OneDiagnostic { condition: $true }"
     result = await yara_server.provide_diagnostic(document)
     assert len(result) == 1
@@ -244,6 +255,7 @@ async def test_diagnostics(yara_server):
 @pytest.mark.asyncio
 @pytest.mark.server
 async def test_no_diagnostics(yara_server):
+    ''' Ensure no diagnostics are provided when rules are successfully compiled '''
     document = "rule NoDiagnostics { condition: true }"
     result = await yara_server.provide_diagnostic(document)
     assert result == []
@@ -251,6 +263,7 @@ async def test_no_diagnostics(yara_server):
 @pytest.mark.asyncio
 @pytest.mark.server
 async def test_dirty_files(test_rules, yara_server):
+    ''' Ensure server prefers versions of dirty files over those backed by file path '''
     peek_rules = str(test_rules.joinpath("peek_rules.yara").resolve())
     file_uri = helpers.create_file_uri(peek_rules)
     unsaved_changes = "rule ResolveSymbol {\n strings:\n  $a = \"test\"\n condition:\n  #a > 3\n}\n"
@@ -263,6 +276,7 @@ async def test_dirty_files(test_rules, yara_server):
 @pytest.mark.asyncio
 @pytest.mark.server
 async def test_exceptions_handled(initialize_msg, initialized_msg, test_rules, local_server, yara_server):
+    ''' Ensure server notifies user when errors are encountered '''
     expected = {
         "jsonrpc": "2.0", "method": "window/showMessage",
         "params": {"type": 1, "message": "Could not find symbol for definition request"}
@@ -292,6 +306,7 @@ async def test_exceptions_handled(initialize_msg, initialized_msg, test_rules, l
 @pytest.mark.asyncio
 @pytest.mark.server
 async def test_exit(caplog, initialize_msg, initialized_msg, shutdown_msg, local_server, yara_server):
+    ''' Ensure the server shuts down when given the proper shutdown/exit sequence '''
     exit_msg = json.dumps({"jsonrpc":"2.0","method":"exit","params":None})
     srv_addr, srv_port = local_server
     reader, writer = await asyncio.open_connection(srv_addr, srv_port)
@@ -313,11 +328,13 @@ async def test_exit(caplog, initialize_msg, initialized_msg, shutdown_msg, local
 @pytest.mark.skip(reason="not implemented")
 @pytest.mark.server
 def test_highlights():
+    ''' TBD '''
     assert False is True
 
 @pytest.mark.asyncio
 @pytest.mark.server
 async def test_hover(test_rules, yara_server):
+    ''' Ensure a variable's value is provided on hover '''
     peek_rules = str(test_rules.joinpath("peek_rules.yara").resolve())
     file_uri = helpers.create_file_uri(peek_rules)
     params = {
@@ -333,6 +350,7 @@ async def test_hover(test_rules, yara_server):
 @pytest.mark.asyncio
 @pytest.mark.server
 async def test_no_hover(test_rules, yara_server):
+    ''' Ensure non-variables do not return hovers '''
     peek_rules = str(test_rules.joinpath("peek_rules.yara").resolve())
     file_uri = helpers.create_file_uri(peek_rules)
     params = {
@@ -346,6 +364,7 @@ async def test_no_hover(test_rules, yara_server):
 @pytest.mark.asyncio
 @pytest.mark.server
 async def test_initialize(initialize_msg, initialized_msg, local_server, yara_server):
+    ''' Ensure server responds with appropriate initialization handshake '''
     expected_initialize = {
         "jsonrpc": "2.0", "id": 0, "result":{
             "capabilities": {
@@ -377,6 +396,7 @@ async def test_initialize(initialize_msg, initialized_msg, local_server, yara_se
 @pytest.mark.asyncio
 @pytest.mark.server
 async def test_no_references(test_rules, yara_server):
+    ''' Ensure server does not return references if none are found '''
     alienspy = str(test_rules.joinpath("apt_alienspy_rat.yar").resolve())
     file_uri = helpers.create_file_uri(alienspy)
     params = {
@@ -390,6 +410,7 @@ async def test_no_references(test_rules, yara_server):
 @pytest.mark.asyncio
 @pytest.mark.server
 async def test_references_rules(test_rules, yara_server):
+    ''' Ensure references to rules are returned at the start of the rule name '''
     peek_rules = str(test_rules.joinpath("peek_rules.yara").resolve())
     file_uri = helpers.create_file_uri(peek_rules)
     params = {
@@ -417,6 +438,7 @@ async def test_references_rules(test_rules, yara_server):
 @pytest.mark.asyncio
 @pytest.mark.server
 async def test_references_variable(test_rules, yara_server):
+    ''' Ensure references to variables are returned at the start of the variable name '''
     peek_rules = str(test_rules.joinpath("peek_rules.yara").resolve())
     file_uri = helpers.create_file_uri(peek_rules)
     params = {
@@ -449,6 +471,7 @@ async def test_references_variable(test_rules, yara_server):
 @pytest.mark.asyncio
 @pytest.mark.server
 async def test_references_wildcard(test_rules, yara_server):
+    ''' Ensure wildcard variables return references to all possible variables within rule they are found '''
     peek_rules = str(test_rules.joinpath("peek_rules.yara").resolve())
     file_uri = helpers.create_file_uri(peek_rules)
     params = {
@@ -476,6 +499,7 @@ async def test_references_wildcard(test_rules, yara_server):
 @pytest.mark.asyncio
 @pytest.mark.server
 async def test_renames(test_rules, yara_server):
+    ''' Ensure variables can be renamed '''
     peek_rules = str(test_rules.joinpath("peek_rules.yara").resolve())
     file_uri = helpers.create_file_uri(peek_rules)
     # @dstring[1]: Line 30, Col 12
@@ -498,6 +522,7 @@ async def test_renames(test_rules, yara_server):
 @pytest.mark.asyncio
 @pytest.mark.server
 async def test_shutdown(caplog, initialize_msg, initialized_msg, shutdown_msg, local_server, yara_server):
+    ''' Ensure server logs appropriate response to shutdown '''
     srv_addr, srv_port = local_server
     reader, writer = await asyncio.open_connection(srv_addr, srv_port)
     with caplog.at_level(logging.DEBUG, "yara"):
