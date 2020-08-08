@@ -120,6 +120,26 @@ async def test_definitions_rules(test_rules, yara_server):
 
 @pytest.mark.asyncio
 @pytest.mark.server
+async def test_definitions_private_rules(test_rules, yara_server):
+    private_goto_rules = str(test_rules.joinpath("private_rule_goto.yara").resolve())
+    file_uri = helpers.create_file_uri(private_goto_rules)
+    params = {
+        "textDocument": {"uri": file_uri},
+        "position": {"line": 9, "character": 14}
+    }
+    document = yara_server._get_document(file_uri, dirty_files={})
+    result = await yara_server.provide_definition(params, document)
+    print(json.dumps(result, cls=protocol.JSONEncoder))
+    assert len(result) == 1
+    assert isinstance(result[0], protocol.Location) is True
+    assert result[0].uri == file_uri
+    assert result[0].range.start.line == 0
+    assert result[0].range.start.char == 13
+    assert result[0].range.end.line == 0
+    assert result[0].range.end.char == 28
+
+@pytest.mark.asyncio
+@pytest.mark.server
 async def test_definitions_variables_count(test_rules, yara_server):
     peek_rules = str(test_rules.joinpath("peek_rules.yara").resolve())
     file_uri = helpers.create_file_uri(peek_rules)
@@ -293,7 +313,7 @@ async def test_initialize(initialize_msg, local_server, yara_server):
         "jsonrpc": "2.0", "id": 0, "result":{
             "capabilities": {
                 "completionProvider":{"resolveProvider": False, "triggerCharacters": ["."]},
-                "definitionProvider": True, "hoverProvider": True,
+                "definitionProvider": True, "hoverProvider": True, "renameProvider": True,
                 "referencesProvider": True, "textDocumentSync": 1,
                 "executeCommandProvider": {"commands": ["yara.CompileRule", "yara.CompileAllRules"]}
             }
