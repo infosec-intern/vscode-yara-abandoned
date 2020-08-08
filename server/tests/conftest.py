@@ -52,4 +52,9 @@ def initialize_msg():
     """ Hardcoded 'initialize' message to start handshake with server """
     json_path = Path(__file__).parent.joinpath("initialize_msg.json").resolve()
     with json_path.open() as init:
-        return json.load(init)
+        return json.dumps(json.load(init))
+
+@pytest.fixture(scope="module")
+def initialized_msg():
+    """ Hardcoded 'initialized' message to complete client setup with server """
+    return json.dumps({"jsonrpc": "2.0", "method": "initialized", "params": {}})

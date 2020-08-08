@@ -260,13 +260,36 @@ async def test_dirty_files(test_rules, yara_server):
     document = yara_server._get_document(file_uri, dirty_files)
     assert document == unsaved_changes
 
-@pytest.mark.xfail
 @pytest.mark.asyncio
 @pytest.mark.server
-async def test_exceptions_handled():
-    assert False is True
+async def test_exceptions_handled(initialize_msg, initialized_msg, test_rules, local_server, yara_server):
+    expected = {
+        "jsonrpc": "2.0", "method": "window/showMessage",
+        "params": {"type": 1, "message": "Could not find symbol for definition request"}
+    }
+    peek_rules = str(test_rules.joinpath("peek_rules.yara").resolve())
+    file_uri = helpers.create_file_uri(peek_rules)
+    error_request = json.dumps({
+        "jsonrpc": "2.0", "id": 1,    # the initialize message takes id 0
+        "method": "textDocument/definition",
+        "params": {
+            "textDocument": {"uri": file_uri},
+            "position": {}
+        }
+    })
+    srv_addr, srv_port = local_server
+    reader, writer = await asyncio.open_connection(srv_addr, srv_port)
+    await yara_server.write_data(initialize_msg, writer)
+    await yara_server.read_request(reader)
+    await yara_server.write_data(initialized_msg, writer)
+    await yara_server.read_request(reader)
+    await yara_server.write_data(error_request, writer)
+    response = await yara_server.read_request(reader)
+    assert response == expected
+    writer.close()
+    await writer.wait_closed()
 
-@pytest.mark.xfail
+# @pytest.mark.xfail
 @pytest.mark.asyncio
 @pytest.mark.server
 async def test_exit(local_server, yara_server):
@@ -308,8 +331,8 @@ async def test_no_hover(test_rules, yara_server):
 
 @pytest.mark.asyncio
 @pytest.mark.server
-async def test_initialize(initialize_msg, local_server, yara_server):
-    expected = {
+async def test_initialize(initialize_msg, initialized_msg, local_server, yara_server):
+    expected_initialize = {
         "jsonrpc": "2.0", "id": 0, "result":{
             "capabilities": {
                 "completionProvider":{"resolveProvider": False, "triggerCharacters": ["."]},
@@ -319,15 +342,21 @@ async def test_initialize(initialize_msg, local_server, yara_server):
             }
         }
     }
+    expected_initialized = {
+        "jsonrpc": "2.0", "method": "window/showMessageRequest",
+        "params": {"type": 3, "message": "Successfully connected"}
+    }
     srv_addr, srv_port = local_server
     reader, writer = await asyncio.open_connection(srv_addr, srv_port)
-    message = json.dumps(initialize_msg)
     # write_data and read_request are just helpers for formatting JSON-RPC messages appropriately
     # despite using a second YaraLanguageServer, these will route through the one in local_server
     # because we pass the related reader & writer objects to these functions
-    await yara_server.write_data(message, writer)
+    await yara_server.write_data(initialize_msg, writer)
     response = await yara_server.read_request(reader)
-    assert response == expected
+    assert response == expected_initialize
+    await yara_server.write_data(initialized_msg, writer)
+    response = await yara_server.read_request(reader)
+    assert response == expected_initialized
     writer.close()
     await writer.wait_closed()
 
@@ -452,7 +481,7 @@ async def test_renames(test_rules, yara_server):
         assert edit.newText == new_text
         assert edit.range.start.line in acceptableLines
 
-@pytest.mark.xfail
+# @pytest.mark.xfail
 @pytest.mark.asyncio
 @pytest.mark.server
 async def test_shutdown(caplog, setup_server):
