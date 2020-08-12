@@ -35,9 +35,10 @@ def get_rule_range(document: str, pos: lsp.Position) -> lsp.Range:
     '''
     start_pattern = re.compile(r"^((private|global) )?rule\b")
     end_pattern = re.compile("^}$")
-    start_pos = None
-    end_pos = None
     lines = document.replace("\r", "").split("\n")
+    # default to assuming the entire document is within range
+    start_pos = lsp.Position(line=0, char=0)
+    end_pos = lsp.Position(line=len(lines), char=0)
     # work backwards from the given position and find the start of rule
     for index in range(pos.line, 0, -1):
         line = lines[index]
