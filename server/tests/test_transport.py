@@ -10,20 +10,18 @@ import pytest
 
 @pytest.mark.asyncio
 @pytest.mark.transport
-async def test_tcp_closed(local_server):
+async def test_tcp_closed(open_streams):
     ''' Ensure the transport mechanism is properly closed '''
-    srv_addr, srv_port = local_server
-    reader, writer = await asyncio.open_connection(srv_addr, srv_port)
+    reader, writer = open_streams
     writer.close()
     await writer.wait_closed()
     assert reader.at_eof() is True
 
 @pytest.mark.asyncio
 @pytest.mark.transport
-async def test_tcp_opened(local_server):
+async def test_tcp_opened(open_streams):
     ''' Ensure the transport mechanism is properly opened '''
-    srv_addr, srv_port = local_server
-    reader, writer = await asyncio.open_connection(srv_addr, srv_port)
+    reader, writer = open_streams
     assert reader.at_eof() is False
     writer.close()
     await writer.wait_closed()

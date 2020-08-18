@@ -16,18 +16,17 @@ def pytest_configure(config):
     config.addinivalue_line("markers", "server: Run YARA-specific protocol unittests")
     config.addinivalue_line("markers", "transport: Run network transport unittests")
 
-
 @pytest.fixture(scope="function")
 def yara_server():
     """ Generate an instance of the YARA language server """
     return yarals.YaraLanguageServer()
 
 @pytest.fixture(scope="function")
-async def local_server(unused_tcp_port, yara_server):
-    """Set up a local asyncio network server
+async def open_streams(unused_tcp_port, yara_server):
+    """ Set up a local asyncio network server
 
     :param unused_tcp_port: Random TCP port to bind server to. Provided by pytest-asyncio
-    :return: Address and port that server is bound to
+    :return: Read/Write streams to interact with server
     """
     addr = "localhost"
     port = unused_tcp_port
@@ -37,9 +36,20 @@ async def local_server(unused_tcp_port, yara_server):
         port=port,
         start_serving=True
     )
-    yield addr, port
+    reader, writer = await asyncio.open_connection(addr, port)
+    yield reader, writer
     server.close()
     await server.wait_closed()
+
+@pytest.fixture(scope="function")
+async def init_server(initialize_msg, initialized_msg):
+    """ Start the given language server with the standard init sequence """
+    async def _init_server(reader, writer, yara_server):
+        await yara_server.write_data(initialize_msg, writer)
+        await yara_server.read_request(reader)
+        await yara_server.write_data(initialized_msg, writer)
+        await yara_server.read_request(reader)
+    return _init_server
 
 @pytest.fixture(scope="function")
 def test_rules():

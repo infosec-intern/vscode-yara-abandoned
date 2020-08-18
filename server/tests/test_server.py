@@ -274,7 +274,7 @@ async def test_dirty_files(test_rules, yara_server):
 
 @pytest.mark.asyncio
 @pytest.mark.server
-async def test_exceptions_handled(initialize_msg, initialized_msg, test_rules, local_server, yara_server):
+async def test_exceptions_handled(initialize_msg, initialized_msg, open_streams, test_rules, yara_server):
     ''' Ensure server notifies user when errors are encountered '''
     expected = {
         "jsonrpc": "2.0", "method": "window/showMessage",
@@ -290,8 +290,7 @@ async def test_exceptions_handled(initialize_msg, initialized_msg, test_rules, l
             "position": {}
         }
     })
-    srv_addr, srv_port = local_server
-    reader, writer = await asyncio.open_connection(srv_addr, srv_port)
+    reader, writer = open_streams
     await yara_server.write_data(initialize_msg, writer)
     await yara_server.read_request(reader)
     await yara_server.write_data(initialized_msg, writer)
@@ -304,11 +303,10 @@ async def test_exceptions_handled(initialize_msg, initialized_msg, test_rules, l
 
 @pytest.mark.asyncio
 @pytest.mark.server
-async def test_exit(caplog, initialize_msg, initialized_msg, shutdown_msg, local_server, yara_server):
+async def test_exit(caplog, initialize_msg, initialized_msg, open_streams, shutdown_msg, yara_server):
     ''' Ensure the server shuts down when given the proper shutdown/exit sequence '''
     exit_msg = json.dumps({"jsonrpc":"2.0","method":"exit","params":None})
-    srv_addr, srv_port = local_server
-    reader, writer = await asyncio.open_connection(srv_addr, srv_port)
+    reader, writer = open_streams
     with pytest.raises(asyncio.exceptions.CancelledError):
         with caplog.at_level(logging.DEBUG, "yara"):
             await yara_server.write_data(initialize_msg, writer)
@@ -348,7 +346,7 @@ async def test_hover(test_rules, yara_server):
 
 @pytest.mark.asyncio
 @pytest.mark.server
-async def test_hover_dirty_file(initialize_msg, initialized_msg, local_server, test_rules, yara_server):
+async def test_hover_dirty_file(initialize_msg, initialized_msg, open_streams, test_rules, yara_server):
     ''' Ensure a variable's value is provided on hover for a dirty file '''
     peek_rules = str(test_rules.joinpath("peek_rules.yara").resolve())
     file_uri = helpers.create_file_uri(peek_rules)
@@ -367,8 +365,7 @@ async def test_hover_dirty_file(initialize_msg, initialized_msg, local_server, t
             "position": {"line": 4, "character": 3}
         }
     })
-    srv_addr, srv_port = local_server
-    reader, writer = await asyncio.open_connection(srv_addr, srv_port)
+    reader, writer = open_streams
     await yara_server.write_data(initialize_msg, writer)
     await yara_server.read_request(reader)
     await yara_server.write_data(initialized_msg, writer)
@@ -398,7 +395,7 @@ async def test_no_hover(test_rules, yara_server):
 
 @pytest.mark.asyncio
 @pytest.mark.server
-async def test_initialize(initialize_msg, initialized_msg, local_server, yara_server):
+async def test_initialize(initialize_msg, initialized_msg, open_streams, yara_server):
     ''' Ensure server responds with appropriate initialization handshake '''
     expected_initialize = {
         "jsonrpc": "2.0", "id": 0, "result":{
@@ -414,8 +411,7 @@ async def test_initialize(initialize_msg, initialized_msg, local_server, yara_se
         "jsonrpc": "2.0", "method": "window/showMessageRequest",
         "params": {"type": 3, "message": "Successfully connected"}
     }
-    srv_addr, srv_port = local_server
-    reader, writer = await asyncio.open_connection(srv_addr, srv_port)
+    reader, writer = open_streams
     # write_data and read_request are just helpers for formatting JSON-RPC messages appropriately
     # despite using a second YaraLanguageServer, these will route through the one in local_server
     # because we pass the related reader & writer objects to these functions
@@ -556,10 +552,9 @@ async def test_renames(test_rules, yara_server):
 
 @pytest.mark.asyncio
 @pytest.mark.server
-async def test_shutdown(caplog, initialize_msg, initialized_msg, shutdown_msg, local_server, yara_server):
+async def test_shutdown(caplog, initialize_msg, initialized_msg, open_streams, shutdown_msg, yara_server):
     ''' Ensure server logs appropriate response to shutdown '''
-    srv_addr, srv_port = local_server
-    reader, writer = await asyncio.open_connection(srv_addr, srv_port)
+    reader, writer = open_streams
     with caplog.at_level(logging.DEBUG, "yara"):
         await yara_server.write_data(initialize_msg, writer)
         await yara_server.read_request(reader)
