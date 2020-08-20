@@ -260,11 +260,13 @@ class YaraLanguageServer(LanguageServer):
                                 with open(file_path, "rb") as ifile:
                                     document = ifile.read().decode(self._encoding)
                                 diagnostics = await self.provide_diagnostic(document)
-                                params = {
-                                    "uri": file_uri,
-                                    "diagnostics": diagnostics
-                                }
-                                await self.send_notification("textDocument/publishDiagnostics", params, writer)
+                            else:
+                                diagnostics = []
+                            params = {
+                                "uri": file_uri,
+                                "diagnostics": diagnostics
+                            }
+                            await self.send_notification("textDocument/publishDiagnostics", params, writer)
             except ce.NoYaraPython as warn:
                 self._logger.warning(warn)
                 params = {
