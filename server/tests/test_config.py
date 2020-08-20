@@ -1,55 +1,59 @@
 import asyncio
+import json
+import logging
 
 import pytest
-from yarals import helpers
+from yarals import helpers, protocol
 
 
-@pytest.mark.xfail
+@pytest.mark.asyncio
 @pytest.mark.config
-def test_compile_on_save_false(test_rules):
-    change_config_request = {
-        "jsonrpc":"2.0",
-        "method": "workspace/didChangeConfiguration",
-        "params": {
-            "settings": {
-                "yara": {"compile_on_save": False}
-            }
-        }
-    }
-    save_file = str(test_rules.joinpath("simple_mistake.yar").resolve())
-    save_request = {
-        "jsonrpc": "2.0",
-        "method":"textDocument/didSave",
-        "params": {
-            "textDocument": {
-                "uri": helpers.create_file_uri(save_file),
-                "version": 2
-            }
-        }
-    }
-    assert "fake news" is True
+async def test_compile_on_save_false(caplog, init_server, open_streams, test_rules, yara_server):
+    new_config = {"compile_on_save": False}
+    peek_rules = str(test_rules.joinpath("peek_rules.yara").resolve())
+    file_uri = helpers.create_file_uri(peek_rules)
+    change_config_msg = json.dumps({
+        "jsonrpc":"2.0", "method": "workspace/didChangeConfiguration",
+        "params": {"settings": {"yara": new_config}}
+    })
+    save_file_msg = json.dumps({
+        "jsonrpc":"2.0", "method": "textDocument/didSave",
+        "params": {"textDocument": {"uri": file_uri}}
+    })
+    reader, writer = open_streams
+    with caplog.at_level(logging.DEBUG, "yara"):
+        await init_server(reader, writer, yara_server)
+        await yara_server.write_data(change_config_msg, writer)
+        await yara_server.write_data(save_file_msg, writer)
+        response = await yara_server.read_request(reader)
+        diagnostics = response["params"]["diagnostics"]
+        assert len(diagnostics) == 0
+        assert ("yara", logging.DEBUG, "Changed workspace config to {}".format(json.dumps(new_config))) in caplog.record_tuples
 
-@pytest.mark.xfail
+@pytest.mark.asyncio
 @pytest.mark.config
-def test_compile_on_save_true(test_rules):
-    change_config_request = {
-        "jsonrpc":"2.0",
-        "method": "workspace/didChangeConfiguration",
-        "params": {
-            "settings": {
-                "yara": {"compile_on_save": True}
-            }
-        }
-    }
-    save_file = str(test_rules.joinpath("simple_mistake.yar").resolve())
-    save_request = {
-        "jsonrpc": "2.0",
-        "method":"textDocument/didSave",
-        "params": {
-            "textDocument": {
-                "uri": helpers.create_file_uri(save_file),
-                "version": 2
-            }
-        }
-    }
-    assert "fake news" is True
+async def test_compile_on_save_true(caplog, init_server, open_streams, test_rules, yara_server):
+    expected_msg = "syntax error, unexpected <true>, expecting text string"
+    expected_sev = protocol.DiagnosticSeverity.ERROR
+    new_config = {"compile_on_save": True}
+    peek_rules = str(test_rules.joinpath("peek_rules.yara").resolve())
+    file_uri = helpers.create_file_uri(peek_rules)
+    change_config_msg = json.dumps({
+        "jsonrpc":"2.0", "method": "workspace/didChangeConfiguration",
+        "params": {"settings": {"yara": new_config}}
+    })
+    save_file_msg = json.dumps({
+        "jsonrpc":"2.0", "method": "textDocument/didSave",
+        "params": {"textDocument": {"uri": file_uri}}
+    })
+    reader, writer = open_streams
+    with caplog.at_level(logging.DEBUG, "yara"):
+        await init_server(reader, writer, yara_server)
+        await yara_server.write_data(change_config_msg, writer)
+        await yara_server.write_data(save_file_msg, writer)
+        response = await yara_server.read_request(reader)
+        diagnostics = response["params"]["diagnostics"]
+        assert len(diagnostics) == 1
+        assert diagnostics[0]["message"] == expected_msg
+        assert diagnostics[0]["severity"] == expected_sev
+        assert ("yara", logging.DEBUG, "Changed workspace config to {}".format(json.dumps(new_config))) in caplog.record_tuples
