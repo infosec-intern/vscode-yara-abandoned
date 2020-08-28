@@ -33,11 +33,9 @@ async def open_streams(unused_tcp_port, yara_server):
     server = await asyncio.start_server(
         client_connected_cb=yara_server.handle_client,
         host=addr,
-        port=port
+        port=port,
+        start_serving=True
     )
-    # v3.6 does not need to call this, but 3.7+ does
-    if hasattr(server, "start_serving"):
-        await server.start_serving()
     reader, writer = await asyncio.open_connection(addr, port)
     yield reader, writer
     server.close()
