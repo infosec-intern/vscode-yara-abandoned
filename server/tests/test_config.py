@@ -1,4 +1,4 @@
-import asyncio
+''' Tests for yarals configuration reactions '''
 import json
 import logging
 
@@ -9,6 +9,7 @@ from yarals import helpers, protocol
 @pytest.mark.asyncio
 @pytest.mark.config
 async def test_compile_on_save_false(caplog, init_server, open_streams, test_rules, yara_server):
+    ''' Ensure no diagnostics returned on save when 'compile_on_save' set to false '''
     new_config = {"compile_on_save": False}
     peek_rules = str(test_rules.joinpath("peek_rules.yara").resolve())
     file_uri = helpers.create_file_uri(peek_rules)
@@ -33,6 +34,7 @@ async def test_compile_on_save_false(caplog, init_server, open_streams, test_rul
 @pytest.mark.asyncio
 @pytest.mark.config
 async def test_compile_on_save_true(caplog, init_server, open_streams, test_rules, yara_server):
+    ''' Ensure diagnostics are returned on save when 'compile_on_save' set to true '''
     expected_msg = "syntax error, unexpected <true>, expecting text string"
     expected_sev = protocol.DiagnosticSeverity.ERROR
     new_config = {"compile_on_save": True}

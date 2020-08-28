@@ -2,9 +2,6 @@
     Currently only TCP is supported, though ideally anything supported by
     the asyncio library will be fully integrated and tested in the future
 '''
-import asyncio
-import logging
-
 import pytest
 
 

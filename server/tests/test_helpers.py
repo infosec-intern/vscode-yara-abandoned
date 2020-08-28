@@ -1,4 +1,4 @@
-from pathlib import Path
+''' Tests for yarals.helpers module '''
 from urllib.parse import quote
 
 import pytest

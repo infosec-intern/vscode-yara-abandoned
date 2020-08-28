@@ -1,6 +1,5 @@
-import asyncio
+''' Tests for yarals.protocol module '''
 import json
-from pathlib import Path
 
 import pytest
 from yarals import protocol
@@ -12,7 +11,7 @@ def test_diagnostic():
     pos_dict = {"line": 10, "character": 15}
     pos = protocol.Position(line=pos_dict["line"], char=pos_dict["character"])
     rg_dict = {"start": pos_dict, "end": pos_dict}
-    rg = protocol.Range(start=pos, end=pos)
+    rg_obj = protocol.Range(start=pos, end=pos)
     diag_dict = {
         "message": "Test Diagnostic",
         "range": rg_dict,
@@ -20,7 +19,7 @@ def test_diagnostic():
         "severity": 1
     }
     diag = protocol.Diagnostic(
-        locrange=rg,
+        locrange=rg_obj,
         message=diag_dict["message"],
         severity=diag_dict["severity"]
     )
@@ -39,10 +38,10 @@ def test_location():
     pos_dict = {"line": 10, "character": 15}
     pos = protocol.Position(line=pos_dict["line"], char=pos_dict["character"])
     rg_dict = {"start": pos_dict, "end": pos_dict}
-    rg = protocol.Range(start=pos, end=pos)
+    rg_obj = protocol.Range(start=pos, end=pos)
     loc_dict = {"range": rg_dict, "uri": "fake:///one/two/three/four.path"}
     loc = protocol.Location(
-        locrange=rg,
+        locrange=rg_obj,
         uri=loc_dict["uri"]
     )
     assert json.dumps(loc, cls=protocol.JSONEncoder) == json.dumps(loc_dict)
@@ -60,8 +59,8 @@ def test_range():
     pos_dict = {"line": 10, "character": 15}
     pos = protocol.Position(line=pos_dict["line"], char=pos_dict["character"])
     rg_dict = {"start": pos_dict, "end": pos_dict}
-    rg = protocol.Range(
+    rg_obj = protocol.Range(
         start=pos,
         end=pos
     )
-    assert json.dumps(rg, cls=protocol.JSONEncoder) == json.dumps(rg_dict)
+    assert json.dumps(rg_obj, cls=protocol.JSONEncoder) == json.dumps(rg_dict)

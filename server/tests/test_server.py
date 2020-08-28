@@ -1,10 +1,8 @@
-import asyncio
+''' Tests for yarals.yarals module '''
 import json
 import logging
-from pathlib import Path
 
 import pytest
-from yarals import custom_err as ce
 from yarals import helpers
 from yarals import protocol
 
@@ -551,11 +549,11 @@ async def test_renames(test_rules, yara_server):
     result = await yara_server.provide_rename(params, document, file_uri)
     assert isinstance(result, protocol.WorkspaceEdit) is True
     assert len(result.changes) == 3
-    acceptableLines = [21, 28, 29]
+    acceptable_lines = [21, 28, 29]
     for edit in result.changes:
         assert isinstance(edit, protocol.TextEdit) is True
         assert edit.newText == new_text
-        assert edit.range.start.line in acceptableLines
+        assert edit.range.start.line in acceptable_lines
 
 @pytest.mark.asyncio
 @pytest.mark.server
