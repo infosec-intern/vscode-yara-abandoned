@@ -8,6 +8,13 @@ from yarals import custom_err as ce
 from yarals import helpers
 from yarals import protocol
 
+try:
+    # asyncio exceptions changed from 3.6 > 3.7 > 3.8
+    # so try to keep this compatible regardless of Python version 3.6+
+    # https://medium.com/@jflevesque/asyncio-exceptions-changes-from-python-3-6-to-3-7-to-3-8-cancellederror-timeouterror-f79945ead378
+    from asyncio.exceptions import CancelledError
+except ImportError:
+    from concurrent.futures import CancelledError
 
 @pytest.mark.skip(reason="not implemented")
 @pytest.mark.server
@@ -307,7 +314,7 @@ async def test_exit(caplog, initialize_msg, initialized_msg, open_streams, shutd
     ''' Ensure the server shuts down when given the proper shutdown/exit sequence '''
     exit_msg = json.dumps({"jsonrpc":"2.0","method":"exit","params":None})
     reader, writer = open_streams
-    with pytest.raises(asyncio.exceptions.CancelledError):
+    with pytest.raises(CancelledError):
         with caplog.at_level(logging.DEBUG, "yara"):
             await yara_server.write_data(initialize_msg, writer)
             await yara_server.read_request(reader)
