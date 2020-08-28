@@ -35,7 +35,7 @@ async def open_streams(unused_tcp_port, yara_server):
         host=addr,
         port=port
     )
-    server.start_serving()
+    await server.start_serving()
     reader, writer = await asyncio.open_connection(addr, port)
     yield reader, writer
     server.close()

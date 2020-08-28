@@ -42,7 +42,7 @@ async def main():
     socket_server = await asyncio.start_server(
         client_connected_cb=yarals.handle_client,
         host=args.host,
-        port=args.port,
+        port=args.port
     )
     servhost, servport = socket_server.sockets[0].getsockname()
     logger.info("Serving on tcp://%s:%d", servhost, servport)
