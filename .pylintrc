@@ -2,9 +2,10 @@
 [MESSAGES CONTROL]
 disable=
     line-too-long,
+    too-many-arguments,
+    too-many-branches,
     too-many-locals,
-    too-many-nested-blocks,
-    too-many-branches
+    too-many-nested-blocks
 
 [MASTER]
 extension-pkg-whitelist=yara
