@@ -62,8 +62,10 @@ def test_parse_uri():
 def test_parse_uri_windows():
     ''' Ensure paths are properly parsed for Windows '''
     path = "c:/one/two/three/four.txt"
+    # on Windows, Python will capitalize the drive letter and use opposite slashes as everywhere else
+    expected = "C:\\one\\two\\three\\four.txt"
     file_uri = "file:///{}".format(path)
-    assert helpers.parse_uri(file_uri) == path
+    assert helpers.parse_uri(file_uri) == expected
 
 @pytest.mark.helpers
 def test_resolve_symbol():
