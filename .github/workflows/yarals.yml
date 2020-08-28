@@ -32,13 +32,11 @@ jobs:
         pip wheel ./server/
         pip install *.whl
     - name: Lint Package
-      uses: fylein/python-pylint-github-action@v4
-      with:
-        args: pylint --exit-zero --rcfile=.pylintrc ./server/yarals
+      run: |
+        pylint --exit-zero --rcfile=.pylintrc ./server/yarals
     - name: Lint Tests
-      uses: fylein/python-pylint-github-action@v4
-      with:
-        args: pylint --exit-zero --rcfile=.pylintrc --disable=protected-access,import-error $(ls -R ./server/tests/test_*.py)
+      run: |
+        pylint --exit-zero --rcfile=.pylintrc --disable=protected-access,import-error $(ls -R ./server/tests/test_*.py)
     - name: Test with pytest
       run: |
         pytest
