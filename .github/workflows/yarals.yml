@@ -31,6 +31,7 @@ jobs:
       with:
         args: pylint --rcfile=.pylintrc ./server/yarals
     - name: Build and install yarals and its dependencies
+      run: |
         pip wheel ./server/
         pip install *.whl
     - name: Test with pytest
