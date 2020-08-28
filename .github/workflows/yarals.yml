@@ -39,7 +39,7 @@ jobs:
     - name: Lint Tests
       uses: fylein/python-pylint-github-action@v4
       with:
-        args: pylint --exit-zero --rcfile=.pylintrc --disable=protected-access $(ls -R ./server/tests/test_*.py)
+        args: pylint --exit-zero --rcfile=.pylintrc --disable=protected-access,import-error $(ls -R ./server/tests/test_*.py)
     - name: Test with pytest
       run: |
         pytest
