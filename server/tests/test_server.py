@@ -16,7 +16,7 @@ try:
 except ImportError:
     from concurrent.futures import CancelledError
 
-@pytest.mark.skip(reason="not implemented")
+# @pytest.mark.skip(reason="not implemented")
 @pytest.mark.server
 def test_cmd_compile_rule():
     ''' Ensure CompileRule compiles the currently-active YARA rule file '''
