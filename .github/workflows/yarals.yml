@@ -1,0 +1,39 @@
+# This workflow will install Python dependencies, run tests and lint with a variety of Python versions
+# For more information see: https://help.github.com/actions/language-and-framework-guides/using-python-with-github-actions
+
+name: Language Server - Build, Lint, Test
+
+on:
+  push:
+    branches: [ language-server ]
+  pull_request:
+    branches: [ language-server ]
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        python-version: [3.6, 3.7, 3.8]
+        os: [ ubuntu-latest, macOS-latest, windows-latest ]
+    runs-on: ${{ matrix.os }}
+    steps:
+    - uses: actions/checkout@v2
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v2
+      with:
+        python-version: ${{ matrix.python-version }}
+    - name: Install build and test dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install pylint pytest pytest-asyncio wheel
+    - name: Pylint
+      uses: fylein/python-pylint-github-action@v4
+      with:
+        args: pylint --rcfile=.pylintrc ./server/yarals
+    - name: Build and install yarals and its dependencies
+      run: |
+        pip wheel ./server/
+        pip install *.whl
+    - name: Test with pytest
+      run: |
+        pytest
