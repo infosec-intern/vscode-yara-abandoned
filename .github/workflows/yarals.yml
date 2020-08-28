@@ -30,7 +30,7 @@ jobs:
     - name: Build and install yarals and its dependencies
       run: |
         pip wheel ./server/
-        pip install *.whl
+        pip install $(ls *.whl)
     - name: Lint Package
       run: |
         pylint --exit-zero --rcfile=.pylintrc ./server/yarals
