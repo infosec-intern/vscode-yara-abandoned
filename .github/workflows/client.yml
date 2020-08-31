@@ -24,9 +24,13 @@ jobs:
       uses: actions/setup-node@v1
       with:
         node-version: ${{ matrix.node-version }}
-    - run: npm ci
-    - run: npm run compile
+    - name: Install dependencies
+      run: |
+        - npm run install
+        - npm run postinstall
+    - name: Compile Source
+      run: npm run compile
     - name: Run tests
       uses: GabrielBB/xvfb-action@v1.2
       with:
-        run: npm test
+        run: npm run test
