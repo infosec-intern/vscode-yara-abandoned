@@ -6,7 +6,7 @@ name: Client - Build, Install, Test
 on:
   push:
     branches: [ language-server ]
-    paths-ignore: 
+    paths-ignore:
       - .github/workflow/yarals.yml
   pull_request:
     branches: [ language-server ]
@@ -27,7 +27,7 @@ jobs:
       uses: actions/setup-node@v1
       with:
         node-version: ${{ matrix.node-version }}
-    - name: Set up Python ${{ matrix.python-version }}
+    - name: Use Python ${{ matrix.python-version }}
       uses: actions/setup-python@v2
       with:
         python-version: ${{ matrix.python-version }}
