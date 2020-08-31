@@ -6,6 +6,8 @@ name: Language Client - Build, Install, Test
 on:
   push:
     branches: [ language-server ]
+    paths-ignore: 
+      - .github/workflow/yarals.yml
   pull_request:
     branches: [ language-server ]
 
