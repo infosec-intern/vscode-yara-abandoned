@@ -5,9 +5,8 @@ name: Client - Build, Install, Test
 
 on:
   push:
-    branches: [ language-server ]
     paths-ignore:
-      - .github/workflow/yarals.yml
+      - '.github/workflow/yarals.yml'
       - 'server/tests/*'
   pull_request:
     branches: [ language-server ]
