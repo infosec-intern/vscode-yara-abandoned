@@ -63,9 +63,13 @@ suite("YARA: Setup", function () {
     */
     test("server binding", async function () {
         // ensure the server binds to a port so the client can connect
+        const fs = require("fs");
+        const os = require("os");
         const host: string = "127.0.0.1";
         const port: number = 8471;
         const extensionRoot: string = path.join(__dirname, "..", "..");
+        const targetDir: string = fs.mkdtempSync(`${os.tmpdir()}${path.sep}`);
+        install_server(extensionRoot, targetDir);
         await start_server(extensionRoot, host, port);
         return new Promise((resolve, reject) => {
             let connection: Socket = createConnection(port, host, () => {});
