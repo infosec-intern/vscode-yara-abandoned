@@ -8,6 +8,7 @@ on:
     branches: [ language-server ]
     paths-ignore:
       - .github/workflow/yarals.yml
+      - 'server/tests/*'
   pull_request:
     branches: [ language-server ]
 
