@@ -6,6 +6,8 @@ name: Language Server - Build, Lint, Test
 on:
   push:
     branches: [ language-server ]
+    paths-ignore:
+      - .github/workflow/client.yml
   pull_request:
     branches: [ language-server ]
 
