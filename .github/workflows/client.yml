@@ -33,6 +33,10 @@ jobs:
         python-version: ${{ matrix.python-version }}
     - name: Install dependencies
       run: |
+        python -m pip install --upgrade pip
+        pip install pylint pytest pytest-asyncio wheel
+        pip wheel ./server/
+        pip install $(ls *.whl)
         npm install
         npm run postinstall
     - name: Compile Source
