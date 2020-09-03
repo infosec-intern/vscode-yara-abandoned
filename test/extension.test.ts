@@ -36,10 +36,7 @@ const removeDir = function(dirPath: string) {
 
 // Unit tests to ensure the setup functions are working appropriately
 suite("YARA: Setup", function () {
-    /*
-        give this test a generous timeout of 10 seconds to ensure the install
-        has enough time to finish before the test is killed
-    */
+    this.timeout(10000);
     test("install server", function () {
         // ensure the server components are installed if none exist
         const fs = require("fs");
@@ -55,7 +52,7 @@ suite("YARA: Setup", function () {
             console.log(`Couldn't remove temporary directory "${targetDir}". Manual removal required`);
         }
         assert(installResult && dirExists);
-    }).timeout(10000);
+    });
     /*
         Have to report this test as complete in a slightly different way
         due to the "async" requirement
@@ -91,6 +88,7 @@ suite("YARA: Setup", function () {
 
 // Integration tests to ensure the client is working independently of the server
 suite("YARA: Client", function () {
+    this.timeout(5000);
     test.skip("client connection refused", async function () {
         // ensure the client throws an error message if the connection is refused and the server is shut down
         const filepath: string = path.join(workspace, "peek_rules.yara");
@@ -122,6 +120,7 @@ suite("YARA: Client", function () {
 
 // Integration tests to ensure the client and server are interacting as expected
 suite("YARA: Language Server", function () {
+    this.timeout(5000);
     setup(async function () {
         let extension = vscode.extensions.getExtension(ext_id);
         await extension.activate();
