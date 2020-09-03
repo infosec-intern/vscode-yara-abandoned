@@ -255,7 +255,7 @@ suite("YARA: Language Server", function () {
         results.get(uri).forEach(edit => {
             assert(edit.newText == newName, `'${edit.newText}' != expected '${newName}'`);
             assert(acceptableLines.has(edit.range.start.line), `${edit.range.start.line} is not in the list of acceptable lines`);
-        })
+        });
     });
     test("command CompileRule", async function() {
         // should compile the active document in the current texteditor

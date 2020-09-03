@@ -15,11 +15,11 @@ jobs:
   build:
     strategy:
       matrix:
-        node-version: [ 8.x ]
+        # node-version: [ 8.x ]
         python-version: [ 3.8 ]
-        # os: [ ubuntu-latest ]
-        # node-version: [ 8.x, 10.x, 12.x, 14.x ]
-        os: [ ubuntu-latest, macOS-latest, windows-latest ]
+        os: [ windows-latest ]
+        node-version: [ 8.x, 10.x, 12.x, 14.x ]
+        # os: [ ubuntu-latest, macOS-latest, windows-latest ]
     runs-on: ${{ matrix.os }}
     steps:
     - uses: actions/checkout@v2
@@ -37,7 +37,7 @@ jobs:
         pip install pylint pytest pytest-asyncio wheel
         pip wheel ./server/
         pip install $(ls *.whl)
-        npm install
+        npm ci
         npm run postinstall
     - name: Compile Source
       run: npm run compile
