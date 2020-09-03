@@ -3,7 +3,9 @@
 import * as assert from "assert";
 import { ChildProcess } from "child_process";
 import { createConnection, Socket } from "net";
+import * as fs from "fs";
 import * as path from "path";
+import * as os from "os";
 import * as vscode from "vscode";
 import * as lcp from "vscode-languageclient";
 import { install_server, start_server, server_installed } from "../client/server";
@@ -11,14 +13,12 @@ import { install_server, start_server, server_installed } from "../client/server
 const ext_id: string = "infosec-intern.yara";
 const workspace: string = path.join(__dirname, "..", "..", "test/rules/");
 
-
 // lazily pulled from https://solvit.io/53b9763
 const removeDir = function(dirPath: string) {
-    const fs = require("fs");
-    const path = require("path");
     if (fs.existsSync(dirPath)) {
         return;
     }
+    console.log(`Removing ${dirPath}`);
     let list = fs.readdirSync(dirPath);
     for (let i = 0; i < list.length; i++) {
         let filename = path.join(dirPath, list[i]);
@@ -36,23 +36,26 @@ const removeDir = function(dirPath: string) {
 
 // Unit tests to ensure the setup functions are working appropriately
 suite("YARA: Setup", function () {
-    this.timeout(10000);
+    // this.timeout(10000);
+    const extensionRoot: string = path.join(__dirname, "..", "..");
+    let targetDir: string = "";
 
-    test("install server", function () {
+    setup(function () {
         // ensure the server components are installed if none exist
-        const fs = require("fs");
-        const os = require("os");
-        const extensionRoot: string = path.join(__dirname, "..", "..");
-        const targetDir: string = fs.mkdtempSync(`${os.tmpdir()}${path.sep}`);
-        const installResult: boolean = install_server(extensionRoot, targetDir);
-        console.log(`install server: installing in ${targetDir}`);
-        // install_server creates the env/ directory when successful
-        let dirExists: boolean = fs.existsSync(path.join(targetDir, "env"));
+        targetDir = fs.mkdtempSync(`${os.tmpdir()}${path.sep}`);
+    });
+    teardown(function () {
         try {
             removeDir(targetDir);
         } catch {
             console.log(`Couldn't remove temporary directory "${targetDir}". Manual removal required`);
         }
+    });
+    test("install server", function () {
+        const installResult: boolean = install_server(extensionRoot, targetDir);
+        console.log(`install server: installing in ${targetDir}`);
+        // install_server creates the env/ directory when successful
+        let dirExists: boolean = fs.existsSync(path.join(targetDir, "env"));
         assert(installResult && dirExists);
     });
     /*
@@ -62,49 +65,48 @@ suite("YARA: Setup", function () {
     */
     test("server binding", async function () {
         // ensure the server binds to a port so the client can connect
-        const fs = require("fs");
-        const os = require("os");
         const host: string = "127.0.0.1";
         const port: number = 8471;
-        const extensionRoot: string = path.join(__dirname, "..", "..");
-        const targetDir: string = fs.mkdtempSync(`${os.tmpdir()}${path.sep}`);
         console.log(`server binding: installing in ${targetDir}`);
-        install_server(extensionRoot, targetDir);
-        await start_server(extensionRoot, host, port);
-        console.log(`server binding: started server`);
-        return new Promise((resolve, reject) => {
-            let connection: Socket = createConnection(port, host, () => {});
-            console.log(`server binding: connecting to server on ${host}:${port}`);
-            connection.on("connect", () => {
-                console.log(`server binding: connected to server`);
-                connection.end();
-                resolve();
+        const installResult: boolean = install_server(extensionRoot, targetDir);
+        console.log(`server binding: installed? ${installResult}`);
+        start_server(extensionRoot, host, port).then(() => {
+            console.log(`server binding: started server`);
+            return new Promise((resolve, reject) => {
+                let connection: Socket = createConnection(port, host, () => {});
+                console.log(`server binding: connecting to server on ${host}:${port}`);
+                connection.on("connect", () => {
+                    console.log(`server binding: connected to server`);
+                    connection.end();
+                    resolve();
+                });
             });
         });
     });
     test("server installed", function () {
-        const fs = require("fs");
-        const os = require("os");
-        const extensionRoot: string = path.join(__dirname, "..", "..");
-        const targetDir: string = fs.mkdtempSync(`${os.tmpdir()}${path.sep}`);
         console.log(`server installed: installing in ${targetDir}`);
         const installResult: boolean = install_server(extensionRoot, targetDir);
         console.log(`server installed: installed? ${installResult}`);
         assert(server_installed(targetDir));
-    }).timeout(10000);
+    });
 });
 
 // Integration tests to ensure the client is working independently of the server
 suite("YARA: Client", function () {
-    this.timeout(5000);
+    // this.timeout(5000);
+    let extension: vscode.Extension<any>|null = null;
+    let api = null;
 
+    setup(async function () {
+        extension = vscode.extensions.getExtension(ext_id);
+        let api = await extension.activate();
+        console.log("extension started");
+    });
     test.skip("client connection refused", async function () {
         // ensure the client throws an error message if the connection is refused and the server is shut down
         const filepath: string = path.join(workspace, "peek_rules.yara");
         const uri: vscode.Uri = vscode.Uri.file(filepath);
         const pos: vscode.Position = new vscode.Position(42, 14);
-        let extension = vscode.extensions.getExtension(ext_id);
-        let api = await extension.activate();
         // kill the server process, then try to open the client against it
         api.get_server().process.kill();
         let results: Array<vscode.Location> = await vscode.commands.executeCommand("vscode.executeDefinitionProvider", uri, pos);
@@ -115,10 +117,8 @@ suite("YARA: Client", function () {
     test("start server", async function () {
         // ensure the language server is started as the client's child process
         // by checking that the PID exists
-        let extension = vscode.extensions.getExtension(ext_id);
-        let api = await extension.activate();
         let server_proc: ChildProcess = api.get_server().process;
-        console.log(`start server: server_proc PID ${server_proc}`);
+        console.log(`start server: server_proc PID ${server_proc.pid}`);
         assert(server_proc.pid > -1);
     });
     test.skip("stop server", async function () {
@@ -130,9 +130,11 @@ suite("YARA: Client", function () {
 
 // Integration tests to ensure the client and server are interacting as expected
 suite("YARA: Language Server", function () {
-    this.timeout(5000);
-    setup(async function () {
+    // this.timeout(5000);
+
+    suiteSetup(async function () {
         let extension = vscode.extensions.getExtension(ext_id);
+        console.log(`extension ${extension.id} is active? ${extension.isActive}`);
         await extension.activate();
         console.log(`function unittests: extension activated`);
     });
