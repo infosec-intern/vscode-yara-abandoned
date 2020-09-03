@@ -39,6 +39,6 @@ jobs:
     - name: Lint Tests
       run: |
         pylint --exit-zero --rcfile=.pylintrc --disable=protected-access,import-error $(ls -R ./server/tests/test_*.py)
-    - name: Test with pytest
+    - name: Run tests
       run: |
         pytest
