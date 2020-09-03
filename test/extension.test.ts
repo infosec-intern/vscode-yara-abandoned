@@ -37,6 +37,7 @@ const removeDir = function(dirPath: string) {
 // Unit tests to ensure the setup functions are working appropriately
 suite("YARA: Setup", function () {
     this.timeout(10000);
+
     test("install server", function () {
         // ensure the server components are installed if none exist
         const fs = require("fs");
@@ -44,6 +45,7 @@ suite("YARA: Setup", function () {
         const extensionRoot: string = path.join(__dirname, "..", "..");
         const targetDir: string = fs.mkdtempSync(`${os.tmpdir()}${path.sep}`);
         const installResult: boolean = install_server(extensionRoot, targetDir);
+        console.log(`install server: installing in ${targetDir}`);
         // install_server creates the env/ directory when successful
         let dirExists: boolean = fs.existsSync(path.join(targetDir, "env"));
         try {
@@ -66,11 +68,15 @@ suite("YARA: Setup", function () {
         const port: number = 8471;
         const extensionRoot: string = path.join(__dirname, "..", "..");
         const targetDir: string = fs.mkdtempSync(`${os.tmpdir()}${path.sep}`);
+        console.log(`server binding: installing in ${targetDir}`);
         install_server(extensionRoot, targetDir);
         await start_server(extensionRoot, host, port);
+        console.log(`server binding: started server`);
         return new Promise((resolve, reject) => {
             let connection: Socket = createConnection(port, host, () => {});
+            console.log(`server binding: connecting to server on ${host}:${port}`);
             connection.on("connect", () => {
+                console.log(`server binding: connected to server`);
                 connection.end();
                 resolve();
             });
@@ -81,7 +87,9 @@ suite("YARA: Setup", function () {
         const os = require("os");
         const extensionRoot: string = path.join(__dirname, "..", "..");
         const targetDir: string = fs.mkdtempSync(`${os.tmpdir()}${path.sep}`);
-        install_server(extensionRoot, targetDir);
+        console.log(`server installed: installing in ${targetDir}`);
+        const installResult: boolean = install_server(extensionRoot, targetDir);
+        console.log(`server installed: installed? ${installResult}`);
         assert(server_installed(targetDir));
     }).timeout(10000);
 });
@@ -89,6 +97,7 @@ suite("YARA: Setup", function () {
 // Integration tests to ensure the client is working independently of the server
 suite("YARA: Client", function () {
     this.timeout(5000);
+
     test.skip("client connection refused", async function () {
         // ensure the client throws an error message if the connection is refused and the server is shut down
         const filepath: string = path.join(workspace, "peek_rules.yara");
@@ -109,6 +118,7 @@ suite("YARA: Client", function () {
         let extension = vscode.extensions.getExtension(ext_id);
         let api = await extension.activate();
         let server_proc: ChildProcess = api.get_server().process;
+        console.log(`start server: server_proc PID ${server_proc}`);
         assert(server_proc.pid > -1);
     });
     test.skip("stop server", async function () {
@@ -124,6 +134,7 @@ suite("YARA: Language Server", function () {
     setup(async function () {
         let extension = vscode.extensions.getExtension(ext_id);
         await extension.activate();
+        console.log(`function unittests: extension activated`);
     });
     test("rule definition", async function () {
         const filepath: string = path.join(workspace, "peek_rules.yara");
