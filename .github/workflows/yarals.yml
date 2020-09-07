@@ -50,7 +50,7 @@ jobs:
     - name: Upload pytest results
       uses: actions/upload-artifact@v2
       with:
-        name: pytest-results.txt
+        name: pytest-results-${{ matrix.os }}-${{ matrix.python-version }}.txt
         path: pytest-results.txt
     - name: Save package
       if: ${{ success() }}
