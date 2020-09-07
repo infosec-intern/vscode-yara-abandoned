@@ -24,7 +24,7 @@ Some common sequences are provided as snippets, to allow easy auto-completion fo
 * "any" and "all" keywords
 
 ## Requirements
-With the new language server protocol, Python 3.5 or higher is required, due to the heavy use of the `asyncio` library.
+With the new language server protocol, Python 3.7 or higher is required, due to the heavy use of the `asyncio` library and certain specific, related functions being used.
 
 In addition, `yara-python` must be installed. If it is not installed, this extension will try to build a virtual environment in `$EXTENSIONROOT/server/env` with the latest Python version and install dependencies there.
 

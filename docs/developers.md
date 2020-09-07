@@ -9,9 +9,7 @@ If you want to build this locally for development purposes (or testing out cutti
 To get the files, clone the git repository to your local filesystem. All the commands below are done in a Bash prompt on Linux. PowerShell on Windows should be largely the same, with maybe some minor tweaks to the Python commands.
 
 ```text
-~$ git clone https://github.com/infosec-intern/vscode-yara.git
-~$ cd vscode-yara/
-~/vscode-yara$ git checkout language-server
+~$ git clone https://github.com/infosec-intern/vscode-yara.git vscode-yara
 ```
 
 ## Installation
@@ -22,12 +20,11 @@ There is now a `setup.py` installation package as well, that is best built with 
 ```text
 ~$ cd vscode-yara/
 ~/vscode-yara$ npm install
-~/vscode-yara$ cd server/
-~/vscode-yara/server$ python3 -m venv ./env
-~/vscode-yara/server$ source ./env/bin/activate
-(env) ~/vscode-yara/server$ python3 -m pip install yara-python wheel pytest pytest-asyncio
-(env) ~/vscode-yara/server$ python3 -m pip wheel .
-(env) ~/vscode-yara/server$ python3 -m pip install yarals
+~/vscode-yara$ python3 -m venv ./server/env
+~/vscode-yara$ source ./server/env/bin/activate
+(env) ~/vscode-yara$ python3 -m pip install wheel pytest pytest-asyncio
+(env) ~/vscode-yara$ python3 -m pip wheel ./server/
+(env) ~/vscode-yara$ python3 -m pip install *.whl
 ```
 
 ## Execution
