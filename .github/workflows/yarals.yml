@@ -15,10 +15,8 @@ jobs:
   build:
     strategy:
       matrix:
-        # python-version: [ 3.7, 3.8 ]
-        # os: [ ubuntu-latest, macOS-latest, windows-latest ]
-        python-version: [ 3.7 ]
-        os: [ ubuntu-latest ]
+        python-version: [ 3.7, 3.8 ]
+        os: [ ubuntu-latest, macOS-latest, windows-latest ]
     runs-on: ${{ matrix.os }}
     steps:
     - uses: actions/checkout@v2
@@ -35,7 +33,6 @@ jobs:
         pip wheel ./server/
         pip install $(ls *.whl)
         echo "::set-env name=YARALS_VERSION::$(pip show yarals | grep Version | cut -d ' ' -f2)"
-        echo "Using ${{ env.YARALS_VERSION }} as pkg version"
     - name: Lint Package
       run: |
         pylint --exit-zero --rcfile=.pylintrc ./server/yarals | tee pylint-pkg.txt
@@ -44,7 +41,7 @@ jobs:
         pylint --exit-zero --rcfile=.pylintrc --disable=protected-access,import-error $(ls -R ./server/tests/test_*.py) | tee pylint-tests.txt
     - name: Run tests
       run: |
-        pytest | tee pytest-results.txt
+        pytest -vv | tee pytest-results.txt
     - name: Upload pylint results
       uses: actions/upload-artifact@v2
       with:
