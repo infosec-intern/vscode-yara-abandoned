@@ -49,11 +49,11 @@ function Invoke-CheckVersion () {
     }
 
     # ensure the python version is 3.6+
-    if (($Python.Version.Major -eq 3) -and ($Python.Version.Minor -ge 6)) {
+    if (($Python.Version.Major -eq 3) -and ($Python.Version.Minor -ge 7)) {
         return $PyCmd
     }
     else {
-        Write-Error "${Python.Source} version must be at least 3.6.0 to complete installation"
+        Write-Error "${Python.Source} version must be at least 3.7.0 to complete installation"
         return $false
     }
 }

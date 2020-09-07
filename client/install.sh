@@ -14,18 +14,18 @@ exit_with_error () {
 check_version () {
     # Validate the provided Python path's version
     # Requires path to python executable to validate
-    # version follows format: "Python 3.6.0"
+    # version follows format: "Python 3.7.0"
     PY_VERSION=`${PYTHON_PATH} -V | cut -d' ' -f2`
     # probably a better way to do this parsing, but whatever
     PY_MAJOR=`echo ${PY_VERSION} | cut -d'.' -f1`
     PY_MINOR=`echo ${PY_VERSION} | cut -d'.' -f2`
 
-    if [ ${PY_MAJOR} -eq "3" ] && [ ${PY_MINOR} -ge "6" ]
+    if [ ${PY_MAJOR} -eq "3" ] && [ ${PY_MINOR} -ge "7" ]
     then
         echo "${PYTHON_PATH} version verified. Building virtual environment"
         BUILD_ENV=true
     else
-        exit_with_error "${PYTHON_PATH} version must be at least 3.6.0 to complete installation"
+        exit_with_error "${PYTHON_PATH} version must be at least 3.7.0 to complete installation"
     fi
 }
 
