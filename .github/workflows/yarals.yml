@@ -41,14 +41,14 @@ jobs:
         pylint --exit-zero --rcfile=.pylintrc --disable=protected-access,import-error $(ls -R ./server/tests/test_*.py) | tee pylint-tests.txt
     - name: Run tests
       run: |
-        pytest --junitxml=junit/test-results-${{ matrix.python-version }}.xml
+        pytest | tee pytest-results.txt
     - name: Upload pylint results
       uses: actions/upload-artifact@v2
       with:
-        name: pylint-results-${{ matrix.python-version }}-${{ matrix.os }}
+        name: pylint-results.txt
         path: pylint-*.txt
     - name: Upload pytest results
       uses: actions/upload-artifact@v2
       with:
         name: pytest-results-${{ matrix.python-version }}-${{ matrix.os }}
-        path: junit/test-results-${{ matrix.python-version }}.xml
+        path: pytest-results-${{ matrix.python-version }}.txt
