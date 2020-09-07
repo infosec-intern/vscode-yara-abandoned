@@ -51,4 +51,4 @@ jobs:
       uses: actions/upload-artifact@v2
       with:
         name: pytest-results-${{ matrix.python-version }}-${{ matrix.os }}
-        path: pytest-results-${{ matrix.python-version }}.txt
+        path: pytest-results.txt
