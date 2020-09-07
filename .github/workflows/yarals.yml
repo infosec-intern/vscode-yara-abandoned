@@ -57,5 +57,5 @@ jobs:
       if: ${{ success() }}
       uses: actions/upload-artifact@v2
       with:
-        name: yarals-${YARALS_VERSION}-py3-none-any.whl
-        path: yarals-${YARALS_VERSION}-py3-none-any.whl
+        name: yarals-${{ env.YARALS_VERSION }}-py3-none-any.whl
+        path: yarals-${{ env.YARALS_VERSION }}-py3-none-any.whl
