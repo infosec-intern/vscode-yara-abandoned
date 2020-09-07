@@ -50,5 +50,5 @@ jobs:
     - name: Upload pytest results
       uses: actions/upload-artifact@v2
       with:
-        name: pytest-results-${{ matrix.python-version }}-${{ matrix.os }}
+        name: pytest-results.txt
         path: pytest-results.txt
