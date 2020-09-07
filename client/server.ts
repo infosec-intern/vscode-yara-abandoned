@@ -62,7 +62,6 @@ export function server_installed(installDir: string): boolean {
     if (!existsSync(envPath)) {
         return false;
     }
-    // let pipPath: string = path.join()
     let cmd: string = path.join(envPath, "bin", "pip");
     let args: string[] = ["freeze"];
     if (platform == "win32") {

@@ -1,6 +1,6 @@
 "use strict";
 
-import {ChildProcess, spawn} from "child_process";
+import {ChildProcess} from "child_process";
 import * as getPort from "get-port";
 import {Socket} from "net";
 import * as path from "path";
