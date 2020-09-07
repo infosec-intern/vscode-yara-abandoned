@@ -52,3 +52,8 @@ jobs:
       with:
         name: pytest-results.txt
         path: pytest-results.txt
+    - name: Save package
+      if: ${{ success() }}
+      uses: actions/upload-artifact@v2
+      with:
+        name: yarals*.whl
