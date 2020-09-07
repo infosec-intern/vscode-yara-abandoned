@@ -9,7 +9,7 @@ on:
       - '.github/workflows/yarals.yml'
       - 'server/tests/*'
   pull_request:
-    branches: [ language-server ]
+    branches: [ main ]
 
 jobs:
   build:
