@@ -15,9 +15,10 @@ jobs:
   build:
     strategy:
       matrix:
-        python-version: [ 3.7, 3.8 ]
-        os: [ ubuntu-latest, macOS-latest, windows-latest ]
-        # os: [ ubuntu-latest ]
+        # python-version: [ 3.7, 3.8 ]
+        # os: [ ubuntu-latest, macOS-latest, windows-latest ]
+        python-version: [ 3.7 ]
+        os: [ ubuntu-latest ]
     runs-on: ${{ matrix.os }}
     steps:
     - uses: actions/checkout@v2
@@ -33,7 +34,8 @@ jobs:
       run: |
         pip wheel ./server/
         pip install $(ls *.whl)
-        echo "::set-env name=YARALS_VERSION::$(pip freeze | grep yarals | cut -d '=' -f3)"
+        echo "::set-env name=YARALS_VERSION::$(pip show yarals | grep Version | cut -d ' ' -f2)"
+        echo "Using ${{ env.YARALS_VERSION }} as pkg version"
     - name: Lint Package
       run: |
         pylint --exit-zero --rcfile=.pylintrc ./server/yarals | tee pylint-pkg.txt
