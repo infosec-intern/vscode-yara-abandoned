@@ -35,10 +35,20 @@ jobs:
         pip install $(ls *.whl)
     - name: Lint Package
       run: |
-        pylint --exit-zero --rcfile=.pylintrc ./server/yarals
+        pylint --exit-zero --rcfile=.pylintrc ./server/yarals | tee pylint-pkg.txt
     - name: Lint Tests
       run: |
-        pylint --exit-zero --rcfile=.pylintrc --disable=protected-access,import-error $(ls -R ./server/tests/test_*.py)
+        pylint --exit-zero --rcfile=.pylintrc --disable=protected-access,import-error $(ls -R ./server/tests/test_*.py) | tee pylint-tests.txt
     - name: Run tests
       run: |
-        pytest
+        pytest --junitxml=junit/test-results-${{ matrix.python-version }}.xml
+    - name: Upload pylint results
+      uses: actions/upload-artifact@v2
+      with:
+        name: pylint-results-${{ matrix.python-version }}-${{ matrix.os }}
+        path: pylint-*.txt
+    - name: Upload pytest results
+      uses: actions/upload-artifact@v2
+      with:
+        name: pytest-results-${{ matrix.python-version }}-${{ matrix.os }}
+        path: junit/test-results-${{ matrix.python-version }}.xml
