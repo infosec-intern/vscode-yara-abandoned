@@ -56,4 +56,4 @@ jobs:
       if: ${{ success() }}
       uses: actions/upload-artifact@v2
       with:
-        name: yarals*.whl
+        path: yarals*.whl
