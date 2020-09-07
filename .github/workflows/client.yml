@@ -8,6 +8,7 @@ on:
     paths-ignore:
       - '.github/workflows/yarals.yml'
       - 'server/tests/*'
+      - 'docs/'
   pull_request:
     branches: [ main ]
 
