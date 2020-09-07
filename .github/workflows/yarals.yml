@@ -33,6 +33,7 @@ jobs:
       run: |
         pip wheel ./server/
         pip install $(ls *.whl)
+        echo "::set-env name=YARALS_VERSION::$(pip freeze | grep yarals | cut -d '=' -f3)"
     - name: Lint Package
       run: |
         pylint --exit-zero --rcfile=.pylintrc ./server/yarals | tee pylint-pkg.txt
@@ -56,4 +57,5 @@ jobs:
       if: ${{ success() }}
       uses: actions/upload-artifact@v2
       with:
-        path: yarals*.whl
+        name: yarals-${YARALS_VERSION}-py3-none-any.whl
+        path: yarals-${YARALS_VERSION}-py3-none-any.whl
