@@ -12,25 +12,23 @@ import {install_server, start_server, server_installed} from "./server";
 let server_info: Object;
 
 export async function activate(context: ExtensionContext) {
+    let outputChannel: OutputChannel = window.createOutputChannel("YARA");
+    context.subscriptions.push(outputChannel);
     // check if the server components are installed - if not, install them
     let installDir: string = path.join(context.extensionPath, "server");
     if (!server_installed(installDir)) {
         let msg: string = `Installing YARA Language Server components into ${installDir}`;
-        console.log(msg);
-        window.showInformationMessage(msg);
+        outputChannel.appendLine(`[Extension Activation] ${msg}`);
         if (install_server(context.extensionPath, installDir)) {
             let msg: string = "Successfully installed server components";
-            console.log(msg);
-            window.showInformationMessage(msg);
+            outputChannel.appendLine(`[Extension Activation] ${msg}`);
         }
         else {
             let msg: string = "Failed to install server components";
-            console.log(msg);
-            window.showErrorMessage(msg);
+            outputChannel.appendLine(`[Extension Activation] ${msg}`);
+            window.showErrorMessage(`YARA: ${msg}`);
         }
     }
-    // open up output channel and start the server
-    let outputChannel: OutputChannel = window.createOutputChannel("YARA");
     let lhost: string = "127.0.0.1";
     // grab a random open TCP port to listen to
     let tcpPort: number = await getPort();
