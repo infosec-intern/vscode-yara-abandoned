@@ -44,14 +44,18 @@ suite("YARA: Setup", function () {
         targetDir = fs.mkdtempSync(`${os.tmpdir()}${path.sep}`);
     });
     teardown(function () {
-        try { removeDir(targetDir); } catch {}
+        try {
+            removeDir(targetDir);
+        } catch (err) {
+            console.log(`Couldn't remove targetDir: ${err}`);
+        }
     });
     test("install server", function (done) {
         const installResult: boolean = install_server(extensionRoot, targetDir);
         // install_server creates the env/ directory when successful
         let dirExists: boolean = fs.existsSync(path.join(targetDir, "env"));
         console.log(`installResult && dirExists: ${installResult} && ${dirExists}`);
-        assert(installResult && dirExists == true);
+        assert.equal(true, (installResult && dirExists));
         done();
     });
     /*
@@ -63,8 +67,7 @@ suite("YARA: Setup", function () {
         // ensure the server binds to a port so the client can connect
         const host: string = "127.0.0.1";
         const port: number = 8471;
-        const installed: boolean = install_server(extensionRoot, targetDir);
-        console.log(`Python installed? ${fs.existsSync(path.join(targetDir, 'server', 'env', 'bin', 'python'))} && ${installed}`);
+        install_server(extensionRoot, targetDir);
         await start_server(targetDir, host, port);
         return new Promise(function (resolve, reject) {
             const connection: Socket = createConnection(port, host, function () {
@@ -73,15 +76,15 @@ suite("YARA: Setup", function () {
             });
         });
     });
-    test("server installed", async function () {
-        targetDir = fs.mkdtempSync(`${os.tmpdir()}${path.sep}`);
+    test("server installed", function (done) {
         install_server(extensionRoot, targetDir);
-        assert(server_installed(targetDir) == true);
+        assert.equal(true, server_installed(targetDir));
+        done();
     });
 });
 
 // Integration tests to ensure the client is working independently of the server
-suite.skip("YARA: Client", function () {
+suite("YARA: Client", function () {
     // this.timeout(5000);
     let extension: vscode.Extension<any>|null = null;
 
