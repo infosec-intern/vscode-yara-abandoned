@@ -28,24 +28,26 @@ export function install_server(extensionRoot: string, targetDir: string): boolea
     // so shell: true *should* be safe
     // TODO: verify that assumption
     let venv_proc = spawnSync(cmd, args, {shell: true});
+    venv_proc.output.forEach((line: string, index: number) => {
+        console.log(`install_server line #${index}: ${line}`);
+    });
     return venv_proc.status == 0;
 }
 
-export async function start_server(extensionRoot: string, host: string, tcpPort: number): Promise<ChildProcess> {
+export async function start_server(serverRoot: string, host: string, tcpPort: number): Promise<ChildProcess> {
     /*
         start up the language server with the pre-installed python runtime
         returns the language server's ChildProcess instance
     */
-    let serverPath: string = path.join(extensionRoot, "server", "vscode_yara.py");
-    let pythonPath: string = path.join(extensionRoot, "server", "env", "bin", "python");
+    let serverPath: string = path.join(serverRoot, "env", "bin", "vscode_yara.py");
+    let pythonPath: string = path.join(serverRoot, "env", "bin", "python");
     if (platform === "win32") {
-        pythonPath = path.join(extensionRoot, "server", "env", "Scripts", "python");
-        // pythonPath = context.asAbsolutePath(path.join("server", "env", "Scripts", "python"));
+        serverPath = path.join(serverRoot, "env", "Scripts", "vscode_yara.py");
+        pythonPath = path.join(serverRoot, "env", "Scripts", "python");
     }
     // launch the language server
     const options = {
-        cwd: path.join(extensionRoot, "server"),
-        // cwd: context.asAbsolutePath(path.join("server")),
+        cwd: serverRoot,
         detached: false,
         shell: false,
         windowsHide: false
