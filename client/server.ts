@@ -28,9 +28,6 @@ export function install_server(extensionRoot: string, targetDir: string): boolea
     // so shell: true *should* be safe
     // TODO: verify that assumption
     let venv_proc = spawnSync(cmd, args, {shell: true});
-    venv_proc.output.forEach((line: string, index: number) => {
-        console.log(`install_server line #${index}: ${line}`);
-    });
     return venv_proc.status == 0;
 }
 
