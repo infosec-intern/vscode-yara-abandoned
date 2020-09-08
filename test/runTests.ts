@@ -18,7 +18,7 @@ async function main() {
     await runTests({
         extensionDevelopmentPath,
         extensionTestsPath,
-        launchArgs: [testWorkspace, "--disable-extensions"]
+        launchArgs: [testWorkspace, "--disable-extensions", "--disable-gpu"]
     });
   } catch (err) {
     console.error("Failed to run tests");
