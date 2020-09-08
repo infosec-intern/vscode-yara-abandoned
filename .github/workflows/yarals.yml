@@ -54,7 +54,7 @@ jobs:
         name: pytest-results-${{ matrix.os }}-${{ matrix.python-version }}.txt
         path: pytest-results.txt
     - name: Save package
-      if: ${{ success() }}
+      if: ${{ failure() }}
       uses: actions/upload-artifact@v2
       with:
         name: yarals-${{ env.YARALS_VERSION }}-py3-none-any.whl
