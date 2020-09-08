@@ -30,6 +30,8 @@ async def test_compile_on_save_false(caplog, init_server, open_streams, test_rul
         diagnostics = response["params"]["diagnostics"]
         assert len(diagnostics) == 0
         assert ("yara", logging.DEBUG, "Changed workspace config to {}".format(json.dumps(new_config))) in caplog.record_tuples
+    writer.close()
+    await writer.wait_closed()
 
 @pytest.mark.asyncio
 @pytest.mark.config
@@ -59,3 +61,5 @@ async def test_compile_on_save_true(caplog, init_server, open_streams, test_rule
         assert diagnostics[0]["message"] == expected_msg
         assert diagnostics[0]["severity"] == expected_sev
         assert ("yara", logging.DEBUG, "Changed workspace config to {}".format(json.dumps(new_config))) in caplog.record_tuples
+    writer.close()
+    await writer.wait_closed()
