@@ -24,6 +24,7 @@ export function install_server(extensionRoot: string, targetDir: string): boolea
             targetDir
         ];
     }
+    // console.log(`Installing server with command: ${cmd} ${args.join(" ")}`);
     // we should be generating all command and arguments ourself
     // so shell: true *should* be safe
     // TODO: verify that assumption
@@ -53,6 +54,7 @@ export async function start_server(serverRoot: string, host: string, tcpPort: nu
     let langserver: ChildProcess = spawn(pythonPath, [serverPath, host, tcpPort.toString()], options);
     // wait for the language server to bind to the port
     await tcpPortUsed.waitUntilUsed(tcpPort, host);
+    // console.log(`Running language server with the following cli: ${serverPath} ${host} ${tcpPort}`);
     return langserver;
 }
 
@@ -61,6 +63,7 @@ export function server_installed(installDir: string): boolean {
     if (!existsSync(envPath)) {
         return false;
     }
+    // console.log(`Venv found in ${envPath}`);
     let cmd: string = path.join(envPath, "bin", "pip");
     let args: string[] = ["freeze"];
     if (platform == "win32") {
