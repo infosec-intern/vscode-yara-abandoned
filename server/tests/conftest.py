@@ -16,6 +16,15 @@ def pytest_configure(config):
     config.addinivalue_line("markers", "server: Run YARA-specific protocol unittests")
     config.addinivalue_line("markers", "transport: Run network transport unittests")
 
+@pytest.fixture
+def event_loop():
+    # force asyncio to use this event loop regardless of OS
+    # to avoid RunTimeError "Event loop is closed" on Windows
+    # also seen in: https://github.com/aio-libs/aiohttp/issues/4324
+    loop = asyncio.SelectorEventLoop()
+    yield loop
+    loop.close()
+
 @pytest.fixture(scope="function")
 def yara_server():
     ''' Generate an instance of the YARA language server '''
