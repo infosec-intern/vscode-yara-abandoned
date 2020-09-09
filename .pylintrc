@@ -9,3 +9,4 @@ disable=
 
 [MASTER]
 extension-pkg-whitelist=yara
+output-format=colorized

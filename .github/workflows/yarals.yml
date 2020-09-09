@@ -42,7 +42,7 @@ jobs:
         pylint --exit-zero --rcfile=.pylintrc --disable=protected-access,import-error $(ls -R ./server/tests/test_*.py) | tee pylint-tests.txt
     - name: Run tests
       run: |
-        pytest -vv | tee pytest-results.txt
+        pytest -vv --color=yes | tee pytest-results.txt
     - name: Upload pylint results
       uses: actions/upload-artifact@v2
       with:
