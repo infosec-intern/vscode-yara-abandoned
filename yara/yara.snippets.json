@@ -6,10 +6,14 @@
             "{",
             "\tmeta:",
             "\t\tdate = \"${CURRENT_YEAR}-${CURRENT_MONTH}-${CURRENT_DATE}\"",
+            "\t\tdescription = \"${1:description}\"",
+            "\t\tauthor = \"${2:author}\"",
+            "\t\treference = \"${3:reference}\"",
+            "\t\thash = \"${4:hash}\"",
             "\tstrings:",
-            "\t\t${1:strings}",
+            "\t\t$${5:name} = \"${6:string}\"",
             "\tcondition:",
-            "\t\t${2:condition}",
+            "\t\t$0",
             "}"
         ],
         "description": "Generate a rule skeleton. Rule name is generated from current filename including only alphanumeric characters and underscores)"
@@ -19,15 +23,20 @@
         "body": [
             "meta:",
             "\t\tdate = \"${CURRENT_YEAR}-${CURRENT_MONTH}-${CURRENT_DATE}\"",
-            "\t${metadata}"
-        ],
+            "\t\tdescription = \"${1:description}\"",
+            "\t\tauthor = \"${2:author}\"",
+            "\t\treference = \"${3:reference}\"",
+            "\t\thash = \"${4:hash}\"",
+            "$0"
+            ],
         "description": "Generate a 'meta' section"
     },
     "Strings": {
         "prefix": "strings",
         "body": [
             "strings:",
-            "\t${strings}"
+            "\t\t$${1:name} = \"${2:string}\"",
+            "$0"
         ],
         "description": "Generate a 'strings' section"
     },
@@ -35,13 +44,16 @@
         "prefix": "condition",
         "body": [
             "condition:",
-            "\t${conditions}"
+            "\t$0"
         ],
         "description": "Generate a 'condition' section"
     },
     "Import": {
         "prefix": "import",
-        "body": "import \"${1|pe,elf,cuckoo,magic,hash,math,dotnet,time|}\"",
+        "body": [
+            "import \"${1|pe,elf,cuckoo,magic,hash,math,dotnet,time|}\"",
+            "$0"
+        ],
         "description": "Import a YARA module"
     },
     "for..of": {
@@ -56,12 +68,12 @@
     },
     "any": {
         "prefix": "any",
-        "body": "any of ${them}",
+        "body": "any of ${1:them}",
         "description": "String set keyword: any"
     },
     "all": {
         "prefix": "all",
-        "body": "all of ${them}",
+        "body": "all of ${1:them}",
         "description": "String set keyword: all"
     },
     "Ad Hoc Rule - String": {
