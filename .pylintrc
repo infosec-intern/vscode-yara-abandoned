@@ -1,3 +1,5 @@
+[MASTER]
+extension-pkg-whitelist=yara
 
 [MESSAGES CONTROL]
 disable=
@@ -7,6 +9,5 @@ disable=
     too-many-locals,
     too-many-nested-blocks
 
-[MASTER]
-extension-pkg-whitelist=yara
+[REPORTS]
 output-format=colorized
