@@ -1,7 +1,7 @@
 "use strict";
 
 import * as assert from "assert";
-import { ChildProcess } from "child_process";
+import { ChildProcess, spawnSync } from "child_process";
 import * as fs from "fs";
 import * as path from "path";
 import * as os from "os";
@@ -26,10 +26,18 @@ const removeDir = function(dirPath: string) {
         } else if (stat.isDirectory()) {
             removeDir(filename);
         } else {
-            fs.unlinkSync(filename);
+            try {
+                fs.unlinkSync(filename);
+            } catch (err) {
+                console.log(err.toString());
+            }
         }
     }
-    fs.rmdirSync(dirPath);
+    try {
+        fs.rmdirSync(dirPath);
+    } catch (error) {
+        console.log(`Couldn't remove directory ${dirPath}`);
+    }
     return !fs.existsSync(dirPath);
 };
 
@@ -54,11 +62,12 @@ suite("YARA: Setup", function () {
             console.log(`Server killed? ${server_proc.killed}`);
         }
     });
-    test("install server", function () {
+    test("install server", async function () {
         let installResult: boolean = install_server(extensionRoot, targetDir);
         // install_server creates the env/ directory when successful
         let dirExists: boolean = fs.existsSync(path.join(targetDir, "env"));
-        assert.equal(true, (installResult && dirExists));
+        assert((installResult && dirExists) === true);
+        console.log(`install server: assertion passed`);
     });
     /*
         Have to report this test as complete in a slightly different way
@@ -71,11 +80,15 @@ suite("YARA: Setup", function () {
         const port: number = 8471;
         install_server(extensionRoot, targetDir);
         server_proc = await start_server(targetDir, host, port);
+        let netstat = spawnSync("netstat", ["-an"]);
+        assert(netstat.stdout.toString().includes(`${host}:${port}`) === true);
+        console.log(`server binding: assertion passed`);
     });
-    test("server installed", function () {
+    test("server installed", async function () {
         install_server(extensionRoot, targetDir);
-        const installed = server_installed(targetDir);
-        assert.equal(true, installed);
+        const installed: boolean = server_installed(targetDir);
+        assert(installed == true);
+        console.log(`server installed: assertion passed`);
     });
 });
 
