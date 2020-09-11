@@ -80,7 +80,7 @@ suite("YARA: Setup", function () {
         const port: number = 8471;
         install_server(extensionRoot, targetDir);
         server_proc = await start_server(targetDir, host, port);
-        let netstat = spawnSync("netstat", ["-an"]);
+        let netstat = spawnSync("netstat");
         assert(netstat.stdout.toString().includes(`${host}:${port}`) === true);
         console.log(`server binding: assertion passed`);
     });
