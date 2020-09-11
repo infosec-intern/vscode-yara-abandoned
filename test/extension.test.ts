@@ -1,10 +1,11 @@
 "use strict";
 
 import * as assert from "assert";
-import { ChildProcess, spawnSync } from "child_process";
+import { ChildProcess } from "child_process";
 import * as fs from "fs";
-import * as path from "path";
+import * as net from "net";
 import * as os from "os";
+import * as path from "path";
 import * as vscode from "vscode";
 import * as lcp from "vscode-languageclient";
 import { install_server, start_server, server_installed } from "../client/server";
@@ -48,12 +49,19 @@ suite("YARA: Setup", function () {
     let server_proc: ChildProcess|null = null;
 
     setup(function () {
+        this.timeout(10000);
         server_proc = null;
         // ensure the server components are installed if none exist
         targetDir = fs.mkdtempSync(`${os.tmpdir()}${path.sep}`);
-        console.log(`Test should use the following directory: ${targetDir}`);
+        try {
+            let server_installed: boolean = install_server(extensionRoot, targetDir);
+            console.log(`server installed? ${server_installed}`);
+        } catch (error) {
+            console.log(error)
+        }
     });
     teardown(function () {
+        this.timeout(10000);
         const success: boolean = removeDir(targetDir);
         console.log(`Successfully removed ${targetDir}? ${success}`);
         if (server_proc !== null) {
@@ -62,12 +70,11 @@ suite("YARA: Setup", function () {
             console.log(`Server killed? ${server_proc.killed}`);
         }
     });
-    test("install server", async function () {
-        let installResult: boolean = install_server(extensionRoot, targetDir);
+    test("install server", function (done) {
         // install_server creates the env/ directory when successful
-        let dirExists: boolean = fs.existsSync(path.join(targetDir, "env"));
-        assert((installResult && dirExists) === true);
-        console.log(`install server: assertion passed`);
+        fs.exists(path.join(targetDir, "env"), (exists: boolean) => {
+            if (exists) { done(); }
+        });
     });
     /*
         Have to report this test as complete in a slightly different way
@@ -78,14 +85,12 @@ suite("YARA: Setup", function () {
         // ensure the server binds to a port so the client can connect
         const host: string = "127.0.0.1";
         const port: number = 8471;
-        install_server(extensionRoot, targetDir);
         server_proc = await start_server(targetDir, host, port);
-        let netstat = spawnSync("netstat");
-        assert(netstat.stdout.toString().includes(`${host}:${port}`) === true);
-        console.log(`server binding: assertion passed`);
+        let socket: net.Socket = net.createConnection(port, host);
+        assert(socket.remotePort == port);
+        assert(socket.remoteAddress == host);
     });
     test("server installed", async function () {
-        install_server(extensionRoot, targetDir);
         const installed: boolean = server_installed(targetDir);
         assert(installed == true);
         console.log(`server installed: assertion passed`);
