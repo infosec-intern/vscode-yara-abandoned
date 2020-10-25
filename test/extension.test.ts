@@ -55,7 +55,7 @@ suite("YARA: Setup", function () {
         targetDir = fs.mkdtempSync(`${os.tmpdir()}${path.sep}`);
         try {
             let server_installed: boolean = install_server(extensionRoot, targetDir);
-            console.log(`server installed? ${server_installed}`);
+            // console.log(`server installed? ${server_installed}`);
         } catch (error) {
             console.log(error)
         }
@@ -63,11 +63,11 @@ suite("YARA: Setup", function () {
     teardown(function () {
         this.timeout(10000);
         const success: boolean = removeDir(targetDir);
-        console.log(`Successfully removed ${targetDir}? ${success}`);
+        // console.log(`Successfully removed ${targetDir}? ${success}`);
         if (server_proc !== null) {
-            console.log(`Killing server with PID ${server_proc.pid}`);
+            // console.log(`Killing server with PID ${server_proc.pid}`);
             server_proc.kill();
-            console.log(`Server killed? ${server_proc.killed}`);
+            // console.log(`Server killed? ${server_proc.killed}`);
         }
     });
     test("install server", function (done) {
@@ -93,7 +93,7 @@ suite("YARA: Setup", function () {
     test("server installed", async function () {
         const installed: boolean = server_installed(targetDir);
         assert(installed == true);
-        console.log(`server installed: assertion passed`);
+        // console.log(`server installed: assertion passed`);
     });
 });
 
@@ -108,9 +108,9 @@ suite("YARA: Client", function () {
     });
     teardown(function () {
         if (server_proc !== null) {
-            console.log(`Killing server with PID ${server_proc.pid}`);
+            // console.log(`Killing server with PID ${server_proc.pid}`);
             server_proc.kill();
-            console.log(`Server killed? ${server_proc.killed}`);
+            // console.log(`Server killed? ${server_proc.killed}`);
         }
     })
     test.skip("client connection refused", async function () {
@@ -141,7 +141,7 @@ suite("YARA: Client", function () {
 });
 
 // Integration tests to ensure the client and server are interacting as expected
-suite.skip("YARA: Language Server", function () {
+suite("YARA: Language Server", function () {
     // this.timeout(5000);
 
     suiteSetup(async function () {
