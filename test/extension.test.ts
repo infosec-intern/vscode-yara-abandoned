@@ -2,10 +2,10 @@
 
 import * as assert from "assert";
 import { ChildProcess } from "child_process";
-import { createConnection, Socket } from "net";
 import * as fs from "fs";
-import * as path from "path";
+import * as net from "net";
 import * as os from "os";
+import * as path from "path";
 import * as vscode from "vscode";
 import * as lcp from "vscode-languageclient";
 import { install_server, start_server, server_installed } from "../client/server";
@@ -15,44 +15,66 @@ const workspace: string = path.join(__dirname, "..", "..", "test/rules/");
 
 // lazily pulled from https://solvit.io/53b9763
 const removeDir = function(dirPath: string) {
-    if (fs.existsSync(dirPath)) {
+    if (!fs.existsSync(dirPath)) {
         return;
     }
     let list = fs.readdirSync(dirPath);
     for (let i = 0; i < list.length; i++) {
         let filename = path.join(dirPath, list[i]);
-        let stat = fs.statSync(filename);
+        let stat = fs.lstatSync(filename);
         if (filename == "." || filename == "..") {
             // do nothing for current and parent dir
         } else if (stat.isDirectory()) {
             removeDir(filename);
         } else {
-            fs.unlinkSync(filename);
+            try {
+                fs.unlinkSync(filename);
+            } catch (err) {
+                console.log(err.toString());
+            }
         }
     }
-    fs.rmdirSync(dirPath);
+    try {
+        fs.rmdirSync(dirPath);
+    } catch (error) {
+        console.log(`Couldn't remove directory ${dirPath}`);
+    }
+    return !fs.existsSync(dirPath);
 };
 
 // Unit tests to ensure the setup functions are working appropriately
 suite("YARA: Setup", function () {
-    // this.timeout(10000);
     const extensionRoot: string = path.join(__dirname, "..", "..");
     let targetDir: string = "";
+    let server_proc: ChildProcess|null = null;
 
     setup(function () {
+        this.timeout(10000);
+        server_proc = null;
         // ensure the server components are installed if none exist
         targetDir = fs.mkdtempSync(`${os.tmpdir()}${path.sep}`);
+        try {
+            let server_installed: boolean = install_server(extensionRoot, targetDir);
+            // console.log(`server installed? ${server_installed}`);
+        } catch (error) {
+            console.log(error)
+        }
     });
     teardown(function () {
-        try { removeDir(targetDir); } catch {}
+        this.timeout(10000);
+        const success: boolean = removeDir(targetDir);
+        // console.log(`Successfully removed ${targetDir}? ${success}`);
+        if (server_proc !== null) {
+            // console.log(`Killing server with PID ${server_proc.pid}`);
+            server_proc.kill();
+            // console.log(`Server killed? ${server_proc.killed}`);
+        }
     });
     test("install server", function (done) {
-        const installResult: boolean = install_server(extensionRoot, targetDir);
         // install_server creates the env/ directory when successful
-        let dirExists: boolean = fs.existsSync(path.join(targetDir, "env"));
-        console.log(`installResult && dirExists: ${installResult} && ${dirExists}`);
-        assert(installResult && dirExists == true);
-        done();
+        fs.exists(path.join(targetDir, "env"), (exists: boolean) => {
+            if (exists) { done(); }
+        });
     });
     /*
         Have to report this test as complete in a slightly different way
@@ -63,31 +85,34 @@ suite("YARA: Setup", function () {
         // ensure the server binds to a port so the client can connect
         const host: string = "127.0.0.1";
         const port: number = 8471;
-        const installed: boolean = install_server(extensionRoot, targetDir);
-        console.log(`Python installed? ${fs.existsSync(path.join(targetDir, 'server', 'env', 'bin', 'python'))} && ${installed}`);
-        await start_server(targetDir, host, port);
-        return new Promise(function (resolve, reject) {
-            const connection: Socket = createConnection(port, host, function () {
-                connection.end();
-                resolve();
-            });
-        });
+        server_proc = await start_server(targetDir, host, port);
+        let socket: net.Socket = net.createConnection(port, host);
+        assert(socket.remotePort == port);
+        assert(socket.remoteAddress == host);
     });
     test("server installed", async function () {
-        targetDir = fs.mkdtempSync(`${os.tmpdir()}${path.sep}`);
-        install_server(extensionRoot, targetDir);
-        assert(server_installed(targetDir) == true);
+        const installed: boolean = server_installed(targetDir);
+        assert(installed == true);
+        // console.log(`server installed: assertion passed`);
     });
 });
 
 // Integration tests to ensure the client is working independently of the server
-suite.skip("YARA: Client", function () {
-    // this.timeout(5000);
+suite("YARA: Client", function () {
     let extension: vscode.Extension<any>|null = null;
+    let server_proc: ChildProcess|null = null;
 
     setup(function () {
         extension = vscode.extensions.getExtension(ext_id);
+        server_proc = null;
     });
+    teardown(function () {
+        if (server_proc !== null) {
+            // console.log(`Killing server with PID ${server_proc.pid}`);
+            server_proc.kill();
+            // console.log(`Server killed? ${server_proc.killed}`);
+        }
+    })
     test.skip("client connection refused", async function () {
         // ensure the client throws an error message if the connection is refused and the server is shut down
         const filepath: string = path.join(workspace, "peek_rules.yara");
@@ -105,8 +130,8 @@ suite.skip("YARA: Client", function () {
         // ensure the language server is started as the client's child process
         // by checking that the PID exists
         let api = await extension.activate();
-        let server_proc: ChildProcess = api.get_server().process;
-        assert(server_proc.pid > -1);
+        server_proc = api.get_server().process;
+        assert(server_proc.pid > 1);
     });
     test.skip("stop server", async function () {
         // ensure the language server is stopped if the client ends
@@ -116,7 +141,7 @@ suite.skip("YARA: Client", function () {
 });
 
 // Integration tests to ensure the client and server are interacting as expected
-suite.skip("YARA: Language Server", function () {
+suite("YARA: Language Server", function () {
     // this.timeout(5000);
 
     suiteSetup(async function () {

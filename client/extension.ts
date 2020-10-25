@@ -15,11 +15,11 @@ export async function activate(context: ExtensionContext) {
     let outputChannel: OutputChannel = window.createOutputChannel("YARA");
     context.subscriptions.push(outputChannel);
     // check if the server components are installed - if not, install them
-    let installDir: string = path.join(context.extensionPath, "server");
-    if (!server_installed(installDir)) {
-        let msg: string = `Installing YARA Language Server components into ${installDir}`;
+    let serverRoot: string = path.join(context.extensionPath, "server");
+    if (!server_installed(serverRoot)) {
+        let msg: string = `Installing YARA Language Server components into ${serverRoot}`;
         outputChannel.appendLine(`[Extension Activation] ${msg}`);
-        if (install_server(context.extensionPath, installDir)) {
+        if (install_server(context.extensionPath, serverRoot)) {
             let msg: string = "Successfully installed server components";
             outputChannel.appendLine(`[Extension Activation] ${msg}`);
         }
@@ -32,7 +32,7 @@ export async function activate(context: ExtensionContext) {
     let lhost: string = "127.0.0.1";
     // grab a random open TCP port to listen to
     let tcpPort: number = await getPort();
-    let langserver: ChildProcess = await start_server(context.extensionPath, lhost, tcpPort);
+    let langserver: ChildProcess = await start_server(serverRoot, lhost, tcpPort);
     // when the client starts it should open a socket to the server
     const serverOptions: lcp.ServerOptions = function() {
         return new Promise((resolve, reject) => {
