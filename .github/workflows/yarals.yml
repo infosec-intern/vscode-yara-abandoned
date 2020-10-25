@@ -33,7 +33,7 @@ jobs:
       run: |
         pip wheel ./server/
         pip install $(ls *.whl)
-        echo "::set-env name=YARALS_VERSION::$(pip show yarals | grep Version | cut -d ' ' -f2)"
+        echo "YARALS_VERSION=$(pip show yarals | grep Version | cut -d ' ' -f2)" >> $GITHUB_ENV
     - name: Lint Package
       run: |
         pylint --exit-zero --rcfile=.pylintrc ./server/yarals | tee pylint-pkg.txt
