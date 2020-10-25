@@ -15,11 +15,12 @@ async function main() {
 		const testWorkspace = path.resolve(__dirname, 'rules')
 
     // Download VS Code, unzip it and run the integration test
-    await runTests({
+    let exitCode: number = await runTests({
         extensionDevelopmentPath,
         extensionTestsPath,
-        launchArgs: [testWorkspace, "--disable-extensions", "--disable-gpu"]
+        launchArgs: [testWorkspace, "--disable-extensions", "--disable-gpu", "--sync off"]
     });
+    process.exit(exitCode);
   } catch (err) {
     console.error("Failed to run tests");
     process.exit(1);
