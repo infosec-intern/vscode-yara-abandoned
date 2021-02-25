@@ -467,17 +467,56 @@
             "traits": "property",
             "invokes": "property",
             "files_attribute_changed": "property",
-            "files_copied": "property",
+            "files_copied": {
+                "path": "property",
+                "sha256": "property",
+                "type": "property"
+            },
             "files_deleted": "property",
-            "files_dropped": "property",
+            "files_dropped": {
+                "source": "property",
+                "destination": "property"
+            },
             "files_opened": "property",
             "files_written": "property",
-            "dns_lookups": "property",
+            "dns_lookups": {
+                "hostname": "property",
+                "resolved_ips": "property"
+            },
             "hosts_file": "property",
-            "ip_traffic": "property",
-            "http_conversations": "property",
-            "smtp_conversations": "property",
-            "permissions_checked": "property",
+            "ip_traffic": {
+                "destination_ip": "property",
+                "destination_port": "property",
+                "transport_layer_protocol": "property"
+            },
+            "http_conversations": {
+                "url": "property",
+                "request_method": "property",
+                "request_headers": "property",
+                "response_headers": "property",
+                "response_status_code": "property",
+                "response_body_filetype": "property"
+            },
+            "smtp_conversations": {
+                "hostname": "property",
+                "destination_ip": "property",
+                "destination_port": "property",
+                "smtp_from": "property",
+                "smtp_to": "property",
+                "message_from": "property",
+                "message_to": "property",
+                "message_cc": "property",
+                "message_bcc": "property",
+                "timestamp": "property",
+                "subject": "property",
+                "html_body": "property",
+                "txt_body": "property",
+                "x_mailer": "property"
+            },
+            "permissions_checked": {
+                "permission": "property",
+                "owner": "property"
+            },
             "permissions_requested": "property",
             "command_executions": "property",
             "modules_loaded": "property",
@@ -496,11 +535,20 @@
             "services_stopped": "property",
             "registry_keys_deleted": "property",
             "registry_keys_opened": "property",
-            "registry_keys_set": "property",
+            "registry_keys_set": {
+                "key": "propery",
+                "value": "property"
+            },
             "shared_preferences_lookups": "property",
-            "shared_preferences_sets": "property",
+            "shared_preferences_sets": {
+                "key": "propery",
+                "value": "property"
+            },
             "system_property_lookups": "property",
-            "system_property_sets": "property",
+            "system_property_sets": {
+                "key": "propery",
+                "value": "property"
+            },
             "windows_hidden": "property",
             "windows_searched": "property"
         },
